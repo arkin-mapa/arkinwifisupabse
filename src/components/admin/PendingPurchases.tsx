@@ -48,8 +48,8 @@ const PendingPurchases = () => {
 
   const handleDelete = (purchaseId: number) => {
     const purchase = purchases.find(p => p.id === purchaseId);
-    if (!purchase || (purchase.status !== "approved" && purchase.status !== "rejected")) {
-      toast.error("Only approved or rejected purchases can be deleted");
+    if (!purchase || purchase.status === "pending") {
+      toast.error("Only approved, rejected, or cancelled purchases can be deleted");
       return;
     }
 
