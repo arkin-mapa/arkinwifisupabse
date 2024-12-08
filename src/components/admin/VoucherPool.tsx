@@ -16,29 +16,45 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const [localVouchers, setLocalVouchers] = useState<Record<string, Voucher[]>>(vouchers || {});
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
-    // Update local state
-    const updatedVouchers = {
-      ...localVouchers,
-      [planDuration]: localVouchers[planDuration].filter(v => v.id !== voucherId)
-    };
+    try {
+      // Update local state first
+      const updatedVouchers = {
+        ...localVouchers,
+        [planDuration]: localVouchers[planDuration].filter(v => v.id !== voucherId)
+      };
+      setLocalVouchers(updatedVouchers);
 
-    // Update localStorage
-    localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
-    setLocalVouchers(updatedVouchers);
+      // Update voucher pool in localStorage
+      localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
 
-    // Update plans with new voucher count
-    const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
-    const updatedPlans = plans.map(p => 
-      p.duration === planDuration
-        ? { ...p, availableVouchers: updatedVouchers[planDuration].filter(v => !v.isUsed).length }
-        : p
-    );
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
+      // Update plans with new voucher count
+      const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
+      const updatedPlans = plans.map(p => 
+        p.duration === planDuration
+          ? { ...p, availableVouchers: updatedVouchers[planDuration].filter(v => !v.isUsed).length }
+          : p
+      );
+      localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
 
-    toast({
-      title: "Voucher deleted",
-      description: "The voucher has been removed from the pool.",
-    });
+      // Also remove from client vouchers if present
+      const clientVouchers = JSON.parse(localStorage.getItem('clientVouchers') || '[]');
+      const updatedClientVouchers = clientVouchers.filter((v: Voucher) => v.id !== voucherId);
+      localStorage.setItem('clientVouchers', JSON.stringify(updatedClientVouchers));
+
+      toast({
+        title: "Voucher deleted",
+        description: "The voucher has been removed from both pool and client wallet.",
+      });
+    } catch (error) {
+      console.error('Error deleting voucher:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete voucher. Please try again.",
+        variant: "destructive",
+      });
+      // Restore original state
+      setLocalVouchers(vouchers);
+    }
   };
 
   // Update local vouchers when props change

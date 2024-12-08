@@ -47,12 +47,37 @@ const VoucherWallet = () => {
   };
 
   const deleteVoucher = (voucherId: string) => {
-    const updatedVouchers = vouchers.filter(v => v.id !== voucherId);
-    localStorage.setItem('clientVouchers', JSON.stringify(updatedVouchers));
-    setVouchers(updatedVouchers);
-    toast.success("Voucher deleted successfully", {
-      style: { background: '#fff', border: '1px solid #e2e8f0' }
-    });
+    try {
+      // Update client vouchers
+      const updatedVouchers = vouchers.filter(v => v.id !== voucherId);
+      setVouchers(updatedVouchers);
+      localStorage.setItem('clientVouchers', JSON.stringify(updatedVouchers));
+
+      // Also update voucher pool
+      const voucherPool = JSON.parse(localStorage.getItem('vouchers') || '{}');
+      const updatedPool: Record<string, Voucher[]> = {};
+      
+      Object.entries(voucherPool).forEach(([duration, durationVouchers]) => {
+        updatedPool[duration] = (durationVouchers as Voucher[]).filter(v => v.id !== voucherId);
+      });
+      
+      localStorage.setItem('vouchers', JSON.stringify(updatedPool));
+
+      // Update plans with new voucher count
+      const updatedPlans = plans.map(plan => ({
+        ...plan,
+        availableVouchers: (updatedPool[plan.duration] || []).filter(v => !v.isUsed).length
+      }));
+      localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
+      setPlans(updatedPlans);
+
+      toast.success("Voucher deleted successfully");
+    } catch (error) {
+      console.error('Error deleting voucher:', error);
+      toast.error("Failed to delete voucher. Please try again.");
+      // Restore original state
+      setVouchers(vouchers);
+    }
   };
 
   // Group vouchers by plan
