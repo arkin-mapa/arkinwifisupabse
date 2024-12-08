@@ -1,7 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import type { Purchase, Voucher } from "@/types/plans";
+import { transferVouchersToClient } from "@/utils/voucherManagement";
+import type { Purchase } from "@/types/plans";
 
 interface PurchaseActionsProps {
   purchaseId: number;
@@ -11,10 +12,16 @@ interface PurchaseActionsProps {
   onDelete: (id: number) => void;
 }
 
-const PurchaseActions = ({ purchaseId, status, onApprove, onReject, onDelete }: PurchaseActionsProps) => {
+const PurchaseActions = ({ 
+  purchaseId, 
+  status, 
+  onApprove, 
+  onReject, 
+  onDelete 
+}: PurchaseActionsProps) => {
   const handleApprove = async (id: number) => {
     try {
-      // Get the purchase details from localStorage
+      // Get the purchase details
       const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
       const purchase = purchases.find((p: Purchase) => p.id === id);
       
@@ -23,49 +30,15 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject, onDelete }: 
         return;
       }
 
-      // Get the voucher pool
-      const voucherPool = JSON.parse(localStorage.getItem('vouchers') || '{}');
-      const planVouchers = voucherPool[purchase.plan] || [];
-      const availableVouchers = planVouchers.filter(v => !v.isUsed);
-
-      if (availableVouchers.length < purchase.quantity) {
-        toast.error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers.length}`);
-        return;
-      }
-
-      // Select vouchers to transfer and remove them from pool
-      const vouchersToTransfer = availableVouchers.slice(0, purchase.quantity);
-      const remainingVouchers = planVouchers.filter(voucher => 
-        !vouchersToTransfer.some(transferVoucher => transferVoucher.id === voucher.id)
-      );
-
-      // Update voucher pool without the transferred vouchers
-      const updatedVoucherPool = {
-        ...voucherPool,
-        [purchase.plan]: remainingVouchers
-      };
-      localStorage.setItem('vouchers', JSON.stringify(updatedVoucherPool));
-
-      // Add vouchers to client wallet
-      const clientVouchers = JSON.parse(localStorage.getItem('clientVouchers') || '[]');
-      localStorage.setItem('clientVouchers', JSON.stringify([...clientVouchers, ...vouchersToTransfer]));
-
-      // Update plan's available voucher count
-      const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
-      const updatedPlans = plans.map(p => 
-        p.duration === purchase.plan
-          ? { ...p, availableVouchers: remainingVouchers.length }
-          : p
-      );
-      localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-
+      // Transfer vouchers
+      transferVouchersToClient(purchase);
+      
       // Update purchase status
       onApprove(id);
-      
       toast.success("Vouchers successfully transferred to client wallet");
     } catch (error) {
       console.error('Error during voucher transfer:', error);
-      toast.error("Failed to transfer vouchers. Please try again.");
+      toast.error(error instanceof Error ? error.message : "Failed to transfer vouchers. Please try again.");
     }
   };
 

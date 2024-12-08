@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { deleteVoucher } from "@/utils/voucherManagement";
 import type { Voucher } from "@/types/plans";
 
 interface VoucherPoolProps {
@@ -17,29 +18,14 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
     try {
-      // Update local state first
+      deleteVoucher(voucherId, planDuration);
+      
+      // Update local state
       const updatedVouchers = {
         ...localVouchers,
         [planDuration]: localVouchers[planDuration].filter(v => v.id !== voucherId)
       };
       setLocalVouchers(updatedVouchers);
-
-      // Update voucher pool in localStorage
-      localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
-
-      // Update plans with new voucher count
-      const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
-      const updatedPlans = plans.map(p => 
-        p.duration === planDuration
-          ? { ...p, availableVouchers: updatedVouchers[planDuration].filter(v => !v.isUsed).length }
-          : p
-      );
-      localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-
-      // Also remove from client vouchers if present
-      const clientVouchers = JSON.parse(localStorage.getItem('clientVouchers') || '[]');
-      const updatedClientVouchers = clientVouchers.filter((v: Voucher) => v.id !== voucherId);
-      localStorage.setItem('clientVouchers', JSON.stringify(updatedClientVouchers));
 
       toast({
         title: "Voucher deleted",
@@ -52,8 +38,6 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
         description: "Failed to delete voucher. Please try again.",
         variant: "destructive",
       });
-      // Restore original state
-      setLocalVouchers(vouchers);
     }
   };
 
