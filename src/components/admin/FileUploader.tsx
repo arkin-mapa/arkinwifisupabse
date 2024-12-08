@@ -17,22 +17,7 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       // Convert ArrayBuffer to Uint8Array which mammoth can handle
       const uint8Array = new Uint8Array(arrayBuffer);
       
-      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array }, {
-        transformDocument: (element: any) => {
-          if (element.type === 'run' && element.styleId?.includes('size-14')) {
-            element.styleName = 'size-14';
-          }
-          return element;
-        },
-        styleMap: [
-          "table => table",
-          "tr => tr",
-          "td => td",
-          "p[style-name='size-14'] => p.size-14",
-          "r[style-name='size-14'] => span.size-14"
-        ],
-        includeDefaultStyleMap: true
-      });
+      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array });
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
@@ -49,12 +34,6 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       // Extract from table cells
       doc.querySelectorAll('td').forEach(cell => {
         const text = cell.textContent?.trim() || '';
-        extractCodes(text);
-      });
-
-      // Extract from text with size 14
-      doc.querySelectorAll('.size-14').forEach(element => {
-        const text = element.textContent?.trim() || '';
         extractCodes(text);
       });
 
