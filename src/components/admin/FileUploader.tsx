@@ -9,9 +9,10 @@ interface Props {
 }
 
 // Define custom types for mammoth options
-interface CustomMammothOptions extends mammoth.Options {
+interface Options {
   transformDocument?: (element: any) => any;
   styleMap?: string[];
+  includeDefaultStyleMap?: boolean;
   preserveEmptyParagraphs?: boolean;
 }
 
@@ -21,8 +22,7 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
     try {
-      const options: CustomMammothOptions = {
-        arrayBuffer,
+      const { value: html } = await mammoth.convertToHtml({ buffer: arrayBuffer }, {
         transformDocument: (element) => {
           if (element.type === 'run' && element.styleId?.includes('size-14')) {
             element.styleName = 'size-14';
@@ -38,14 +38,13 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
         ],
         includeDefaultStyleMap: true,
         preserveEmptyParagraphs: true
-      };
-
-      const { value: html } = await mammoth.convertToHtml(options);
+      });
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const vouchers = new Set<string>();
 
+      // Function to extract voucher codes from text
       const extractCodes = (text: string) => {
         const matches = text.match(/\b\d{6,14}\b/g);
         if (matches) {
@@ -53,16 +52,19 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
         }
       };
 
+      // Extract from table cells
       doc.querySelectorAll('td').forEach(cell => {
         const text = cell.textContent?.trim() || '';
         extractCodes(text);
       });
 
+      // Extract from text with size 14
       doc.querySelectorAll('.size-14').forEach(element => {
         const text = element.textContent?.trim() || '';
         extractCodes(text);
       });
 
+      // Extract from paragraphs and spans
       doc.querySelectorAll('p, span').forEach(element => {
         const text = element.textContent?.trim() || '';
         extractCodes(text);
