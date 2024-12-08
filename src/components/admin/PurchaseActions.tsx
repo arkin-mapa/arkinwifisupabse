@@ -33,18 +33,16 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject, onDelete }: 
         return;
       }
 
-      // Get the required number of vouchers
-      const assignedVouchers = availableVouchers.slice(0, purchase.quantity).map(v => ({
-        ...v,
-        isUsed: true
-      }));
+      // Get the required number of vouchers and remove them from the pool
+      const assignedVouchers = availableVouchers.slice(0, purchase.quantity);
+      const remainingVouchers = planVouchers.filter(v => 
+        !assignedVouchers.some(av => av.id === v.id)
+      );
 
-      // Update voucher pool
+      // Update voucher pool with remaining vouchers
       const updatedPool = {
         ...voucherPool,
-        [purchase.plan]: planVouchers.map(v => 
-          assignedVouchers.find(av => av.id === v.id) ? { ...v, isUsed: true } : v
-        )
+        [purchase.plan]: remainingVouchers
       };
       localStorage.setItem('vouchers', JSON.stringify(updatedPool));
 
@@ -56,7 +54,7 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject, onDelete }: 
       const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
       const updatedPlans = plans.map(p => 
         p.duration === purchase.plan
-          ? { ...p, availableVouchers: (updatedPool[purchase.plan] || []).filter(v => !v.isUsed).length }
+          ? { ...p, availableVouchers: remainingVouchers.filter(v => !v.isUsed).length }
           : p
       );
       localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
@@ -64,9 +62,9 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject, onDelete }: 
       // Call the original onApprove function
       onApprove(id);
       
-      toast.success("Purchase approved and vouchers assigned successfully");
+      toast.success("Purchase approved and vouchers transferred successfully");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to assign vouchers");
+      toast.error(error instanceof Error ? error.message : "Failed to transfer vouchers");
     }
   };
 
