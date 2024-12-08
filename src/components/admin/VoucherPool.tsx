@@ -82,16 +82,14 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                           >
                             <span className="truncate">{voucher.code}</span>
                           </Badge>
-                          {!voucher.isUsed && (
-                            <Button
-                              variant="ghost"
-                              size="icon"
-                              className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleDeleteVoucher(planDuration, voucher.id)}
-                            >
-                              <Trash2 className="h-3 w-3" />
-                            </Button>
-                          )}
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteVoucher(planDuration, voucher.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       ))}
                     </div>

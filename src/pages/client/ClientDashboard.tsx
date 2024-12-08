@@ -4,48 +4,46 @@ import PlansList from "@/components/client/PlansList";
 import PurchaseHistory from "@/components/client/PurchaseHistory";
 import VoucherWallet from "@/components/client/VoucherWallet";
 import { Navbar } from "@/components/ui/navbar";
-import Background3D from "@/components/client/Background3D";
 import { motion } from "framer-motion";
 
 const ClientDashboard = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 to-gray-800">
-      <Background3D />
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <motion.div 
-        initial={{ opacity: 0 }}
-        animate={{ opacity: 1 }}
-        className="container mx-auto p-4 md:p-6 relative z-10"
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="container mx-auto p-4 md:p-6"
       >
         <Tabs defaultValue="plans" className="space-y-4">
-          <div className="sticky top-0 z-20 backdrop-blur-md rounded-xl p-2 bg-white/5 border border-white/10">
-            <TabsList className="w-full grid grid-cols-1 sm:grid-cols-3 gap-2">
-              <TabsTrigger value="plans" className="data-[state=active]:bg-white/20 text-white">
+          <div className="sticky top-16 z-10 backdrop-blur-sm rounded-lg p-1.5 bg-white/50 border shadow-sm">
+            <TabsList className="w-full grid grid-cols-1 sm:grid-cols-3 gap-1">
+              <TabsTrigger value="plans" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Available Plans
               </TabsTrigger>
-              <TabsTrigger value="history" className="data-[state=active]:bg-white/20 text-white">
+              <TabsTrigger value="history" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Purchase History
               </TabsTrigger>
-              <TabsTrigger value="wallet" className="data-[state=active]:bg-white/20 text-white">
+              <TabsTrigger value="wallet" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 My Vouchers
               </TabsTrigger>
             </TabsList>
           </div>
           
           <TabsContent value="plans">
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md p-4 rounded-xl">
+            <Card className="bg-white border shadow-sm p-4 rounded-lg">
               <PlansList />
             </Card>
           </TabsContent>
           
           <TabsContent value="history">
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md p-4 rounded-xl overflow-x-auto">
+            <Card className="bg-white border shadow-sm p-4 rounded-lg">
               <PurchaseHistory />
             </Card>
           </TabsContent>
           
           <TabsContent value="wallet">
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md p-4 rounded-xl">
+            <Card className="bg-white border shadow-sm p-4 rounded-lg">
               <VoucherWallet />
             </Card>
           </TabsContent>
