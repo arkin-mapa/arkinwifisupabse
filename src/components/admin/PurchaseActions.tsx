@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
+import { assignVouchersToClient } from "@/utils/purchaseUtils";
 
 interface PurchaseActionsProps {
   purchaseId: number;
@@ -10,6 +11,44 @@ interface PurchaseActionsProps {
 }
 
 const PurchaseActions = ({ purchaseId, status, onApprove, onReject }: PurchaseActionsProps) => {
+  const handleApprove = async (id: number) => {
+    try {
+      // Get the purchase details from localStorage
+      const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+      const purchase = purchases.find((p: any) => p.id === id);
+      
+      if (!purchase) {
+        toast.error("Purchase not found");
+        return;
+      }
+
+      // Get the voucher pool
+      const voucherPool = JSON.parse(localStorage.getItem('voucherPool') || '{}');
+      
+      // Assign vouchers to client
+      const { assignedVouchers, remainingPool } = assignVouchersToClient(
+        voucherPool,
+        purchase.plan,
+        purchase.quantity
+      );
+
+      // Update voucher pool in localStorage
+      localStorage.setItem('voucherPool', JSON.stringify(remainingPool));
+
+      // Add vouchers to client wallet
+      const clientVouchers = JSON.parse(localStorage.getItem('clientVouchers') || '[]');
+      const updatedClientVouchers = [...clientVouchers, ...assignedVouchers];
+      localStorage.setItem('clientVouchers', JSON.stringify(updatedClientVouchers));
+
+      // Call the original onApprove function
+      onApprove(id);
+      
+      toast.success("Purchase approved and vouchers assigned successfully");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to assign vouchers");
+    }
+  };
+
   if (status !== "pending") return null;
 
   return (
@@ -17,7 +56,7 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject }: PurchaseAc
       <Button
         size="sm"
         className="bg-green-500 hover:bg-green-600 transition-colors"
-        onClick={() => onApprove(purchaseId)}
+        onClick={() => handleApprove(purchaseId)}
       >
         <Check className="w-4 h-4 mr-1" />
         Approve

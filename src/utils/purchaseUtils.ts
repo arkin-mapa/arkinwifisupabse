@@ -9,10 +9,14 @@ export const assignVouchersToClient = (
   const availableVouchers = planVouchers.filter(v => !v.isUsed);
   
   if (availableVouchers.length < quantity) {
-    throw new Error("Not enough vouchers available");
+    throw new Error("Not enough vouchers available in the pool");
   }
 
-  const assignedVouchers = availableVouchers.slice(0, quantity);
+  const assignedVouchers = availableVouchers.slice(0, quantity).map(v => ({
+    ...v,
+    isUsed: true
+  }));
+
   const remainingVouchers = planVouchers.map(v => 
     assignedVouchers.find(av => av.id === v.id) ? { ...v, isUsed: true } : v
   );
