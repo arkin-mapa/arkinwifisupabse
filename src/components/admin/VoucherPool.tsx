@@ -16,9 +16,16 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
   const [localVouchers, setLocalVouchers] = useState(vouchers);
 
-  // Update local state when props change
+  // Initialize with props and sync with localStorage
   useEffect(() => {
-    setLocalVouchers(vouchers);
+    const storedVouchers = getVouchersFromStorage();
+    // Merge props with stored vouchers, preferring stored values for existing keys
+    const mergedVouchers = {
+      ...vouchers,
+      ...storedVouchers
+    };
+    setLocalVouchers(mergedVouchers);
+    saveVouchersToStorage(mergedVouchers);
   }, [vouchers]);
 
   // Update plans' voucher counts whenever vouchers change

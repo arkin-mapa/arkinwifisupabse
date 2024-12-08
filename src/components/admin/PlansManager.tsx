@@ -3,7 +3,6 @@ import { useToast } from "@/hooks/use-toast";
 import PlanCard from "./PlanCard";
 import VoucherPool from "./VoucherPool";
 import AddPlanDialog from "./AddPlanDialog";
-import { getVouchersFromStorage, saveVouchersToStorage } from "@/utils/voucherStorage";
 import type { Plan, Voucher } from "@/types/plans";
 
 const PlansManager = () => {
@@ -14,7 +13,7 @@ const PlansManager = () => {
   // Load plans and vouchers from localStorage on component mount
   useEffect(() => {
     const storedPlans = localStorage.getItem('wifiPlans');
-    const storedVouchers = getVouchersFromStorage();
+    const storedVouchers = localStorage.getItem('vouchers');
     
     if (storedPlans) {
       setPlans(JSON.parse(storedPlans));
@@ -32,7 +31,9 @@ const PlansManager = () => {
       setPlans(defaultPlans);
     }
 
-    setVouchers(storedVouchers);
+    if (storedVouchers) {
+      setVouchers(JSON.parse(storedVouchers));
+    }
   }, []);
 
   const handleAddPlan = (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
@@ -61,7 +62,7 @@ const PlansManager = () => {
     const plan = plans.find(p => p.id === planId);
     if (plan) {
       const { [plan.duration]: _, ...remainingVouchers } = vouchers;
-      saveVouchersToStorage(remainingVouchers);
+      localStorage.setItem('vouchers', JSON.stringify(remainingVouchers));
       setVouchers(remainingVouchers);
     }
     
@@ -88,7 +89,7 @@ const PlansManager = () => {
       [plan.duration]: [...(vouchers[plan.duration] || []), ...newVouchers]
     };
     setVouchers(updatedVouchers);
-    saveVouchersToStorage(updatedVouchers);
+    localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
 
     // Update plans with new voucher count
     const updatedPlans = plans.map(p => 
