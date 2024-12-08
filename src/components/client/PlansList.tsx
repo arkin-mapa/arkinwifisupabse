@@ -12,8 +12,8 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
+import { motion } from "framer-motion";
 
-// Get existing purchases from localStorage or initialize empty array
 const getStoredPurchases = (): Purchase[] => {
   const stored = localStorage.getItem('purchases');
   return stored ? JSON.parse(stored) : [];
@@ -29,7 +29,6 @@ const PlansList = () => {
     paymentMethod: "cash"
   });
 
-  // Load plans from localStorage on component mount
   useEffect(() => {
     const loadPlans = () => {
       const storedPlans = localStorage.getItem('wifiPlans');
@@ -39,12 +38,8 @@ const PlansList = () => {
     };
 
     loadPlans();
-    // Add event listener for storage changes
     window.addEventListener('storage', loadPlans);
-    
-    return () => {
-      window.removeEventListener('storage', loadPlans);
-    };
+    return () => window.removeEventListener('storage', loadPlans);
   }, []);
 
   const handlePurchase = (plan: Plan) => {
@@ -66,7 +61,6 @@ const PlansList = () => {
 
     setPurchasing(selectedPlan.id);
     
-    // Create new purchase object
     const newPurchase: Purchase = {
       id: Date.now(),
       date: new Date().toISOString().split('T')[0],
@@ -78,14 +72,11 @@ const PlansList = () => {
       status: "pending"
     };
 
-    // Get existing purchases and add new one
     const existingPurchases = getStoredPurchases();
     const updatedPurchases = [...existingPurchases, newPurchase];
     
-    // Save to localStorage
     localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
 
-    // Reset state and show success message
     setPurchasing(null);
     setSelectedPlan(null);
     setPurchaseDetails({
@@ -99,25 +90,35 @@ const PlansList = () => {
 
   return (
     <>
-      <div className="grid md:grid-cols-3 gap-4">
-        {plans.map((plan) => (
-          <div key={plan.id} className="border rounded-lg p-4 bg-white shadow-sm">
-            <h3 className="text-lg font-semibold mb-2">{plan.duration}</h3>
-            <p className="text-2xl font-bold mb-2">₱{plan.price}</p>
-            <p className="text-gray-500 mb-4">Available Vouchers: {plan.availableVouchers}</p>
-            <Button 
-              className="w-full"
-              onClick={() => handlePurchase(plan)}
-              disabled={purchasing === plan.id || plan.availableVouchers === 0}
-            >
-              {purchasing === plan.id ? "Processing..." : plan.availableVouchers === 0 ? "Out of Stock" : "Purchase"}
-            </Button>
-          </div>
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+        {plans.map((plan, index) => (
+          <motion.div
+            key={plan.id}
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ delay: index * 0.1 }}
+            className="relative group"
+          >
+            <div className="border rounded-lg p-6 bg-white/90 backdrop-blur-sm shadow-sm 
+                          transition-all duration-300 hover:shadow-lg hover:scale-105">
+              <h3 className="text-xl font-semibold mb-2">{plan.duration}</h3>
+              <p className="text-3xl font-bold text-primary mb-4">₱{plan.price}</p>
+              <p className="text-gray-600 mb-4">Available Vouchers: {plan.availableVouchers}</p>
+              <Button 
+                className="w-full bg-primary hover:bg-primary/90"
+                onClick={() => handlePurchase(plan)}
+                disabled={purchasing === plan.id || plan.availableVouchers === 0}
+              >
+                {purchasing === plan.id ? "Processing..." : 
+                 plan.availableVouchers === 0 ? "Out of Stock" : "Purchase"}
+              </Button>
+            </div>
+          </motion.div>
         ))}
       </div>
 
       <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && setSelectedPlan(null)}>
-        <DialogContent>
+        <DialogContent className="sm:max-w-[425px]">
           <DialogHeader>
             <DialogTitle>Purchase {selectedPlan?.duration} Plan</DialogTitle>
             <DialogDescription>
@@ -136,6 +137,7 @@ const PlansList = () => {
                   customerName: e.target.value
                 })}
                 placeholder="Enter your name"
+                className="mt-1"
               />
             </div>
 
@@ -151,6 +153,7 @@ const PlansList = () => {
                   ...purchaseDetails,
                   quantity: parseInt(e.target.value)
                 })}
+                className="mt-1"
               />
             </div>
 
@@ -162,7 +165,7 @@ const PlansList = () => {
                   ...purchaseDetails,
                   paymentMethod: value
                 })}
-                className="mt-2"
+                className="mt-2 space-y-2"
               >
                 <div className="flex items-center space-x-2">
                   <RadioGroupItem value="cash" id="cash" />
