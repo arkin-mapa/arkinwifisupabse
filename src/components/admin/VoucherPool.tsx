@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
-import { useToast } from "@/hooks/use-toast";
+import { toast } from "sonner";
 import type { Voucher } from "@/types/plans";
 
 interface VoucherPoolProps {
@@ -12,29 +12,28 @@ interface VoucherPoolProps {
 }
 
 const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
-  const { toast } = useToast();
   const [localVouchers, setLocalVouchers] = useState(vouchers);
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
-    setLocalVouchers(prev => {
-      const planVouchers = prev[planDuration] || [];
-      const updatedVouchers = planVouchers.filter(v => v.id !== voucherId);
-      
-      if (updatedVouchers.length === 0) {
-        const { [planDuration]: _, ...rest } = prev;
-        return rest;
-      }
-      
-      return {
-        ...prev,
-        [planDuration]: updatedVouchers
-      };
-    });
+    const updatedVouchers = {
+      ...localVouchers,
+      [planDuration]: localVouchers[planDuration].filter(v => v.id !== voucherId)
+    };
 
-    toast({
-      title: "Voucher deleted",
-      description: "The voucher has been removed from the pool.",
-    });
+    // Update localStorage
+    localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
+    setLocalVouchers(updatedVouchers);
+
+    // Update plans with new voucher count
+    const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
+    const updatedPlans = plans.map(p => 
+      p.duration === planDuration
+        ? { ...p, availableVouchers: updatedVouchers[planDuration].filter(v => !v.isUsed).length }
+        : p
+    );
+    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
+
+    toast.success("Voucher deleted successfully");
   };
 
   return (
@@ -48,24 +47,35 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
             <p className="text-muted-foreground">No vouchers available in the pool.</p>
           ) : (
             <ScrollArea className="h-[400px]">
-              {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
-                <div key={planDuration} className="mb-6">
-                  <div className="flex justify-between items-center mb-2">
-                    <h3 className="font-medium">Plan: {planDuration}</h3>
-                    <span className="text-sm text-muted-foreground">
-                      Total: {planVouchers.length}
-                    </span>
-                  </div>
-                  <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
-                    {planVouchers.map((voucher) => (
-                      <div key={voucher.id} className="relative group">
-                        <Badge
-                          variant={voucher.isUsed ? "secondary" : "default"}
-                          className="w-full justify-center py-2"
-                        >
-                          {voucher.code}
+              {Object.entries(localVouchers).map(([planDuration, planVouchers]) => {
+                const usedCount = planVouchers.filter(v => v.isUsed).length;
+                const unusedCount = planVouchers.length - usedCount;
+                
+                return (
+                  <div key={planDuration} className="mb-6">
+                    <div className="flex justify-between items-center mb-2">
+                      <h3 className="font-medium">Plan: {planDuration}</h3>
+                      <div className="flex gap-2 text-sm">
+                        <Badge variant="outline" className="bg-green-50">
+                          Available: {unusedCount}
                         </Badge>
-                        {!voucher.isUsed && (
+                        <Badge variant="outline" className="bg-gray-50">
+                          Used: {usedCount}
+                        </Badge>
+                        <Badge variant="outline">
+                          Total: {planVouchers.length}
+                        </Badge>
+                      </div>
+                    </div>
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
+                      {planVouchers.map((voucher) => (
+                        <div key={voucher.id} className="relative group">
+                          <Badge
+                            variant={voucher.isUsed ? "secondary" : "default"}
+                            className="w-full justify-between py-2 px-3"
+                          >
+                            <span className="truncate">{voucher.code}</span>
+                          </Badge>
                           <Button
                             variant="ghost"
                             size="icon"
@@ -74,12 +84,12 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                           >
                             <Trash2 className="h-3 w-3" />
                           </Button>
-                        )}
-                      </div>
-                    ))}
+                        </div>
+                      ))}
+                    </div>
                   </div>
-                </div>
-              ))}
+                );
+              })}
             </ScrollArea>
           )}
         </CardContent>
