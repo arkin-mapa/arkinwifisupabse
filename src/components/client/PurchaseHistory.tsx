@@ -20,7 +20,6 @@ import type { Purchase } from "@/types/plans";
 const PurchaseHistory = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 
-  // Load purchases from localStorage on component mount
   useEffect(() => {
     const storedPurchases = localStorage.getItem('purchases');
     if (storedPurchases) {
@@ -41,7 +40,13 @@ const PurchaseHistory = () => {
   };
 
   const handleDelete = (purchaseId: number) => {
-    const updatedPurchases = purchases.filter(purchase => purchase.id !== purchaseId);
+    const purchase = purchases.find(p => p.id === purchaseId);
+    if (!purchase || !["approved", "rejected", "cancelled"].includes(purchase.status)) {
+      toast.error("Only approved, rejected, or cancelled purchases can be deleted");
+      return;
+    }
+
+    const updatedPurchases = purchases.filter(p => p.id !== purchaseId);
     localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
     setPurchases(updatedPurchases);
     toast.success("Purchase record deleted successfully");
@@ -113,7 +118,7 @@ const PurchaseHistory = () => {
                       )}
                     </>
                   )}
-                  {(purchase.status === "cancelled" || purchase.status === "rejected") && (
+                  {(purchase.status === "approved" || purchase.status === "rejected" || purchase.status === "cancelled") && (
                     <AlertDialog>
                       <AlertDialogTrigger asChild>
                         <Button
