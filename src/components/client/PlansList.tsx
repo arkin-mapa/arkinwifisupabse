@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { toast } from "sonner";
 import type { Plan, Purchase } from "@/types/plans";
 import {
@@ -13,15 +13,6 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 
-const mockPlans: Plan[] = [
-  { id: "1", duration: "2 hrs", price: 5, availableVouchers: 93 },
-  { id: "2", duration: "4 hrs", price: 10, availableVouchers: 100 },
-  { id: "3", duration: "6 hrs", price: 15, availableVouchers: 100 },
-  { id: "4", duration: "8 hrs", price: 20, availableVouchers: 100 },
-  { id: "5", duration: "5 days", price: 50, availableVouchers: 0 },
-  { id: "6", duration: "30 days(Butanguid)", price: 200, availableVouchers: 95 },
-];
-
 // Get existing purchases from localStorage or initialize empty array
 const getStoredPurchases = (): Purchase[] => {
   const stored = localStorage.getItem('purchases');
@@ -29,6 +20,7 @@ const getStoredPurchases = (): Purchase[] => {
 };
 
 const PlansList = () => {
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [purchasing, setPurchasing] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [purchaseDetails, setPurchaseDetails] = useState({
@@ -36,6 +28,24 @@ const PlansList = () => {
     quantity: 1,
     paymentMethod: "cash"
   });
+
+  // Load plans from localStorage on component mount
+  useEffect(() => {
+    const loadPlans = () => {
+      const storedPlans = localStorage.getItem('wifiPlans');
+      if (storedPlans) {
+        setPlans(JSON.parse(storedPlans));
+      }
+    };
+
+    loadPlans();
+    // Add event listener for storage changes
+    window.addEventListener('storage', loadPlans);
+    
+    return () => {
+      window.removeEventListener('storage', loadPlans);
+    };
+  }, []);
 
   const handlePurchase = (plan: Plan) => {
     setSelectedPlan(plan);
@@ -90,7 +100,7 @@ const PlansList = () => {
   return (
     <>
       <div className="grid md:grid-cols-3 gap-4">
-        {mockPlans.map((plan) => (
+        {plans.map((plan) => (
           <div key={plan.id} className="border rounded-lg p-4 bg-white shadow-sm">
             <h3 className="text-lg font-semibold mb-2">{plan.duration}</h3>
             <p className="text-2xl font-bold mb-2">₱{plan.price}</p>
