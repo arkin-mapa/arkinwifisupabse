@@ -7,7 +7,7 @@ import { motion } from "framer-motion";
 
 const AdminDashboard = () => {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-gray-900 via-gray-800 to-gray-900">
+    <div className="min-h-screen bg-gray-50">
       <Navbar />
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
@@ -15,25 +15,25 @@ const AdminDashboard = () => {
         className="container mx-auto p-4 md:p-6"
       >
         <Tabs defaultValue="plans" className="space-y-4">
-          <div className="sticky top-0 z-10 backdrop-blur-md rounded-xl p-2 bg-white/5 border border-white/10">
-            <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 gap-2">
-              <TabsTrigger value="plans" className="data-[state=active]:bg-white/20 text-white">
+          <div className="sticky top-16 z-10 backdrop-blur-sm rounded-lg p-1.5 bg-white/50 border shadow-sm">
+            <TabsList className="w-full grid grid-cols-1 sm:grid-cols-2 gap-1">
+              <TabsTrigger value="plans" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Plans Management
               </TabsTrigger>
-              <TabsTrigger value="requests" className="data-[state=active]:bg-white/20 text-white">
+              <TabsTrigger value="requests" className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground">
                 Purchase Requests
               </TabsTrigger>
             </TabsList>
           </div>
           
           <TabsContent value="plans">
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md p-4 rounded-xl">
+            <Card className="bg-white border shadow-sm p-4 rounded-lg">
               <PlansManager />
             </Card>
           </TabsContent>
           
           <TabsContent value="requests">
-            <Card className="bg-white/5 border-white/10 backdrop-blur-md p-4 rounded-xl">
+            <Card className="bg-white border shadow-sm p-4 rounded-lg">
               <PendingPurchases />
             </Card>
           </TabsContent>

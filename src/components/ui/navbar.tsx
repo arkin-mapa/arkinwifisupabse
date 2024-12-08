@@ -1,31 +1,44 @@
-import { Store, User } from "lucide-react";
-import { Link } from "react-router-dom";
-import { Button } from "./button";
+import { Link, useLocation } from "react-router-dom";
 
 export function Navbar() {
-  return (
-    <nav className="border-b bg-white">
-      <div className="flex h-16 items-center px-4 container mx-auto">
-        <Link to="/" className="flex items-center gap-2 font-semibold text-lg text-emerald-600">
-          WiFi Voucher Store
-        </Link>
+  const location = useLocation();
+  const isAdmin = location.pathname.includes('admin');
 
-        <div className="ml-auto flex items-center gap-4">
-          <Link to="/client">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <Store className="h-4 w-4" />
-              Switch to Store
-            </Button>
+  return (
+    <nav className="sticky top-0 z-50 w-full border-b bg-white/75 backdrop-blur-lg">
+      <div className="container flex h-14 items-center">
+        <div className="flex flex-1 items-center justify-between">
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2"
+          >
+            <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+              WiFi Portal
+            </span>
           </Link>
-          <Link to="/admin">
-            <Button variant="ghost" size="sm" className="gap-2">
-              <User className="h-4 w-4" />
-              Admin Dashboard
-            </Button>
-          </Link>
-          <Button variant="outline" size="sm">
-            Logout
-          </Button>
+          
+          <div className="flex items-center space-x-1">
+            <Link
+              to="/admin"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isAdmin 
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              Admin
+            </Link>
+            <Link
+              to="/client"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                !isAdmin 
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              Client
+            </Link>
+          </div>
         </div>
       </div>
     </nav>

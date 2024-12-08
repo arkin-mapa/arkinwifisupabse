@@ -11,6 +11,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { useToast } from "@/hooks/use-toast";
+import { Plus } from "lucide-react";
 import type { Plan } from "@/types/plans";
 
 interface AddPlanDialogProps {
@@ -53,18 +54,19 @@ const AddPlanDialog = ({ onAddPlan }: AddPlanDialogProps) => {
   return (
     <Dialog open={open} onOpenChange={setOpen}>
       <DialogTrigger asChild>
-        <Button>
+        <Button className="gap-2">
+          <Plus className="h-4 w-4" />
           <span className="text-sm font-medium">Add Plan</span>
         </Button>
       </DialogTrigger>
-      <DialogContent>
+      <DialogContent className="sm:max-w-[425px]">
         <DialogHeader>
           <DialogTitle>Add New Plan</DialogTitle>
           <DialogDescription>
             Create a new WiFi plan by entering the duration and price.
           </DialogDescription>
         </DialogHeader>
-        <div className="space-y-4">
+        <div className="space-y-4 pt-4">
           <div className="space-y-2">
             <Label htmlFor="duration">Duration</Label>
             <Input
