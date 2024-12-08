@@ -1,13 +1,24 @@
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { useState } from "react";
-import { Check, X } from "lucide-react";
+import PurchaseActions from "./PurchaseActions";
+import { assignVouchersToClient } from "@/utils/purchaseUtils";
+
+interface Purchase {
+  id: number;
+  date: string;
+  customerName: string;
+  plan: string;
+  quantity: number;
+  total: number;
+  paymentMethod: string;
+  status: string;
+}
 
 const mockPendingPurchases = [
   {
@@ -52,17 +63,27 @@ const PendingPurchases = () => {
   const [editingInstructions, setEditingInstructions] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<keyof typeof paymentInstructions | null>(null);
   const [instructions, setInstructions] = useState(paymentInstructions);
-  const [purchases, setPurchases] = useState(mockPendingPurchases);
+  const [purchases, setPurchases] = useState<Purchase[]>(mockPendingPurchases);
 
   const handleApprove = (purchaseId: number) => {
-    setPurchases(prevPurchases =>
-      prevPurchases.map(purchase =>
-        purchase.id === purchaseId
-          ? { ...purchase, status: "approved" }
-          : purchase
-      )
-    );
-    toast.success("Purchase approved successfully");
+    try {
+      const purchase = purchases.find(p => p.id === purchaseId);
+      if (!purchase) return;
+
+      // Here you would integrate with your voucher pool management
+      // For now, we'll just update the status
+      setPurchases(prevPurchases =>
+        prevPurchases.map(purchase =>
+          purchase.id === purchaseId
+            ? { ...purchase, status: "approved" }
+            : purchase
+        )
+      );
+      
+      toast.success("Purchase approved and vouchers assigned to client");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Failed to approve purchase");
+    }
   };
 
   const handleReject = (purchaseId: number) => {
@@ -73,7 +94,7 @@ const PendingPurchases = () => {
           : purchase
       )
     );
-    toast.success("Purchase rejected successfully");
+    toast.success("Purchase rejected");
   };
 
   const getBadgeVariant = (status: string) => {
@@ -135,26 +156,12 @@ const PendingPurchases = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      {purchase.status === "pending" && (
-                        <div className="flex items-center gap-2">
-                          <Button
-                            size="sm"
-                            className="bg-green-500 hover:bg-green-600"
-                            onClick={() => handleApprove(purchase.id)}
-                          >
-                            <Check className="w-4 h-4 mr-1" />
-                            Approve
-                          </Button>
-                          <Button
-                            size="sm"
-                            variant="destructive"
-                            onClick={() => handleReject(purchase.id)}
-                          >
-                            <X className="w-4 h-4 mr-1" />
-                            Reject
-                          </Button>
-                        </div>
-                      )}
+                      <PurchaseActions
+                        purchaseId={purchase.id}
+                        status={purchase.status}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}
