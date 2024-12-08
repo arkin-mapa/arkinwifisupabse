@@ -19,7 +19,7 @@ const PurchaseHistory = () => {
   const handleCancel = (purchaseId: number) => {
     const updatedPurchases = purchases.map(purchase =>
       purchase.id === purchaseId
-        ? { ...purchase, status: "cancelled" }
+        ? { ...purchase, status: "cancelled" as const }
         : purchase
     );
     
@@ -29,7 +29,7 @@ const PurchaseHistory = () => {
     toast.success("Purchase cancelled successfully");
   };
 
-  const getBadgeVariant = (status: string) => {
+  const getBadgeVariant = (status: Purchase['status']) => {
     switch (status) {
       case "approved":
         return "default";

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
 import { Badge } from "@/components/ui/badge";
@@ -8,51 +8,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import PurchaseActions from "./PurchaseActions";
-import { assignVouchersToClient } from "@/utils/purchaseUtils";
-
-interface Purchase {
-  id: number;
-  date: string;
-  customerName: string;
-  plan: string;
-  quantity: number;
-  total: number;
-  paymentMethod: string;
-  status: string;
-}
-
-const mockPendingPurchases = [
-  {
-    id: 1,
-    date: "2024-02-20",
-    customerName: "John Doe",
-    plan: "2 hrs",
-    quantity: 2,
-    total: 10,
-    paymentMethod: "gcash",
-    status: "pending"
-  },
-  {
-    id: 2,
-    date: "2024-02-21",
-    customerName: "Jane Smith",
-    plan: "4 hrs",
-    quantity: 1,
-    total: 15,
-    paymentMethod: "paymaya",
-    status: "pending"
-  },
-  {
-    id: 3,
-    date: "2024-02-22",
-    customerName: "Bob Wilson",
-    plan: "6 hrs",
-    quantity: 3,
-    total: 25,
-    paymentMethod: "cash",
-    status: "approved"
-  }
-];
+import type { Purchase } from "@/types/plans";
 
 const paymentInstructions = {
   cash: "Please visit our office at...",
@@ -64,41 +20,41 @@ const PendingPurchases = () => {
   const [editingInstructions, setEditingInstructions] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<keyof typeof paymentInstructions | null>(null);
   const [instructions, setInstructions] = useState(paymentInstructions);
-  const [purchases, setPurchases] = useState<Purchase[]>(mockPendingPurchases);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+
+  // Load purchases from localStorage
+  useEffect(() => {
+    const storedPurchases = localStorage.getItem('purchases');
+    if (storedPurchases) {
+      setPurchases(JSON.parse(storedPurchases));
+    }
+  }, []);
 
   const handleApprove = (purchaseId: number) => {
-    try {
-      const purchase = purchases.find(p => p.id === purchaseId);
-      if (!purchase) return;
-
-      // Here you would integrate with your voucher pool management
-      // For now, we'll just update the status
-      setPurchases(prevPurchases =>
-        prevPurchases.map(purchase =>
-          purchase.id === purchaseId
-            ? { ...purchase, status: "approved" }
-            : purchase
-        )
-      );
-      
-      toast.success("Purchase approved and vouchers assigned to client");
-    } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to approve purchase");
-    }
+    const updatedPurchases = purchases.map(purchase =>
+      purchase.id === purchaseId
+        ? { ...purchase, status: "approved" as const }
+        : purchase
+    );
+    
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase approved successfully");
   };
 
   const handleReject = (purchaseId: number) => {
-    setPurchases(prevPurchases =>
-      prevPurchases.map(purchase =>
-        purchase.id === purchaseId
-          ? { ...purchase, status: "rejected" }
-          : purchase
-      )
+    const updatedPurchases = purchases.map(purchase =>
+      purchase.id === purchaseId
+        ? { ...purchase, status: "rejected" as const }
+        : purchase
     );
+    
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
     toast.success("Purchase rejected");
   };
 
-  const getBadgeVariant = (status: string) => {
+  const getBadgeVariant = (status: Purchase['status']) => {
     switch (status) {
       case "approved":
         return "default";
@@ -106,6 +62,8 @@ const PendingPurchases = () => {
         return "secondary";
       case "rejected":
         return "destructive";
+      case "cancelled":
+        return "outline";
       default:
         return "secondary";
     }
