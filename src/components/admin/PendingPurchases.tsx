@@ -54,6 +54,13 @@ const PendingPurchases = () => {
     toast.success("Purchase rejected");
   };
 
+  const handleDelete = (purchaseId: number) => {
+    const updatedPurchases = purchases.filter(purchase => purchase.id !== purchaseId);
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase request deleted successfully");
+  };
+
   const getBadgeVariant = (status: Purchase['status']) => {
     switch (status) {
       case "approved":
@@ -115,12 +122,24 @@ const PendingPurchases = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <PurchaseActions
-                        purchaseId={purchase.id}
-                        status={purchase.status}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                      />
+                      <div className="flex items-center gap-2">
+                        <PurchaseActions
+                          purchaseId={purchase.id}
+                          status={purchase.status}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                        />
+                        {purchase.status !== "pending" && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            onClick={() => handleDelete(purchase.id)}
+                            className="text-red-500 hover:text-red-600"
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}

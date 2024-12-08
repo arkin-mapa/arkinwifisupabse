@@ -3,12 +3,12 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 import { useState, useEffect } from "react";
+import { Trash2 } from "lucide-react";
 import type { Purchase } from "@/types/plans";
 
 const PurchaseHistory = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 
-  // Load purchases from localStorage on component mount
   useEffect(() => {
     const storedPurchases = localStorage.getItem('purchases');
     if (storedPurchases) {
@@ -23,10 +23,16 @@ const PurchaseHistory = () => {
         : purchase
     );
     
-    // Update localStorage
     localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
     setPurchases(updatedPurchases);
     toast.success("Purchase cancelled successfully");
+  };
+
+  const handleDelete = (purchaseId: number) => {
+    const updatedPurchases = purchases.filter(purchase => purchase.id !== purchaseId);
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase record deleted successfully");
   };
 
   const getBadgeVariant = (status: Purchase['status']) => {
@@ -74,8 +80,8 @@ const PurchaseHistory = () => {
                 </Badge>
               </TableCell>
               <TableCell>
-                {purchase.status === "pending" && (
-                  <div className="space-x-2">
+                <div className="space-x-2">
+                  {purchase.status === "pending" && (
                     <Button 
                       variant="destructive" 
                       size="sm"
@@ -83,17 +89,27 @@ const PurchaseHistory = () => {
                     >
                       Cancel
                     </Button>
-                    {purchase.paymentInstructions && (
-                      <Button
-                        variant="outline"
-                        size="sm"
-                        onClick={() => toast.info(purchase.paymentInstructions)}
-                      >
-                        Payment Instructions
-                      </Button>
-                    )}
-                  </div>
-                )}
+                  )}
+                  {purchase.status !== "pending" && (
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => handleDelete(purchase.id)}
+                      className="text-red-500 hover:text-red-600"
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  )}
+                  {purchase.status === "pending" && purchase.paymentInstructions && (
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={() => toast.info(purchase.paymentInstructions)}
+                    >
+                      Payment Instructions
+                    </Button>
+                  )}
+                </div>
               </TableCell>
             </TableRow>
           ))}
