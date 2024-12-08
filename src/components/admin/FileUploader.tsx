@@ -22,7 +22,10 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
     try {
-      const { value: html } = await mammoth.convertToHtml({ buffer: arrayBuffer }, {
+      // Convert ArrayBuffer to Uint8Array which mammoth can handle
+      const uint8Array = new Uint8Array(arrayBuffer);
+      
+      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array }, {
         transformDocument: (element) => {
           if (element.type === 'run' && element.styleId?.includes('size-14')) {
             element.styleName = 'size-14';
@@ -77,6 +80,7 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       }
 
       return voucherArray;
+
     } catch (error) {
       console.error('Error extracting vouchers:', error);
       if (error instanceof Error) {
