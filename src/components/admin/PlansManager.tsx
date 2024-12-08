@@ -13,7 +13,7 @@ import {
 import { Label } from "@/components/ui/label";
 import PlanCard from "./PlanCard";
 import VoucherPool from "./VoucherPool";
-import type { Plan, Voucher } from "@/types/plans";
+import type { Plan } from "@/types/plans";
 
 const PlansManager = () => {
   const [plans, setPlans] = useState<Plan[]>([
@@ -24,8 +24,6 @@ const PlansManager = () => {
     { id: "5", duration: "5 days", price: 50, availableVouchers: 0 },
     { id: "6", duration: "30 days(Butanguid)", price: 200, availableVouchers: 95 },
   ]);
-
-  const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
 
   const [newPlan, setNewPlan] = useState({
     duration: "",
@@ -68,34 +66,17 @@ const PlansManager = () => {
     });
   };
 
-  const handleVoucherUpload = (planId: string, voucherCodes: string[]) => {
+  const handleVoucherUpload = (planId: string, vouchers: string[]) => {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
-
-    const newVouchers = voucherCodes.map((code, index) => ({
-      id: `${planId}-${Date.now()}-${index}`,
-      code,
-      planId,
-      isUsed: false
-    }));
-
-    setVouchers(prev => ({
-      ...prev,
-      [plan.duration]: [...(prev[plan.duration] || []), ...newVouchers]
-    }));
 
     setPlans(prevPlans => 
       prevPlans.map(p => 
         p.id === planId 
-          ? { ...p, availableVouchers: p.availableVouchers + voucherCodes.length }
+          ? { ...p, availableVouchers: p.availableVouchers + vouchers.length }
           : p
       )
     );
-
-    toast({
-      title: "Vouchers added",
-      description: `${voucherCodes.length} vouchers have been added to ${plan.duration} plan.`
-    });
   };
 
   return (
@@ -154,7 +135,7 @@ const PlansManager = () => {
         ))}
       </div>
 
-      <VoucherPool vouchers={vouchers} />
+      <VoucherPool />
     </div>
   );
 };
