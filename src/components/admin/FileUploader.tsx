@@ -8,13 +8,20 @@ interface Props {
   className?: string;
 }
 
+// Define custom types for mammoth options
+interface CustomMammothOptions extends mammoth.Options {
+  transformDocument?: (element: any) => any;
+  styleMap?: string[];
+  preserveEmptyParagraphs?: boolean;
+}
+
 export function FileUploader({ onExtracted, className = '' }: Props) {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
     try {
-      const { value: html } = await mammoth.convertToHtml({
+      const options: CustomMammothOptions = {
         arrayBuffer,
         transformDocument: (element) => {
           if (element.type === 'run' && element.styleId?.includes('size-14')) {
@@ -31,7 +38,9 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
         ],
         includeDefaultStyleMap: true,
         preserveEmptyParagraphs: true
-      });
+      };
+
+      const { value: html } = await mammoth.convertToHtml(options);
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
