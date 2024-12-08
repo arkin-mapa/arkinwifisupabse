@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
-import type { Plan } from "@/types/plans";
+import type { Plan, Purchase } from "@/types/plans";
 import {
   Dialog,
   DialogContent,
@@ -21,6 +21,12 @@ const mockPlans: Plan[] = [
   { id: "5", duration: "5 days", price: 50, availableVouchers: 0 },
   { id: "6", duration: "30 days(Butanguid)", price: 200, availableVouchers: 95 },
 ];
+
+// Get existing purchases from localStorage or initialize empty array
+const getStoredPurchases = (): Purchase[] => {
+  const stored = localStorage.getItem('purchases');
+  return stored ? JSON.parse(stored) : [];
+};
 
 const PlansList = () => {
   const [purchasing, setPurchasing] = useState<string | null>(null);
@@ -46,21 +52,39 @@ const PlansList = () => {
       return;
     }
 
-    setPurchasing(selectedPlan?.id || null);
+    if (!selectedPlan) return;
+
+    setPurchasing(selectedPlan.id);
     
-    // Simulate purchase request
-    setTimeout(() => {
-      setPurchasing(null);
-      setSelectedPlan(null);
-      toast.success("Purchase request submitted successfully!");
-      
-      // Reset form
-      setPurchaseDetails({
-        customerName: "",
-        quantity: 1,
-        paymentMethod: "cash"
-      });
-    }, 1000);
+    // Create new purchase object
+    const newPurchase: Purchase = {
+      id: Date.now(),
+      date: new Date().toISOString().split('T')[0],
+      customerName: purchaseDetails.customerName,
+      plan: selectedPlan.duration,
+      quantity: purchaseDetails.quantity,
+      total: selectedPlan.price * purchaseDetails.quantity,
+      paymentMethod: purchaseDetails.paymentMethod as "cash" | "gcash" | "paymaya",
+      status: "pending"
+    };
+
+    // Get existing purchases and add new one
+    const existingPurchases = getStoredPurchases();
+    const updatedPurchases = [...existingPurchases, newPurchase];
+    
+    // Save to localStorage
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+
+    // Reset state and show success message
+    setPurchasing(null);
+    setSelectedPlan(null);
+    setPurchaseDetails({
+      customerName: "",
+      quantity: 1,
+      paymentMethod: "cash"
+    });
+
+    toast.success("Purchase request submitted successfully!");
   };
 
   return (
@@ -82,7 +106,7 @@ const PlansList = () => {
         ))}
       </div>
 
-      <Dialog open={selectedPlan !== null} onOpenChange={() => setSelectedPlan(null)}>
+      <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && setSelectedPlan(null)}>
         <DialogContent>
           <DialogHeader>
             <DialogTitle>Purchase {selectedPlan?.duration} Plan</DialogTitle>

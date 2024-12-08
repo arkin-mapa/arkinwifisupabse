@@ -2,56 +2,30 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
-import { useState } from "react";
-
-const mockPurchases = [
-  {
-    id: 1,
-    date: "2024-02-20",
-    plan: "2 hrs",
-    amount: 5,
-    quantity: 2,
-    total: 10,
-    status: "pending",
-    paymentMethod: "gcash",
-    customerName: "John Doe",
-    paymentInstructions: "GCash Number: 09123456789\nAccount Name: Juan Dela Cruz\nPlease include the reference number in your payment."
-  },
-  {
-    id: 2,
-    date: "2024-02-19",
-    plan: "4 hrs",
-    amount: 10,
-    quantity: 1,
-    total: 10,
-    status: "approved",
-    paymentMethod: "cash",
-    customerName: "Jane Smith"
-  },
-  {
-    id: 3,
-    date: "2024-02-18",
-    plan: "6 hrs",
-    amount: 15,
-    quantity: 1,
-    total: 15,
-    status: "rejected",
-    paymentMethod: "paymaya",
-    customerName: "Bob Johnson"
-  }
-];
+import { useState, useEffect } from "react";
+import type { Purchase } from "@/types/plans";
 
 const PurchaseHistory = () => {
-  const [purchases, setPurchases] = useState(mockPurchases);
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
+
+  // Load purchases from localStorage on component mount
+  useEffect(() => {
+    const storedPurchases = localStorage.getItem('purchases');
+    if (storedPurchases) {
+      setPurchases(JSON.parse(storedPurchases));
+    }
+  }, []);
 
   const handleCancel = (purchaseId: number) => {
-    setPurchases(prevPurchases =>
-      prevPurchases.map(purchase =>
-        purchase.id === purchaseId
-          ? { ...purchase, status: "cancelled" }
-          : purchase
-      )
+    const updatedPurchases = purchases.map(purchase =>
+      purchase.id === purchaseId
+        ? { ...purchase, status: "cancelled" }
+        : purchase
     );
+    
+    // Update localStorage
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
     toast.success("Purchase cancelled successfully");
   };
 
