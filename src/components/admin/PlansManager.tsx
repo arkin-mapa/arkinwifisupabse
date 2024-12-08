@@ -10,9 +10,11 @@ const PlansManager = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
   const { toast } = useToast();
 
-  // Load plans from localStorage on component mount
+  // Load plans and vouchers from localStorage on component mount
   useEffect(() => {
     const storedPlans = localStorage.getItem('wifiPlans');
+    const storedVouchers = localStorage.getItem('vouchers');
+    
     if (storedPlans) {
       setPlans(JSON.parse(storedPlans));
     } else {
@@ -27,6 +29,10 @@ const PlansManager = () => {
       ];
       localStorage.setItem('wifiPlans', JSON.stringify(defaultPlans));
       setPlans(defaultPlans);
+    }
+
+    if (storedVouchers) {
+      setVouchers(JSON.parse(storedVouchers));
     }
   }, []);
 
@@ -52,6 +58,14 @@ const PlansManager = () => {
     localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
     setPlans(updatedPlans);
     
+    // Also remove vouchers for this plan
+    const plan = plans.find(p => p.id === planId);
+    if (plan) {
+      const { [plan.duration]: _, ...remainingVouchers } = vouchers;
+      localStorage.setItem('vouchers', JSON.stringify(remainingVouchers));
+      setVouchers(remainingVouchers);
+    }
+    
     toast({
       title: "Plan deleted",
       description: "The plan has been removed successfully.",
@@ -70,15 +84,17 @@ const PlansManager = () => {
     }));
 
     // Update vouchers state
-    setVouchers(prev => ({
-      ...prev,
-      [plan.duration]: [...(prev[plan.duration] || []), ...newVouchers]
-    }));
+    const updatedVouchers = {
+      ...vouchers,
+      [plan.duration]: [...(vouchers[plan.duration] || []), ...newVouchers]
+    };
+    setVouchers(updatedVouchers);
+    localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
 
     // Update plans with new voucher count
     const updatedPlans = plans.map(p => 
       p.id === planId 
-        ? { ...p, availableVouchers: p.availableVouchers + voucherCodes.length }
+        ? { ...p, availableVouchers: (updatedVouchers[plan.duration] || []).filter(v => !v.isUsed).length }
         : p
     );
     
