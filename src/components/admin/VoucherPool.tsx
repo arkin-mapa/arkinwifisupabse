@@ -10,7 +10,16 @@ interface Voucher {
 }
 
 const VoucherPool = () => {
-  const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
+  const [vouchers] = useState<Record<string, Voucher[]>>({
+    "2 hrs": [
+      { code: "ABC123456", planId: "1", isUsed: false },
+      { code: "DEF789012", planId: "1", isUsed: true },
+    ],
+    "4 hrs": [
+      { code: "GHI345678", planId: "2", isUsed: false },
+      { code: "JKL901234", planId: "2", isUsed: false },
+    ],
+  });
 
   return (
     <div className="space-y-4">
@@ -23,9 +32,9 @@ const VoucherPool = () => {
             <p className="text-muted-foreground">No vouchers available in the pool.</p>
           ) : (
             <ScrollArea className="h-[400px]">
-              {Object.entries(vouchers).map(([planId, planVouchers]) => (
-                <div key={planId} className="mb-6">
-                  <h3 className="font-medium mb-2">Plan: {planId}</h3>
+              {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
+                <div key={planDuration} className="mb-6">
+                  <h3 className="font-medium mb-2">Plan: {planDuration}</h3>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {planVouchers.map((voucher) => (
                       <Badge
