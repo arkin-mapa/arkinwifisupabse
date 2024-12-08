@@ -19,7 +19,8 @@ export interface Purchase {
   plan: string;
   quantity: number;
   total: number;
-  paymentMethod: string;
-  status: string;
+  paymentMethod: "cash" | "gcash" | "paymaya";
+  status: "pending" | "approved" | "rejected" | "cancelled";
   vouchers?: Voucher[];
+  paymentInstructions?: string;
 }

@@ -1,18 +1,8 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
 import { useState } from "react";
 import { useToast } from "@/hooks/use-toast";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
 import PlanCard from "./PlanCard";
 import VoucherPool from "./VoucherPool";
+import AddPlanDialog from "./AddPlanDialog";
 import type { Plan, Voucher } from "@/types/plans";
 
 const PlansManager = () => {
@@ -26,38 +16,16 @@ const PlansManager = () => {
   ]);
 
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
-
-  const [newPlan, setNewPlan] = useState({
-    duration: "",
-    price: "",
-  });
-
   const { toast } = useToast();
 
-  const handleAddPlan = () => {
-    if (!newPlan.duration || !newPlan.price) {
-      toast({
-        variant: "destructive",
-        title: "Error",
-        description: "Please fill in all fields",
-      });
-      return;
-    }
-
+  const handleAddPlan = (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
     const newPlanObj: Plan = {
       id: (plans.length + 1).toString(),
-      duration: newPlan.duration,
-      price: parseFloat(newPlan.price),
+      ...newPlan,
       availableVouchers: 0,
     };
 
     setPlans([...plans, newPlanObj]);
-    setNewPlan({ duration: "", price: "" });
-    
-    toast({
-      title: "Success",
-      description: "New plan added successfully",
-    });
   };
 
   const handleDeletePlan = (planId: string) => {
@@ -102,45 +70,7 @@ const PlansManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <h2 className="text-xl font-semibold">WiFi Plans</h2>
-        <Dialog>
-          <DialogTrigger asChild>
-            <Button>
-              <span className="text-sm font-medium">Add Plan</span>
-            </Button>
-          </DialogTrigger>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Add New Plan</DialogTitle>
-              <DialogDescription>
-                Create a new WiFi plan by entering the duration and price.
-              </DialogDescription>
-            </DialogHeader>
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="duration">Duration</Label>
-                <Input
-                  id="duration"
-                  placeholder="e.g., 2 hrs, 1 day"
-                  value={newPlan.duration}
-                  onChange={(e) => setNewPlan({ ...newPlan, duration: e.target.value })}
-                />
-              </div>
-              <div className="space-y-2">
-                <Label htmlFor="price">Price (₱)</Label>
-                <Input
-                  id="price"
-                  type="number"
-                  placeholder="Enter price"
-                  value={newPlan.price}
-                  onChange={(e) => setNewPlan({ ...newPlan, price: e.target.value })}
-                />
-              </div>
-              <Button onClick={handleAddPlan} className="w-full">
-                Add Plan
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
+        <AddPlanDialog onAddPlan={handleAddPlan} />
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
