@@ -16,11 +16,19 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
   const [localVouchers, setLocalVouchers] = useState(vouchers);
 
+  // Initialize with props and sync with localStorage
   useEffect(() => {
     const storedVouchers = getVouchersFromStorage();
-    setLocalVouchers(storedVouchers);
-  }, []);
+    // Merge props with stored vouchers, preferring stored values for existing keys
+    const mergedVouchers = {
+      ...vouchers,
+      ...storedVouchers
+    };
+    setLocalVouchers(mergedVouchers);
+    saveVouchersToStorage(mergedVouchers);
+  }, [vouchers]);
 
+  // Update plans' voucher counts whenever vouchers change
   useEffect(() => {
     const plans: Plan[] = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
     const updatedPlans = plans.map(plan => ({
@@ -62,11 +70,11 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
           <CardTitle>Voucher Pool</CardTitle>
         </CardHeader>
         <CardContent>
-          {Object.keys(vouchers).length === 0 ? (
+          {Object.keys(localVouchers).length === 0 ? (
             <p className="text-muted-foreground">No vouchers available in the pool.</p>
           ) : (
             <ScrollArea className="h-[400px]">
-              {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
+              {Object.entries(localVouchers).map(([planDuration, planVouchers]) => (
                 <div key={planDuration} className="mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-medium">Plan: {planDuration}</h3>
