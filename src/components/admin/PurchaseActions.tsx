@@ -66,7 +66,7 @@ const PurchaseActions = ({
     );
   }
 
-  if (status === "approved" || status === "rejected") {
+  if (status === "approved" || status === "rejected" || status === "cancelled") {
     return (
       <Button
         size="icon"
