@@ -2,6 +2,7 @@ import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
+import { useState } from "react";
 
 const mockPurchases = [
   {
@@ -26,13 +27,47 @@ const mockPurchases = [
     status: "approved",
     paymentMethod: "cash",
     customerName: "Jane Smith"
+  },
+  {
+    id: 3,
+    date: "2024-02-18",
+    plan: "6 hrs",
+    amount: 15,
+    quantity: 1,
+    total: 15,
+    status: "rejected",
+    paymentMethod: "paymaya",
+    customerName: "Bob Johnson"
   }
 ];
 
 const PurchaseHistory = () => {
+  const [purchases, setPurchases] = useState(mockPurchases);
+
   const handleCancel = (purchaseId: number) => {
-    // Here you would typically make an API call to cancel the purchase
+    setPurchases(prevPurchases =>
+      prevPurchases.map(purchase =>
+        purchase.id === purchaseId
+          ? { ...purchase, status: "cancelled" }
+          : purchase
+      )
+    );
     toast.success("Purchase cancelled successfully");
+  };
+
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "rejected":
+        return "destructive";
+      case "cancelled":
+        return "outline";
+      default:
+        return "secondary";
+    }
   };
 
   return (
@@ -51,7 +86,7 @@ const PurchaseHistory = () => {
           </TableRow>
         </TableHeader>
         <TableBody>
-          {mockPurchases.map((purchase) => (
+          {purchases.map((purchase) => (
             <TableRow key={purchase.id}>
               <TableCell>{purchase.date}</TableCell>
               <TableCell>{purchase.customerName}</TableCell>
@@ -60,29 +95,30 @@ const PurchaseHistory = () => {
               <TableCell>₱{purchase.total}</TableCell>
               <TableCell>{purchase.paymentMethod}</TableCell>
               <TableCell>
-                <Badge variant={purchase.status === "approved" ? "default" : "secondary"}>
+                <Badge variant={getBadgeVariant(purchase.status)}>
                   {purchase.status}
                 </Badge>
               </TableCell>
               <TableCell>
                 {purchase.status === "pending" && (
-                  <Button 
-                    variant="destructive" 
-                    size="sm"
-                    onClick={() => handleCancel(purchase.id)}
-                  >
-                    Cancel
-                  </Button>
-                )}
-                {purchase.status === "pending" && purchase.paymentInstructions && (
-                  <Button
-                    variant="outline"
-                    size="sm"
-                    className="ml-2"
-                    onClick={() => toast.info(purchase.paymentInstructions)}
-                  >
-                    Payment Instructions
-                  </Button>
+                  <div className="space-x-2">
+                    <Button 
+                      variant="destructive" 
+                      size="sm"
+                      onClick={() => handleCancel(purchase.id)}
+                    >
+                      Cancel
+                    </Button>
+                    {purchase.paymentInstructions && (
+                      <Button
+                        variant="outline"
+                        size="sm"
+                        onClick={() => toast.info(purchase.paymentInstructions)}
+                      >
+                        Payment Instructions
+                      </Button>
+                    )}
+                  </div>
                 )}
               </TableCell>
             </TableRow>
