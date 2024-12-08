@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react"; // Add this import
 import PurchaseActions from "./PurchaseActions";
 import type { Purchase } from "@/types/plans";
 
