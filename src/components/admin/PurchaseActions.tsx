@@ -44,23 +44,23 @@ const PurchaseActions = ({
 
   if (status === "pending") {
     return (
-      <div className="flex items-center gap-2">
+      <div className="flex items-center gap-1">
         <Button
-          size="sm"
-          className="bg-green-500 hover:bg-green-600 transition-colors"
+          size="icon"
+          className="h-7 w-7 bg-green-500 hover:bg-green-600 transition-colors"
           onClick={() => handleApprove(purchaseId)}
+          title="Approve"
         >
-          <Check className="w-4 h-4 mr-1" />
-          Approve
+          <Check className="h-3 w-3" />
         </Button>
         <Button
-          size="sm"
+          size="icon"
           variant="destructive"
-          className="transition-colors"
+          className="h-7 w-7 transition-colors"
           onClick={() => onReject(purchaseId)}
+          title="Reject"
         >
-          <X className="w-4 h-4 mr-1" />
-          Reject
+          <X className="h-3 w-3" />
         </Button>
       </div>
     );
@@ -69,13 +69,13 @@ const PurchaseActions = ({
   if (status === "approved" || status === "rejected") {
     return (
       <Button
-        size="sm"
+        size="icon"
         variant="ghost"
-        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+        className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
         onClick={() => onDelete(purchaseId)}
+        title="Delete"
       >
-        <Trash2 className="w-4 h-4 mr-1" />
-        Delete
+        <Trash2 className="h-3 w-3" />
       </Button>
     );
   }
