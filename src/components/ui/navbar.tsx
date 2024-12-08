@@ -1,44 +1,28 @@
-import { Link, useLocation } from "react-router-dom";
+import { cn } from "@/lib/utils";
 
-export function Navbar() {
-  const location = useLocation();
-  const isAdmin = location.pathname.includes('admin');
+interface NavbarProps extends React.HTMLAttributes<HTMLElement> {
+  className?: string;
+}
 
+export function Navbar({ className, ...props }: NavbarProps) {
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-white/75 backdrop-blur-lg">
-      <div className="container flex h-14 items-center">
-        <div className="flex flex-1 items-center justify-between">
-          <Link 
-            to="/" 
-            className="flex items-center space-x-2"
-          >
-            <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-              WiFi Portal
-            </span>
-          </Link>
-          
-          <div className="flex items-center space-x-1">
-            <Link
-              to="/admin"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                isAdmin 
-                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              Admin
-            </Link>
-            <Link
-              to="/client"
-              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                !isAdmin 
-                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-              }`}
-            >
-              Client
-            </Link>
-          </div>
+    <nav
+      className={cn(
+        "w-full h-14 flex items-center px-4 md:px-6",
+        className
+      )}
+      {...props}
+    >
+      <div className="flex items-center justify-between w-full max-w-6xl mx-auto">
+        <div className="flex items-center space-x-4">
+          <span className="text-lg font-semibold bg-gradient-to-r from-primary to-primary/80 bg-clip-text text-transparent">
+            WiFi Manager
+          </span>
+        </div>
+        <div className="flex items-center space-x-4">
+          <span className="text-sm text-muted-foreground">
+            Welcome, Admin
+          </span>
         </div>
       </div>
     </nav>
