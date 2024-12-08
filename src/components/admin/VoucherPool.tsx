@@ -7,37 +7,16 @@ import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import type { Voucher } from "@/types/plans";
 
-const VoucherPool = () => {
+interface VoucherPoolProps {
+  vouchers: Record<string, Voucher[]>;
+}
+
+const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
-  const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({
-    "2 hrs": [
-      { id: "1", code: "ABC123456", planId: "1", isUsed: false },
-      { id: "2", code: "DEF789012", planId: "1", isUsed: true },
-    ],
-    "4 hrs": [
-      { id: "3", code: "GHI345678", planId: "2", isUsed: false },
-      { id: "4", code: "JKL901234", planId: "2", isUsed: false },
-    ],
-  });
-
-  const addVouchers = (planDuration: string, planId: string, newVoucherCodes: string[]) => {
-    setVouchers(prev => {
-      const newVouchers = newVoucherCodes.map((code, index) => ({
-        id: `${planId}-${Date.now()}-${index}`,
-        code,
-        planId,
-        isUsed: false
-      }));
-
-      return {
-        ...prev,
-        [planDuration]: [...(prev[planDuration] || []), ...newVouchers]
-      };
-    });
-  };
+  const [localVouchers, setLocalVouchers] = useState(vouchers);
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
-    setVouchers(prev => {
+    setLocalVouchers(prev => {
       const planVouchers = prev[planDuration] || [];
       const updatedVouchers = planVouchers.filter(v => v.id !== voucherId);
       
