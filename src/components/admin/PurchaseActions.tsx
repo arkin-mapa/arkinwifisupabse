@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
 import { toast } from "sonner";
-import { assignVouchersToClient } from "@/utils/purchaseUtils";
+import type { Purchase, Voucher } from "@/types/plans";
 
 interface PurchaseActionsProps {
   purchaseId: number;
@@ -15,7 +15,7 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject }: PurchaseAc
     try {
       // Get the purchase details from localStorage
       const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
-      const purchase = purchases.find((p: any) => p.id === id);
+      const purchase = purchases.find((p: Purchase) => p.id === id);
       
       if (!purchase) {
         toast.error("Purchase not found");
@@ -23,22 +23,42 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject }: PurchaseAc
       }
 
       // Get the voucher pool
-      const voucherPool = JSON.parse(localStorage.getItem('voucherPool') || '{}');
-      
-      // Assign vouchers to client
-      const { assignedVouchers, remainingPool } = assignVouchersToClient(
-        voucherPool,
-        purchase.plan,
-        purchase.quantity
-      );
+      const voucherPool = JSON.parse(localStorage.getItem('vouchers') || '{}');
+      const planVouchers = voucherPool[purchase.plan] || [];
+      const availableVouchers = planVouchers.filter(v => !v.isUsed);
 
-      // Update voucher pool in localStorage
-      localStorage.setItem('voucherPool', JSON.stringify(remainingPool));
+      if (availableVouchers.length < purchase.quantity) {
+        toast.error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers.length}`);
+        return;
+      }
+
+      // Get the required number of vouchers
+      const assignedVouchers = availableVouchers.slice(0, purchase.quantity).map(v => ({
+        ...v,
+        isUsed: true
+      }));
+
+      // Update voucher pool
+      const updatedPool = {
+        ...voucherPool,
+        [purchase.plan]: planVouchers.map(v => 
+          assignedVouchers.find(av => av.id === v.id) ? { ...v, isUsed: true } : v
+        )
+      };
+      localStorage.setItem('vouchers', JSON.stringify(updatedPool));
 
       // Add vouchers to client wallet
       const clientVouchers = JSON.parse(localStorage.getItem('clientVouchers') || '[]');
-      const updatedClientVouchers = [...clientVouchers, ...assignedVouchers];
-      localStorage.setItem('clientVouchers', JSON.stringify(updatedClientVouchers));
+      localStorage.setItem('clientVouchers', JSON.stringify([...clientVouchers, ...assignedVouchers]));
+
+      // Update plans with new voucher count
+      const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
+      const updatedPlans = plans.map(p => 
+        p.duration === purchase.plan
+          ? { ...p, availableVouchers: (updatedPool[purchase.plan] || []).filter(v => !v.isUsed).length }
+          : p
+      );
+      localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
 
       // Call the original onApprove function
       onApprove(id);
