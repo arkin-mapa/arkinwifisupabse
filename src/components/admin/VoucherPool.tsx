@@ -5,6 +5,7 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import { getVouchersFromStorage, saveVouchersToStorage } from "@/utils/voucherStorage";
 import type { Voucher, Plan } from "@/types/plans";
 
 interface VoucherPoolProps {
@@ -16,14 +17,11 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const [localVouchers, setLocalVouchers] = useState(vouchers);
 
   useEffect(() => {
-    const storedVouchers = localStorage.getItem('vouchers');
-    if (storedVouchers) {
-      setLocalVouchers(JSON.parse(storedVouchers));
-    }
+    const storedVouchers = getVouchersFromStorage();
+    setLocalVouchers(storedVouchers);
   }, []);
 
   useEffect(() => {
-    // Update plans' voucher counts whenever vouchers change
     const plans: Plan[] = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
     const updatedPlans = plans.map(plan => ({
       ...plan,
@@ -31,7 +29,7 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
     }));
     
     localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    localStorage.setItem('vouchers', JSON.stringify(localVouchers));
+    saveVouchersToStorage(localVouchers);
   }, [localVouchers]);
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
@@ -44,7 +42,6 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
         [planDuration]: updatedVouchers
       };
 
-      // If no vouchers left for this plan duration, remove the key
       if (updatedVouchers.length === 0) {
         delete newVouchers[planDuration];
       }
