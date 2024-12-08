@@ -3,13 +3,13 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlansList from "@/components/client/PlansList";
 import PurchaseHistory from "@/components/client/PurchaseHistory";
 import VoucherWallet from "@/components/client/VoucherWallet";
-import { Navbar } from "@/components/ui/navbar";
 
 const ClientDashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-50">
-      <Navbar />
-      <div className="container mx-auto p-4">
+    <div className="min-h-screen bg-gray-50 p-4">
+      <div className="container mx-auto">
+        <h1 className="text-2xl font-bold text-gray-900 mb-6">Client Dashboard</h1>
+        
         <Tabs defaultValue="plans" className="space-y-4">
           <TabsList>
             <TabsTrigger value="plans">Available Plans</TabsTrigger>
