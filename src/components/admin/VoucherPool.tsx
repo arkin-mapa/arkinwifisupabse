@@ -43,23 +43,25 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
 
   return (
     <div className="space-y-4">
-      <Card>
+      <Card className="bg-white/50 backdrop-blur-sm border shadow-sm">
         <CardHeader>
           <CardTitle>Voucher Pool</CardTitle>
         </CardHeader>
         <CardContent>
-          {Object.keys(localVouchers).length === 0 ? (
+          {!localVouchers || Object.keys(localVouchers).length === 0 ? (
             <p className="text-muted-foreground">No vouchers available in the pool.</p>
           ) : (
-            <ScrollArea className="h-[400px]">
+            <ScrollArea className="h-[400px] pr-4">
               {Object.entries(localVouchers).map(([planDuration, planVouchers]) => {
+                if (!planVouchers || planVouchers.length === 0) return null;
+                
                 const usedCount = planVouchers.filter(v => v.isUsed).length;
                 const unusedCount = planVouchers.length - usedCount;
                 
                 return (
                   <div key={planDuration} className="mb-6">
                     <div className="flex justify-between items-center mb-2">
-                      <h3 className="font-medium">Plan: {planDuration}</h3>
+                      <h3 className="font-medium">{planDuration}</h3>
                       <div className="flex gap-4 text-sm text-muted-foreground">
                         <span>Used: {usedCount}</span>
                         <span>Available: {unusedCount}</span>
@@ -71,15 +73,15 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                         <div key={voucher.id} className="relative group">
                           <Badge
                             variant={voucher.isUsed ? "secondary" : "default"}
-                            className="w-full justify-center py-2"
+                            className="w-full justify-between py-2 px-3"
                           >
-                            {voucher.code}
+                            <span className="truncate">{voucher.code}</span>
                           </Badge>
                           {!voucher.isUsed && (
                             <Button
                               variant="ghost"
                               size="icon"
-                              className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-red-100 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                              className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
                               onClick={() => handleDeleteVoucher(planDuration, voucher.id)}
                             >
                               <Trash2 className="h-3 w-3" />
