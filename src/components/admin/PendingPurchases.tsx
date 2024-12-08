@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { useState } from "react";
+import { Check, X } from "lucide-react";
 
 const mockPendingPurchases = [
   {
@@ -18,6 +19,26 @@ const mockPendingPurchases = [
     total: 10,
     paymentMethod: "gcash",
     status: "pending"
+  },
+  {
+    id: 2,
+    date: "2024-02-21",
+    customerName: "Jane Smith",
+    plan: "4 hrs",
+    quantity: 1,
+    total: 15,
+    paymentMethod: "paymaya",
+    status: "pending"
+  },
+  {
+    id: 3,
+    date: "2024-02-22",
+    customerName: "Bob Wilson",
+    plan: "6 hrs",
+    quantity: 3,
+    total: 25,
+    paymentMethod: "cash",
+    status: "approved"
   }
 ];
 
@@ -31,13 +52,41 @@ const PendingPurchases = () => {
   const [editingInstructions, setEditingInstructions] = useState(false);
   const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<keyof typeof paymentInstructions | null>(null);
   const [instructions, setInstructions] = useState(paymentInstructions);
+  const [purchases, setPurchases] = useState(mockPendingPurchases);
 
   const handleApprove = (purchaseId: number) => {
+    setPurchases(prevPurchases =>
+      prevPurchases.map(purchase =>
+        purchase.id === purchaseId
+          ? { ...purchase, status: "approved" }
+          : purchase
+      )
+    );
     toast.success("Purchase approved successfully");
   };
 
   const handleReject = (purchaseId: number) => {
+    setPurchases(prevPurchases =>
+      prevPurchases.map(purchase =>
+        purchase.id === purchaseId
+          ? { ...purchase, status: "rejected" }
+          : purchase
+      )
+    );
     toast.success("Purchase rejected successfully");
+  };
+
+  const getBadgeVariant = (status: string) => {
+    switch (status) {
+      case "approved":
+        return "default";
+      case "pending":
+        return "secondary";
+      case "rejected":
+        return "destructive";
+      default:
+        return "secondary";
+    }
   };
 
   const handleSaveInstructions = () => {
@@ -52,11 +101,11 @@ const PendingPurchases = () => {
     <div className="space-y-4">
       <Card>
         <CardHeader>
-          <CardTitle>Pending Purchases</CardTitle>
+          <CardTitle>Purchase Requests</CardTitle>
         </CardHeader>
         <CardContent>
-          {mockPendingPurchases.length === 0 ? (
-            <p className="text-muted-foreground">No pending purchases to review.</p>
+          {purchases.length === 0 ? (
+            <p className="text-muted-foreground">No purchase requests to review.</p>
           ) : (
             <Table>
               <TableHeader>
@@ -72,33 +121,40 @@ const PendingPurchases = () => {
                 </TableRow>
               </TableHeader>
               <TableBody>
-                {mockPendingPurchases.map((purchase) => (
+                {purchases.map((purchase) => (
                   <TableRow key={purchase.id}>
                     <TableCell>{purchase.date}</TableCell>
                     <TableCell>{purchase.customerName}</TableCell>
                     <TableCell>{purchase.plan}</TableCell>
                     <TableCell>{purchase.quantity}</TableCell>
                     <TableCell>₱{purchase.total}</TableCell>
-                    <TableCell>{purchase.paymentMethod}</TableCell>
+                    <TableCell className="capitalize">{purchase.paymentMethod}</TableCell>
                     <TableCell>
-                      <Badge variant="secondary">{purchase.status}</Badge>
+                      <Badge variant={getBadgeVariant(purchase.status)}>
+                        {purchase.status}
+                      </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="space-x-2">
-                        <Button
-                          size="sm"
-                          onClick={() => handleApprove(purchase.id)}
-                        >
-                          Approve
-                        </Button>
-                        <Button
-                          size="sm"
-                          variant="destructive"
-                          onClick={() => handleReject(purchase.id)}
-                        >
-                          Reject
-                        </Button>
-                      </div>
+                      {purchase.status === "pending" && (
+                        <div className="flex items-center gap-2">
+                          <Button
+                            size="sm"
+                            className="bg-green-500 hover:bg-green-600"
+                            onClick={() => handleApprove(purchase.id)}
+                          >
+                            <Check className="w-4 h-4 mr-1" />
+                            Approve
+                          </Button>
+                          <Button
+                            size="sm"
+                            variant="destructive"
+                            onClick={() => handleReject(purchase.id)}
+                          >
+                            <X className="w-4 h-4 mr-1" />
+                            Reject
+                          </Button>
+                        </div>
+                      )}
                     </TableCell>
                   </TableRow>
                 ))}
