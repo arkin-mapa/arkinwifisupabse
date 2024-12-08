@@ -13,7 +13,7 @@ interface VoucherPoolProps {
 
 const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
-  const [localVouchers, setLocalVouchers] = useState(vouchers);
+  const [localVouchers, setLocalVouchers] = useState<Record<string, Voucher[]>>(vouchers || {});
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
     // Update local state
@@ -40,6 +40,11 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
       description: "The voucher has been removed from the pool.",
     });
   };
+
+  // Update local vouchers when props change
+  if (JSON.stringify(vouchers) !== JSON.stringify(localVouchers)) {
+    setLocalVouchers(vouchers);
+  }
 
   return (
     <div className="space-y-4">
