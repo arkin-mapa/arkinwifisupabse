@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
@@ -13,22 +13,38 @@ interface VoucherPoolProps {
 
 const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
-  const [localVouchers, setLocalVouchers] = useState(vouchers);
+  const [localVouchers, setLocalVouchers] = useState<Record<string, Voucher[]>>({});
+
+  // Load vouchers from localStorage on mount
+  useEffect(() => {
+    const storedVouchers = localStorage.getItem('voucherPool');
+    if (storedVouchers) {
+      setLocalVouchers(JSON.parse(storedVouchers));
+    } else {
+      setLocalVouchers(vouchers);
+      localStorage.setItem('voucherPool', JSON.stringify(vouchers));
+    }
+  }, [vouchers]);
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
     setLocalVouchers(prev => {
       const planVouchers = prev[planDuration] || [];
       const updatedVouchers = planVouchers.filter(v => v.id !== voucherId);
       
+      let newVoucherPool;
       if (updatedVouchers.length === 0) {
         const { [planDuration]: _, ...rest } = prev;
-        return rest;
+        newVoucherPool = rest;
+      } else {
+        newVoucherPool = {
+          ...prev,
+          [planDuration]: updatedVouchers
+        };
       }
       
-      return {
-        ...prev,
-        [planDuration]: updatedVouchers
-      };
+      // Update localStorage
+      localStorage.setItem('voucherPool', JSON.stringify(newVoucherPool));
+      return newVoucherPool;
     });
 
     toast({
@@ -44,11 +60,11 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
           <CardTitle>Voucher Pool</CardTitle>
         </CardHeader>
         <CardContent>
-          {Object.keys(vouchers).length === 0 ? (
+          {Object.keys(localVouchers).length === 0 ? (
             <p className="text-muted-foreground">No vouchers available in the pool.</p>
           ) : (
             <ScrollArea className="h-[400px]">
-              {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
+              {Object.entries(localVouchers).map(([planDuration, planVouchers]) => (
                 <div key={planDuration} className="mb-6">
                   <div className="flex justify-between items-center mb-2">
                     <h3 className="font-medium">Plan: {planDuration}</h3>
