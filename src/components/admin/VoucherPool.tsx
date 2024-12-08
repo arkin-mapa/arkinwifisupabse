@@ -20,6 +20,22 @@ const VoucherPool = () => {
     ],
   });
 
+  const addVouchers = (planDuration: string, planId: string, newVoucherCodes: string[]) => {
+    setVouchers(prev => {
+      const newVouchers = newVoucherCodes.map((code, index) => ({
+        id: `${planId}-${Date.now()}-${index}`,
+        code,
+        planId,
+        isUsed: false
+      }));
+
+      return {
+        ...prev,
+        [planDuration]: [...(prev[planDuration] || []), ...newVouchers]
+      };
+    });
+  };
+
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
     setVouchers(prev => {
       const planVouchers = prev[planDuration] || [];

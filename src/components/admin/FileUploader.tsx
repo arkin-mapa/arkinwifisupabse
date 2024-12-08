@@ -8,15 +8,6 @@ interface Props {
   className?: string;
 }
 
-// Define custom types for mammoth options
-interface CustomMammothOptions {
-  transformDocument?: (element: any) => any;
-  styleMap?: string[];
-  includeDefaultStyleMap?: boolean;
-  preserveEmptyParagraphs?: boolean;
-  convertImage?: (element: any) => any;
-}
-
 export function FileUploader({ onExtracted, className = '' }: Props) {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -26,8 +17,8 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       // Convert ArrayBuffer to Uint8Array which mammoth can handle
       const uint8Array = new Uint8Array(arrayBuffer);
       
-      const options: CustomMammothOptions = {
-        transformDocument: (element) => {
+      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array }, {
+        transformDocument: (element: any) => {
           if (element.type === 'run' && element.styleId?.includes('size-14')) {
             element.styleName = 'size-14';
           }
@@ -40,11 +31,8 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
           "p[style-name='size-14'] => p.size-14",
           "r[style-name='size-14'] => span.size-14"
         ],
-        includeDefaultStyleMap: true,
-        preserveEmptyParagraphs: true
-      };
-
-      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array }, options);
+        includeDefaultStyleMap: true
+      });
 
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');

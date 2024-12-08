@@ -12,6 +12,7 @@ import {
 } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import PlanCard from "./PlanCard";
+import VoucherPool from "./VoucherPool";
 import type { Plan } from "@/types/plans";
 
 const PlansManager = () => {
@@ -66,11 +67,14 @@ const PlansManager = () => {
   };
 
   const handleVoucherUpload = (planId: string, vouchers: string[]) => {
+    const plan = plans.find(p => p.id === planId);
+    if (!plan) return;
+
     setPlans(prevPlans => 
-      prevPlans.map(plan => 
-        plan.id === planId 
-          ? { ...plan, availableVouchers: plan.availableVouchers + vouchers.length }
-          : plan
+      prevPlans.map(p => 
+        p.id === planId 
+          ? { ...p, availableVouchers: p.availableVouchers + vouchers.length }
+          : p
       )
     );
   };
@@ -130,6 +134,8 @@ const PlansManager = () => {
           />
         ))}
       </div>
+
+      <VoucherPool />
     </div>
   );
 };
