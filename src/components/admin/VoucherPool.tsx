@@ -2,24 +2,45 @@ import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-
-interface Voucher {
-  code: string;
-  planId: string;
-  isUsed: boolean;
-}
+import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import type { Voucher } from "@/types/plans";
 
 const VoucherPool = () => {
-  const [vouchers] = useState<Record<string, Voucher[]>>({
+  const { toast } = useToast();
+  const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({
     "2 hrs": [
-      { code: "ABC123456", planId: "1", isUsed: false },
-      { code: "DEF789012", planId: "1", isUsed: true },
+      { id: "1", code: "ABC123456", planId: "1", isUsed: false },
+      { id: "2", code: "DEF789012", planId: "1", isUsed: true },
     ],
     "4 hrs": [
-      { code: "GHI345678", planId: "2", isUsed: false },
-      { code: "JKL901234", planId: "2", isUsed: false },
+      { id: "3", code: "GHI345678", planId: "2", isUsed: false },
+      { id: "4", code: "JKL901234", planId: "2", isUsed: false },
     ],
   });
+
+  const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
+    setVouchers(prev => {
+      const planVouchers = prev[planDuration] || [];
+      const updatedVouchers = planVouchers.filter(v => v.id !== voucherId);
+      
+      if (updatedVouchers.length === 0) {
+        const { [planDuration]: _, ...rest } = prev;
+        return rest;
+      }
+      
+      return {
+        ...prev,
+        [planDuration]: updatedVouchers
+      };
+    });
+
+    toast({
+      title: "Voucher deleted",
+      description: "The voucher has been removed from the pool.",
+    });
+  };
 
   return (
     <div className="space-y-4">
@@ -34,16 +55,32 @@ const VoucherPool = () => {
             <ScrollArea className="h-[400px]">
               {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
                 <div key={planDuration} className="mb-6">
-                  <h3 className="font-medium mb-2">Plan: {planDuration}</h3>
+                  <div className="flex justify-between items-center mb-2">
+                    <h3 className="font-medium">Plan: {planDuration}</h3>
+                    <span className="text-sm text-muted-foreground">
+                      Total: {planVouchers.length}
+                    </span>
+                  </div>
                   <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2">
                     {planVouchers.map((voucher) => (
-                      <Badge
-                        key={voucher.code}
-                        variant={voucher.isUsed ? "secondary" : "default"}
-                        className="justify-center py-2"
-                      >
-                        {voucher.code}
-                      </Badge>
+                      <div key={voucher.id} className="relative group">
+                        <Badge
+                          variant={voucher.isUsed ? "secondary" : "default"}
+                          className="w-full justify-center py-2"
+                        >
+                          {voucher.code}
+                        </Badge>
+                        {!voucher.isUsed && (
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-red-100 text-red-500 opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteVoucher(planDuration, voucher.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        )}
+                      </div>
                     ))}
                   </div>
                 </div>
