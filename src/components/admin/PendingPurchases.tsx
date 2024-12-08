@@ -46,6 +46,19 @@ const PendingPurchases = () => {
     toast.success("Purchase rejected");
   };
 
+  const handleDelete = (purchaseId: number) => {
+    const purchase = purchases.find(p => p.id === purchaseId);
+    if (!purchase || (purchase.status !== "approved" && purchase.status !== "rejected")) {
+      toast.error("Only approved or rejected purchases can be deleted");
+      return;
+    }
+
+    const updatedPurchases = purchases.filter(p => p.id !== purchaseId);
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase deleted successfully");
+  };
+
   return (
     <div className="space-y-4">
       <Card>
@@ -60,6 +73,7 @@ const PendingPurchases = () => {
               purchases={purchases}
               onApprove={handleApprove}
               onReject={handleReject}
+              onDelete={handleDelete}
             />
           )}
         </CardContent>

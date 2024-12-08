@@ -1,5 +1,5 @@
 import { Button } from "@/components/ui/button";
-import { Check, X } from "lucide-react";
+import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import type { Purchase, Voucher } from "@/types/plans";
 
@@ -8,9 +8,10 @@ interface PurchaseActionsProps {
   status: string;
   onApprove: (id: number) => void;
   onReject: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
-const PurchaseActions = ({ purchaseId, status, onApprove, onReject }: PurchaseActionsProps) => {
+const PurchaseActions = ({ purchaseId, status, onApprove, onReject, onDelete }: PurchaseActionsProps) => {
   const handleApprove = async (id: number) => {
     try {
       // Get the purchase details from localStorage
@@ -69,29 +70,45 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject }: PurchaseAc
     }
   };
 
-  if (status !== "pending") return null;
+  if (status === "pending") {
+    return (
+      <div className="flex items-center gap-2">
+        <Button
+          size="sm"
+          className="bg-green-500 hover:bg-green-600 transition-colors"
+          onClick={() => handleApprove(purchaseId)}
+        >
+          <Check className="w-4 h-4 mr-1" />
+          Approve
+        </Button>
+        <Button
+          size="sm"
+          variant="destructive"
+          className="transition-colors"
+          onClick={() => onReject(purchaseId)}
+        >
+          <X className="w-4 h-4 mr-1" />
+          Reject
+        </Button>
+      </div>
+    );
+  }
 
-  return (
-    <div className="flex items-center gap-2">
+  if (status === "approved" || status === "rejected") {
+    return (
       <Button
         size="sm"
-        className="bg-green-500 hover:bg-green-600 transition-colors"
-        onClick={() => handleApprove(purchaseId)}
+        variant="ghost"
+        className="text-red-500 hover:text-red-600 hover:bg-red-50"
+        onClick={() => onDelete(purchaseId)}
       >
-        <Check className="w-4 h-4 mr-1" />
-        Approve
+        <Trash2 className="w-4 h-4 mr-1" />
+        Delete
       </Button>
-      <Button
-        size="sm"
-        variant="destructive"
-        className="transition-colors"
-        onClick={() => onReject(purchaseId)}
-      >
-        <X className="w-4 h-4 mr-1" />
-        Reject
-      </Button>
-    </div>
-  );
+    );
+  }
+
+  return null;
 };
 
 export default PurchaseActions;
