@@ -3,24 +3,22 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PendingPurchases from "@/components/admin/PendingPurchases";
 import VoucherPool from "@/components/admin/VoucherPool";
 import PlansManager from "@/components/admin/PlansManager";
+import { Navbar } from "@/components/ui/navbar";
 
 const AdminDashboard = () => {
   return (
-    <div className="min-h-screen bg-gray-50 p-4">
-      <div className="container mx-auto">
-        <h1 className="text-2xl font-bold text-gray-900 mb-6">Admin Dashboard</h1>
-        
-        <Tabs defaultValue="pending" className="space-y-4">
+    <div className="min-h-screen bg-gray-50">
+      <Navbar />
+      <div className="container mx-auto p-4">
+        <Tabs defaultValue="plans" className="space-y-4">
           <TabsList>
-            <TabsTrigger value="pending">Pending Purchases</TabsTrigger>
-            <TabsTrigger value="vouchers">Voucher Pool</TabsTrigger>
-            <TabsTrigger value="plans">Manage Plans</TabsTrigger>
+            <TabsTrigger value="plans">Plans</TabsTrigger>
+            <TabsTrigger value="vouchers">Vouchers</TabsTrigger>
+            <TabsTrigger value="requests">Requests</TabsTrigger>
           </TabsList>
           
-          <TabsContent value="pending">
-            <Card className="p-4">
-              <PendingPurchases />
-            </Card>
+          <TabsContent value="plans">
+            <PlansManager />
           </TabsContent>
           
           <TabsContent value="vouchers">
@@ -29,9 +27,9 @@ const AdminDashboard = () => {
             </Card>
           </TabsContent>
           
-          <TabsContent value="plans">
+          <TabsContent value="requests">
             <Card className="p-4">
-              <PlansManager />
+              <PendingPurchases />
             </Card>
           </TabsContent>
         </Tabs>
