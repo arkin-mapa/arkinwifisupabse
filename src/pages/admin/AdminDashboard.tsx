@@ -23,7 +23,7 @@ const AdminDashboard = () => {
           
           <TabsContent value="vouchers">
             <Card className="p-4">
-              <VoucherPool />
+              <VoucherPool vouchers={{}} />
             </Card>
           </TabsContent>
           
