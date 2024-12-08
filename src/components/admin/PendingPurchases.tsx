@@ -7,7 +7,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
-import { Trash2 } from "lucide-react"; // Add this import
 import PurchaseActions from "./PurchaseActions";
 import type { Purchase } from "@/types/plans";
 
@@ -53,13 +52,6 @@ const PendingPurchases = () => {
     localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
     setPurchases(updatedPurchases);
     toast.success("Purchase rejected");
-  };
-
-  const handleDelete = (purchaseId: number) => {
-    const updatedPurchases = purchases.filter(purchase => purchase.id !== purchaseId);
-    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
-    setPurchases(updatedPurchases);
-    toast.success("Purchase request deleted successfully");
   };
 
   const getBadgeVariant = (status: Purchase['status']) => {
@@ -123,24 +115,12 @@ const PendingPurchases = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <div className="flex items-center gap-2">
-                        <PurchaseActions
-                          purchaseId={purchase.id}
-                          status={purchase.status}
-                          onApprove={handleApprove}
-                          onReject={handleReject}
-                        />
-                        {purchase.status !== "pending" && (
-                          <Button
-                            variant="ghost"
-                            size="icon"
-                            onClick={() => handleDelete(purchase.id)}
-                            className="text-red-500 hover:text-red-600"
-                          >
-                            <Trash2 className="h-4 w-4" />
-                          </Button>
-                        )}
-                      </div>
+                      <PurchaseActions
+                        purchaseId={purchase.id}
+                        status={purchase.status}
+                        onApprove={handleApprove}
+                        onReject={handleReject}
+                      />
                     </TableCell>
                   </TableRow>
                 ))}

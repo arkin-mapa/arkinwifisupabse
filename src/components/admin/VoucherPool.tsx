@@ -1,12 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { getVouchersFromStorage, saveVouchersToStorage } from "@/utils/voucherStorage";
-import type { Voucher, Plan } from "@/types/plans";
+import type { Voucher } from "@/types/plans";
 
 interface VoucherPoolProps {
   vouchers: Record<string, Voucher[]>;
@@ -16,37 +15,20 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
   const [localVouchers, setLocalVouchers] = useState(vouchers);
 
-  useEffect(() => {
-    const storedVouchers = getVouchersFromStorage();
-    setLocalVouchers(storedVouchers);
-  }, []);
-
-  useEffect(() => {
-    const plans: Plan[] = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
-    const updatedPlans = plans.map(plan => ({
-      ...plan,
-      availableVouchers: (localVouchers[plan.duration] || []).filter(v => !v.isUsed).length
-    }));
-    
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    saveVouchersToStorage(localVouchers);
-  }, [localVouchers]);
-
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
     setLocalVouchers(prev => {
       const planVouchers = prev[planDuration] || [];
       const updatedVouchers = planVouchers.filter(v => v.id !== voucherId);
       
-      const newVouchers = {
+      if (updatedVouchers.length === 0) {
+        const { [planDuration]: _, ...rest } = prev;
+        return rest;
+      }
+      
+      return {
         ...prev,
         [planDuration]: updatedVouchers
       };
-
-      if (updatedVouchers.length === 0) {
-        delete newVouchers[planDuration];
-      }
-
-      return newVouchers;
     });
 
     toast({
