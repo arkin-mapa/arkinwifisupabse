@@ -6,14 +6,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
 import { toast } from "sonner";
 
+interface PaymentMethod {
+  cash: string;
+  gcash: string;
+  paymaya: string;
+}
+
 interface PaymentInstructionsProps {
-  instructions: Record<string, string>;
-  setInstructions: (instructions: Record<string, string>) => void;
+  instructions: PaymentMethod;
+  setInstructions: React.Dispatch<React.SetStateAction<PaymentMethod>>;
 }
 
 const PaymentInstructionsCard = ({ instructions, setInstructions }: PaymentInstructionsProps) => {
   const [editingInstructions, setEditingInstructions] = useState(false);
-  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<string | null>(null);
+  const [selectedPaymentMethod, setSelectedPaymentMethod] = useState<keyof PaymentMethod | null>(null);
 
   const handleSaveInstructions = () => {
     if (selectedPaymentMethod) {
@@ -38,7 +44,7 @@ const PaymentInstructionsCard = ({ instructions, setInstructions }: PaymentInstr
                   variant="outline"
                   size="sm"
                   onClick={() => {
-                    setSelectedPaymentMethod(method);
+                    setSelectedPaymentMethod(method as keyof PaymentMethod);
                     setEditingInstructions(true);
                   }}
                 >
@@ -59,10 +65,14 @@ const PaymentInstructionsCard = ({ instructions, setInstructions }: PaymentInstr
           <div className="space-y-4">
             <Textarea
               value={selectedPaymentMethod ? instructions[selectedPaymentMethod] : ""}
-              onChange={(e) => setInstructions({
-                ...instructions,
-                [selectedPaymentMethod as string]: e.target.value
-              })}
+              onChange={(e) => {
+                if (selectedPaymentMethod) {
+                  setInstructions(prev => ({
+                    ...prev,
+                    [selectedPaymentMethod]: e.target.value
+                  }));
+                }
+              }}
               rows={5}
             />
             <Button onClick={handleSaveInstructions}>Save Changes</Button>
