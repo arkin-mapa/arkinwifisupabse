@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Button } from "@/components/ui/button";
+import { Trash2 } from "lucide-react";
 import PurchaseActions from "./PurchaseActions";
 import type { Purchase } from "@/types/plans";
 
@@ -52,6 +53,13 @@ const PendingPurchases = () => {
     localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
     setPurchases(updatedPurchases);
     toast.success("Purchase rejected");
+  };
+
+  const handleDelete = (purchaseId: number) => {
+    const updatedPurchases = purchases.filter(purchase => purchase.id !== purchaseId);
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase record deleted successfully");
   };
 
   const getBadgeVariant = (status: Purchase['status']) => {
@@ -115,12 +123,23 @@ const PendingPurchases = () => {
                       </Badge>
                     </TableCell>
                     <TableCell>
-                      <PurchaseActions
-                        purchaseId={purchase.id}
-                        status={purchase.status}
-                        onApprove={handleApprove}
-                        onReject={handleReject}
-                      />
+                      <div className="flex items-center gap-2">
+                        <PurchaseActions
+                          purchaseId={purchase.id}
+                          status={purchase.status}
+                          onApprove={handleApprove}
+                          onReject={handleReject}
+                        />
+                        {(purchase.status === "rejected" || purchase.status === "cancelled") && (
+                          <Button
+                            variant="destructive"
+                            size="sm"
+                            onClick={() => handleDelete(purchase.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        )}
+                      </div>
                     </TableCell>
                   </TableRow>
                 ))}
