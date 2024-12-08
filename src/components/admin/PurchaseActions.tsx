@@ -33,38 +33,39 @@ const PurchaseActions = ({ purchaseId, status, onApprove, onReject, onDelete }: 
         return;
       }
 
-      // Get the required number of vouchers and remove them from the pool
-      const assignedVouchers = availableVouchers.slice(0, purchase.quantity);
-      const remainingVouchers = planVouchers.filter(v => 
-        !assignedVouchers.some(av => av.id === v.id)
+      // Select vouchers to transfer and remove them from pool
+      const vouchersToTransfer = availableVouchers.slice(0, purchase.quantity);
+      const remainingVouchers = planVouchers.filter(voucher => 
+        !vouchersToTransfer.some(transferVoucher => transferVoucher.id === voucher.id)
       );
 
-      // Update voucher pool with remaining vouchers
-      const updatedPool = {
+      // Update voucher pool without the transferred vouchers
+      const updatedVoucherPool = {
         ...voucherPool,
         [purchase.plan]: remainingVouchers
       };
-      localStorage.setItem('vouchers', JSON.stringify(updatedPool));
+      localStorage.setItem('vouchers', JSON.stringify(updatedVoucherPool));
 
       // Add vouchers to client wallet
       const clientVouchers = JSON.parse(localStorage.getItem('clientVouchers') || '[]');
-      localStorage.setItem('clientVouchers', JSON.stringify([...clientVouchers, ...assignedVouchers]));
+      localStorage.setItem('clientVouchers', JSON.stringify([...clientVouchers, ...vouchersToTransfer]));
 
-      // Update plans with new voucher count
+      // Update plan's available voucher count
       const plans = JSON.parse(localStorage.getItem('wifiPlans') || '[]');
       const updatedPlans = plans.map(p => 
         p.duration === purchase.plan
-          ? { ...p, availableVouchers: remainingVouchers.filter(v => !v.isUsed).length }
+          ? { ...p, availableVouchers: remainingVouchers.length }
           : p
       );
       localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
 
-      // Call the original onApprove function
+      // Update purchase status
       onApprove(id);
       
-      toast.success("Purchase approved and vouchers transferred successfully");
+      toast.success("Vouchers successfully transferred to client wallet");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Failed to transfer vouchers");
+      console.error('Error during voucher transfer:', error);
+      toast.error("Failed to transfer vouchers. Please try again.");
     }
   };
 
