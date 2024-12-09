@@ -3,6 +3,7 @@ import { useToast } from "@/hooks/use-toast";
 import PlanCard from "./PlanCard";
 import VoucherPool from "./VoucherPool";
 import AddPlanDialog from "./AddPlanDialog";
+import { fetchPlans, createPlan, deletePlan, fetchVouchers, addVouchers } from "@/utils/supabaseData";
 import type { Plan, Voucher } from "@/types/plans";
 
 const PlansManager = () => {
@@ -10,130 +11,90 @@ const PlansManager = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
   const { toast } = useToast();
 
-  // Load plans and vouchers from localStorage on component mount
   useEffect(() => {
-    const storedPlans = localStorage.getItem('wifiPlans');
-    const storedVouchers = localStorage.getItem('vouchers');
-    
-    if (storedPlans) {
-      const parsedPlans = JSON.parse(storedPlans);
-      // Update available vouchers count to only include unused vouchers
-      const updatedPlans = parsedPlans.map(plan => ({
-        ...plan,
-        availableVouchers: (JSON.parse(storedVouchers || '{}')[plan.duration] || [])
-          .filter(v => !v.isUsed).length
-      }));
-      setPlans(updatedPlans);
-      localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    } else {
-      // Initialize with default plans if none exist
-      const defaultPlans: Plan[] = [
-        { id: "1", duration: "2 hrs", price: 5, availableVouchers: 0 },
-        { id: "2", duration: "4 hrs", price: 10, availableVouchers: 0 },
-        { id: "3", duration: "6 hrs", price: 15, availableVouchers: 0 },
-        { id: "4", duration: "8 hrs", price: 20, availableVouchers: 0 },
-        { id: "5", duration: "5 days", price: 50, availableVouchers: 0 },
-        { id: "6", duration: "30 days", price: 200, availableVouchers: 0 },
-      ];
-      localStorage.setItem('wifiPlans', JSON.stringify(defaultPlans));
-      setPlans(defaultPlans);
-    }
-
-    if (storedVouchers) {
-      setVouchers(JSON.parse(storedVouchers));
-    }
+    loadData();
   }, []);
 
-  const handleAddPlan = (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
-    const newPlanObj: Plan = {
-      id: (plans.length + 1).toString(),
-      ...newPlan,
-      availableVouchers: 0,
-    };
+  const loadData = async () => {
+    try {
+      const [plansData, vouchersData] = await Promise.all([
+        fetchPlans(),
+        fetchVouchers()
+      ]);
 
-    const updatedPlans = [...plans, newPlanObj];
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    setPlans(updatedPlans);
+      // Transform plans data to include available vouchers count
+      const plansWithCounts = plansData.map(plan => ({
+        ...plan,
+        availableVouchers: (vouchersData[plan.duration] || []).filter(v => !v.isUsed).length
+      }));
 
-    toast({
-      title: "Success",
-      description: "New plan added successfully",
-    });
-  };
-
-  const handleDeletePlan = (planId: string) => {
-    const updatedPlans = plans.filter(plan => plan.id !== planId);
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    setPlans(updatedPlans);
-    
-    // Also remove vouchers for this plan
-    const plan = plans.find(p => p.id === planId);
-    if (plan) {
-      const { [plan.duration]: _, ...remainingVouchers } = vouchers;
-      localStorage.setItem('vouchers', JSON.stringify(remainingVouchers));
-      setVouchers(remainingVouchers);
-    }
-    
-    toast({
-      title: "Plan deleted",
-      description: "The plan has been removed successfully.",
-    });
-  };
-
-  const handleVoucherExtracted = (planId: string, voucherCodes: string[]) => {
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
-
-    // Check for duplicates across all plans
-    const allExistingCodes = new Set<string>();
-    Object.values(vouchers).forEach(planVouchers => {
-      planVouchers.forEach(v => allExistingCodes.add(v.code));
-    });
-
-    // Filter out duplicates
-    const uniqueNewCodes = voucherCodes.filter(code => !allExistingCodes.has(code));
-
-    if (uniqueNewCodes.length < voucherCodes.length) {
-      const duplicateCount = voucherCodes.length - uniqueNewCodes.length;
+      setPlans(plansWithCounts);
+      setVouchers(vouchersData);
+    } catch (error) {
+      console.error('Error loading data:', error);
       toast({
-        title: "Duplicate vouchers found",
-        description: `${duplicateCount} duplicate voucher(s) were skipped. Vouchers must be unique across all plans.`,
+        title: "Error",
+        description: "Failed to load plans and vouchers",
+        variant: "destructive"
       });
-
-      if (uniqueNewCodes.length === 0) {
-        return; // Exit if all vouchers were duplicates
-      }
     }
+  };
 
-    const newVouchers = uniqueNewCodes.map((code, index) => ({
-      id: `${planId}-${Date.now()}-${index}`,
-      code,
-      planId,
-      isUsed: false
-    }));
+  const handleAddPlan = async (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
+    try {
+      await createPlan(newPlan);
+      await loadData(); // Reload all data
+      
+      toast({
+        title: "Success",
+        description: "New plan added successfully",
+      });
+    } catch (error) {
+      console.error('Error adding plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add new plan",
+        variant: "destructive"
+      });
+    }
+  };
 
-    // Update vouchers state
-    const updatedVouchers = {
-      ...vouchers,
-      [plan.duration]: [...(vouchers[plan.duration] || []), ...newVouchers]
-    };
-    setVouchers(updatedVouchers);
-    localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
+  const handleDeletePlan = async (planId: string) => {
+    try {
+      await deletePlan(planId);
+      await loadData(); // Reload all data
+      
+      toast({
+        title: "Plan deleted",
+        description: "The plan has been removed successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting plan:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete plan",
+        variant: "destructive"
+      });
+    }
+  };
 
-    // Update plans with new voucher count
-    const updatedPlans = plans.map(p => 
-      p.id === planId 
-        ? { ...p, availableVouchers: (updatedVouchers[plan.duration] || []).filter(v => !v.isUsed).length }
-        : p
-    );
-    
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    setPlans(updatedPlans);
+  const handleVoucherExtracted = async (planId: string, voucherCodes: string[]) => {
+    try {
+      await addVouchers(planId, voucherCodes);
+      await loadData(); // Reload all data
 
-    toast({
-      title: "Vouchers uploaded",
-      description: `${uniqueNewCodes.length} new vouchers added to ${plan.duration} plan`,
-    });
+      toast({
+        title: "Vouchers uploaded",
+        description: `${voucherCodes.length} new vouchers added successfully`,
+      });
+    } catch (error) {
+      console.error('Error adding vouchers:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add vouchers",
+        variant: "destructive"
+      });
+    }
   };
 
   return (

@@ -2,53 +2,57 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import PurchasesTable from "./PurchasesTable";
+import { fetchPurchases, updatePurchaseStatus, deletePurchase } from "@/utils/supabaseData";
 import type { Purchase } from "@/types/plans";
 
 const PendingPurchases = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 
   useEffect(() => {
-    const storedPurchases = localStorage.getItem('purchases');
-    if (storedPurchases) {
-      setPurchases(JSON.parse(storedPurchases));
-    }
+    loadPurchases();
   }, []);
 
-  const handleApprove = (purchaseId: number) => {
-    const updatedPurchases = purchases.map(purchase =>
-      purchase.id === purchaseId
-        ? { ...purchase, status: "approved" as const }
-        : purchase
-    );
-    
-    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
-    setPurchases(updatedPurchases);
-    toast.success("Purchase approved successfully");
-  };
-
-  const handleReject = (purchaseId: number) => {
-    const updatedPurchases = purchases.map(purchase =>
-      purchase.id === purchaseId
-        ? { ...purchase, status: "rejected" as const }
-        : purchase
-    );
-    
-    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
-    setPurchases(updatedPurchases);
-    toast.success("Purchase rejected");
-  };
-
-  const handleDelete = (purchaseId: number) => {
-    const purchase = purchases.find(p => p.id === purchaseId);
-    if (!purchase || purchase.status === "pending") {
-      toast.error("Only approved, rejected, or cancelled purchases can be deleted");
-      return;
+  const loadPurchases = async () => {
+    try {
+      const purchasesData = await fetchPurchases();
+      setPurchases(purchasesData);
+    } catch (error) {
+      console.error('Error loading purchases:', error);
+      toast.error("Failed to load purchases");
     }
+  };
 
-    const updatedPurchases = purchases.filter(p => p.id !== purchaseId);
-    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
-    setPurchases(updatedPurchases);
-    toast.success("Purchase deleted successfully");
+  const handleApprove = async (purchaseId: string) => {
+    try {
+      await updatePurchaseStatus(purchaseId, "approved");
+      await loadPurchases();
+      toast.success("Purchase approved successfully");
+    } catch (error) {
+      console.error('Error approving purchase:', error);
+      toast.error("Failed to approve purchase");
+    }
+  };
+
+  const handleReject = async (purchaseId: string) => {
+    try {
+      await updatePurchaseStatus(purchaseId, "rejected");
+      await loadPurchases();
+      toast.success("Purchase rejected");
+    } catch (error) {
+      console.error('Error rejecting purchase:', error);
+      toast.error("Failed to reject purchase");
+    }
+  };
+
+  const handleDelete = async (purchaseId: string) => {
+    try {
+      await deletePurchase(purchaseId);
+      await loadPurchases();
+      toast.success("Purchase deleted successfully");
+    } catch (error) {
+      console.error('Error deleting purchase:', error);
+      toast.error("Failed to delete purchase");
+    }
   };
 
   return (
