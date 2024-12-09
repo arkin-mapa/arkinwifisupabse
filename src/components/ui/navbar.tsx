@@ -14,14 +14,19 @@ export function Navbar() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      const { error } = await supabase.auth.signOut({ scope: 'local' });
+      
+      // First clear any existing session
+      await supabase.auth.clearSession();
+      
+      // Then perform the signOut
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("Logout error:", error);
         throw error;
       }
 
-      // Navigate before showing toast to avoid state updates after unmount
+      // Navigate and show success message
       navigate("/login", { replace: true });
       toast.success("Logged out successfully");
     } catch (error) {
