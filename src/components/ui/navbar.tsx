@@ -13,14 +13,16 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
-      // Check if we have a session before attempting to log out
-      if (!session) {
-        console.log('No active session found');
+      const { data: currentSession } = await supabase.auth.getSession();
+      
+      if (!currentSession.session) {
+        console.log('No active session found, redirecting to login');
         navigate('/login');
         return;
       }
 
       const { error } = await supabase.auth.signOut();
+      
       if (error) {
         console.error('Error during logout:', error);
         throw error;
@@ -29,7 +31,7 @@ export function Navbar() {
       toast.success("Logged out successfully");
       navigate('/login');
     } catch (error) {
-      console.error('Error logging out:', error);
+      console.error('Logout error:', error);
       toast.error("Failed to log out");
       // Even if logout fails, redirect to login page for safety
       navigate('/login');
