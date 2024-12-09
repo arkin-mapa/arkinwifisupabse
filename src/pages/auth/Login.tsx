@@ -31,6 +31,8 @@ const Login = () => {
     checkSession();
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
+      console.log("Auth state changed:", event, session);
+      
       if (event === 'SIGNED_IN' && session) {
         // Check user role and redirect accordingly
         const { data: profile } = await supabase
