@@ -84,7 +84,6 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                 if (!planVouchers || planVouchers.length === 0) return null;
                 
                 const availableVouchers = planVouchers.filter(v => !v.isUsed);
-                const usedVouchers = planVouchers.filter(v => v.isUsed);
                 const isExpanded = expandedPlans[planDuration];
                 
                 return (
@@ -98,9 +97,7 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                         <h3 className="font-medium">{planDuration}</h3>
                       </div>
                       <div className="flex gap-4 text-sm text-muted-foreground">
-                        <Badge variant="secondary">Used: {usedVouchers.length}</Badge>
                         <Badge variant="default">Available: {availableVouchers.length}</Badge>
-                        <Badge variant="outline">Total: {planVouchers.length}</Badge>
                       </div>
                     </div>
                     {isExpanded && (
