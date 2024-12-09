@@ -9,14 +9,20 @@ import { Loader2 } from "lucide-react";
 export function Navbar() {
   const navigate = useNavigate();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const { session } = useSessionContext();
+  const { session, isLoading: sessionLoading } = useSessionContext();
 
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
       console.log("Starting logout process");
       
-      const { error } = await supabase.auth.signOut();
+      // Clear any existing session first
+      await supabase.auth.clearSession();
+      
+      // Then perform the signOut
+      const { error } = await supabase.auth.signOut({
+        scope: 'local'
+      });
       
       if (error) {
         console.error('Logout error:', error);
@@ -34,6 +40,11 @@ export function Navbar() {
       setIsLoggingOut(false);
     }
   };
+
+  // Don't show anything while session is loading
+  if (sessionLoading) {
+    return null;
+  }
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
