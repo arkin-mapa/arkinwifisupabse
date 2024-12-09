@@ -24,56 +24,31 @@ import {
 import { toast } from "sonner";
 import { Trash2 } from "lucide-react";
 import type { Purchase } from "@/types/plans";
+import { fetchClientPurchases, cancelPurchase } from "@/utils/supabaseData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const PurchaseHistory = () => {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadPurchases();
-  }, []);
+  const { data: purchases = [], isLoading } = useQuery({
+    queryKey: ['clientPurchases'],
+    queryFn: fetchClientPurchases
+  });
 
-  const loadPurchases = () => {
-    const storedPurchases = localStorage.getItem('purchases');
-    if (storedPurchases) {
-      setPurchases(JSON.parse(storedPurchases));
+  const cancelMutation = useMutation({
+    mutationFn: cancelPurchase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientPurchases'] });
+      toast.success("Purchase cancelled successfully");
+    },
+    onError: (error) => {
+      console.error('Cancel error:', error);
+      toast.error("Failed to cancel purchase. Please try again.");
     }
-  };
+  });
 
-  const handleCancel = (purchaseId: number) => {
-    const updatedPurchases = purchases.map(purchase =>
-      purchase.id === purchaseId
-        ? { ...purchase, status: "cancelled" as const }
-        : purchase
-    );
-    
-    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
-    setPurchases(updatedPurchases);
-    toast.success("Purchase cancelled successfully");
-  };
-
-  const handleDelete = async (purchaseId: number) => {
-    const purchase = purchases.find(p => p.id === purchaseId);
-    if (!purchase || !["approved", "rejected", "cancelled"].includes(purchase.status)) {
-      toast.error("Only approved, rejected, or cancelled purchases can be deleted");
-      return;
-    }
-
-    try {
-      // First update state to ensure immediate UI update
-      setPurchases(prevPurchases => 
-        prevPurchases.filter(p => p.id !== purchaseId)
-      );
-
-      // Then update localStorage
-      const updatedPurchases = purchases.filter(p => p.id !== purchaseId);
-      localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
-      
-      toast.success("Purchase record deleted successfully");
-    } catch (error) {
-      // If there's an error, reload the original state
-      loadPurchases();
-      toast.error("Failed to delete purchase record");
-    }
+  const handleCancel = (purchaseId: string) => {
+    cancelMutation.mutate(purchaseId);
   };
 
   const getBadgeVariant = (status: Purchase['status']) => {
@@ -90,6 +65,10 @@ const PurchaseHistory = () => {
         return "secondary";
     }
   };
+
+  if (isLoading) {
+    return <div className="text-center">Loading purchase history...</div>;
+  }
 
   return (
     <Card>
@@ -129,60 +108,29 @@ const PurchaseHistory = () => {
                   </TableCell>
                   <TableCell>
                     {purchase.status === "pending" && (
-                      <>
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="destructive" size="sm">
-                              Cancel
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                Cancel Purchase Request
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                Are you sure you want to cancel this purchase request?
-                                This action cannot be undone.
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>No, keep it</AlertDialogCancel>
-                              <AlertDialogAction
-                                onClick={() => handleCancel(purchase.id)}
-                              >
-                                Yes, cancel it
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      </>
-                    )}
-                    {(purchase.status === "approved" || purchase.status === "rejected" || purchase.status === "cancelled") && (
                       <AlertDialog>
                         <AlertDialogTrigger asChild>
-                          <Button
-                            variant="ghost"
-                            size="sm"
-                            className="text-red-500 hover:text-red-600 hover:bg-red-50"
-                          >
-                            <Trash2 className="w-4 h-4" />
+                          <Button variant="destructive" size="sm">
+                            Cancel
                           </Button>
                         </AlertDialogTrigger>
                         <AlertDialogContent>
                           <AlertDialogHeader>
-                            <AlertDialogTitle>Delete Purchase Record</AlertDialogTitle>
+                            <AlertDialogTitle>
+                              Cancel Purchase Request
+                            </AlertDialogTitle>
                             <AlertDialogDescription>
-                              Are you sure you want to delete this purchase record?
+                              Are you sure you want to cancel this purchase request?
                               This action cannot be undone.
                             </AlertDialogDescription>
                           </AlertDialogHeader>
                           <AlertDialogFooter>
                             <AlertDialogCancel>No, keep it</AlertDialogCancel>
                             <AlertDialogAction
-                              onClick={() => handleDelete(purchase.id)}
+                              onClick={() => handleCancel(purchase.id)}
+                              disabled={cancelMutation.isPending}
                             >
-                              Yes, delete it
+                              Yes, cancel it
                             </AlertDialogAction>
                           </AlertDialogFooter>
                         </AlertDialogContent>

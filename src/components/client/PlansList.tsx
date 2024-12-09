@@ -1,7 +1,7 @@
 import { Button } from "@/components/ui/button";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { toast } from "sonner";
-import type { Plan, Purchase } from "@/types/plans";
+import type { Plan } from "@/types/plans";
 import {
   Dialog,
   DialogContent,
@@ -13,34 +13,47 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion } from "framer-motion";
-
-const getStoredPurchases = (): Purchase[] => {
-  const stored = localStorage.getItem('purchases');
-  return stored ? JSON.parse(stored) : [];
-};
+import { fetchClientPlans, createPurchase } from "@/utils/supabaseData";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const PlansList = () => {
-  const [plans, setPlans] = useState<Plan[]>([]);
-  const [purchasing, setPurchasing] = useState<string | null>(null);
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [purchaseDetails, setPurchaseDetails] = useState({
     customerName: "",
     quantity: 1,
-    paymentMethod: "cash"
+    paymentMethod: "cash" as const
   });
 
-  useEffect(() => {
-    const loadPlans = () => {
-      const storedPlans = localStorage.getItem('wifiPlans');
-      if (storedPlans) {
-        setPlans(JSON.parse(storedPlans));
-      }
-    };
+  const queryClient = useQueryClient();
 
-    loadPlans();
-    window.addEventListener('storage', loadPlans);
-    return () => window.removeEventListener('storage', loadPlans);
-  }, []);
+  const { data: plans = [], isLoading } = useQuery({
+    queryKey: ['clientPlans'],
+    queryFn: fetchClientPlans
+  });
+
+  const purchaseMutation = useMutation({
+    mutationFn: (plan: Plan) => createPurchase({
+      customerName: purchaseDetails.customerName,
+      planId: plan.id,
+      quantity: purchaseDetails.quantity,
+      totalAmount: plan.price * purchaseDetails.quantity,
+      paymentMethod: purchaseDetails.paymentMethod
+    }),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
+      toast.success("Purchase request submitted successfully!");
+      setSelectedPlan(null);
+      setPurchaseDetails({
+        customerName: "",
+        quantity: 1,
+        paymentMethod: "cash"
+      });
+    },
+    onError: (error) => {
+      console.error('Purchase error:', error);
+      toast.error("Failed to submit purchase request. Please try again.");
+    }
+  });
 
   const handlePurchase = (plan: Plan) => {
     setSelectedPlan(plan);
@@ -59,34 +72,12 @@ const PlansList = () => {
 
     if (!selectedPlan) return;
 
-    setPurchasing(selectedPlan.id);
-    
-    const newPurchase: Purchase = {
-      id: Date.now(),
-      date: new Date().toISOString().split('T')[0],
-      customerName: purchaseDetails.customerName,
-      plan: selectedPlan.duration,
-      quantity: purchaseDetails.quantity,
-      total: selectedPlan.price * purchaseDetails.quantity,
-      paymentMethod: purchaseDetails.paymentMethod as "cash" | "gcash" | "paymaya",
-      status: "pending"
-    };
-
-    const existingPurchases = getStoredPurchases();
-    const updatedPurchases = [...existingPurchases, newPurchase];
-    
-    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
-
-    setPurchasing(null);
-    setSelectedPlan(null);
-    setPurchaseDetails({
-      customerName: "",
-      quantity: 1,
-      paymentMethod: "cash"
-    });
-
-    toast.success("Purchase request submitted successfully!");
+    purchaseMutation.mutate(selectedPlan);
   };
+
+  if (isLoading) {
+    return <div className="text-center">Loading plans...</div>;
+  }
 
   return (
     <>
@@ -107,9 +98,9 @@ const PlansList = () => {
               <Button 
                 className="w-full bg-primary hover:bg-primary/90"
                 onClick={() => handlePurchase(plan)}
-                disabled={purchasing === plan.id || plan.availableVouchers === 0}
+                disabled={purchaseMutation.isPending || plan.availableVouchers === 0}
               >
-                {purchasing === plan.id ? "Processing..." : 
+                {purchaseMutation.isPending ? "Processing..." : 
                  plan.availableVouchers === 0 ? "Out of Stock" : "Purchase"}
               </Button>
             </div>
@@ -161,7 +152,7 @@ const PlansList = () => {
               <Label>Payment Method</Label>
               <RadioGroup
                 value={purchaseDetails.paymentMethod}
-                onValueChange={(value) => setPurchaseDetails({
+                onValueChange={(value: 'cash' | 'gcash' | 'paymaya') => setPurchaseDetails({
                   ...purchaseDetails,
                   paymentMethod: value
                 })}
@@ -186,9 +177,9 @@ const PlansList = () => {
               <Button
                 className="w-full"
                 onClick={handleSubmitPurchase}
-                disabled={purchasing === selectedPlan?.id}
+                disabled={purchaseMutation.isPending}
               >
-                {purchasing === selectedPlan?.id ? "Processing..." : "Confirm Purchase"}
+                {purchaseMutation.isPending ? "Processing..." : "Confirm Purchase"}
               </Button>
             </div>
           </div>

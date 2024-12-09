@@ -4,49 +4,19 @@ import type { Voucher, Plan } from "@/types/plans";
 import { toast } from "sonner";
 import { printVoucher } from "@/utils/printUtils";
 import PlanGroup from "./voucher/PlanGroup";
+import { fetchClientVouchers } from "@/utils/supabaseData";
+import { useQuery } from "@tanstack/react-query";
 
 const VoucherWallet = () => {
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [plans, setPlans] = useState<Plan[]>([]);
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const storedVouchers = localStorage.getItem('clientVouchers');
-    const storedPlans = localStorage.getItem('wifiPlans');
-    
-    if (storedVouchers) {
-      setVouchers(JSON.parse(storedVouchers));
-    }
-    if (storedPlans) {
-      setPlans(JSON.parse(storedPlans));
-    }
-
-    const handleStorageChange = () => {
-      const updatedVouchers = localStorage.getItem('clientVouchers');
-      if (updatedVouchers) {
-        setVouchers(JSON.parse(updatedVouchers));
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  const deleteVoucher = (voucherId: string) => {
-    try {
-      const updatedVouchers = vouchers.filter(v => v.id !== voucherId);
-      setVouchers(updatedVouchers);
-      localStorage.setItem('clientVouchers', JSON.stringify(updatedVouchers));
-      toast.success("Voucher deleted successfully");
-    } catch (error) {
-      console.error('Error deleting voucher:', error);
-      toast.error("Failed to delete voucher. Please try again.");
-    }
-  };
+  const { data: vouchers = [], isLoading } = useQuery({
+    queryKey: ['clientVouchers'],
+    queryFn: fetchClientVouchers
+  });
 
   const handlePrintVoucher = (voucher: Voucher) => {
-    const plan = plans.find(p => p.id === voucher.planId);
-    if (!printVoucher(voucher, plan)) {
+    if (!printVoucher(voucher)) {
       toast.error("Unable to open print window. Please check your popup settings.");
     }
   };
@@ -67,6 +37,10 @@ const VoucherWallet = () => {
     return acc;
   }, {} as Record<string, Voucher[]>);
 
+  if (isLoading) {
+    return <div className="text-center">Loading vouchers...</div>;
+  }
+
   if (vouchers.length === 0) {
     return (
       <Card className="p-6 text-center border">
@@ -81,11 +55,9 @@ const VoucherWallet = () => {
         <PlanGroup
           key={planId}
           planId={planId}
-          plan={plans.find(p => p.id === planId)}
           vouchers={planVouchers}
           isExpanded={expandedPlans[planId]}
           onToggle={() => togglePlanExpansion(planId)}
-          onDeleteVoucher={deleteVoucher}
           onPrintVoucher={handlePrintVoucher}
         />
       ))}
