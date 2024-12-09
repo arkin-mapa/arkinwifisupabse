@@ -22,5 +22,4 @@ export interface Purchase {
   paymentMethod: "cash" | "gcash" | "paymaya";
   status: "pending" | "approved" | "rejected" | "cancelled";
   vouchers?: Voucher[];
-  paymentInstructions?: string;
 }
