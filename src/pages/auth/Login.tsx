@@ -80,8 +80,21 @@ const Login = () => {
             providers={[]}
             localization={{
               variables: {
+                sign_in: {
+                  email_label: 'Email address',
+                  password_label: 'Password',
+                  email_input_placeholder: 'Your email address',
+                  password_input_placeholder: 'Your password',
+                  button_label: 'Sign in',
+                  loading_button_label: 'Signing in ...',
+                },
                 sign_up: {
-                  email_exists_error: "This email is already registered. Please sign in instead.",
+                  email_label: 'Email address',
+                  password_label: 'Create a Password',
+                  email_input_placeholder: 'Your email address',
+                  password_input_placeholder: 'Your password',
+                  button_label: 'Sign up',
+                  loading_button_label: 'Signing up ...',
                 }
               }
             }}
