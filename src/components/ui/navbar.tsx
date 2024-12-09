@@ -14,8 +14,15 @@ export function Navbar() {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      console.log("Starting logout process");
       
+      // First check if we have a session
+      if (!session) {
+        console.log("No active session found, redirecting to login");
+        navigate("/login");
+        return;
+      }
+
+      console.log("Starting logout process");
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -24,9 +31,10 @@ export function Navbar() {
         return;
       }
 
+      // Only navigate and show success message if there were no errors
       console.log("Logout successful");
       toast.success("Logged out successfully");
-      navigate("/login");
+      navigate("/login", { replace: true });
     } catch (error) {
       console.error('Unexpected error during logout:', error);
       toast.error("An unexpected error occurred");
