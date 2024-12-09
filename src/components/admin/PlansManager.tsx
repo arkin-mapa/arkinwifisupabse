@@ -3,6 +3,7 @@ import VoucherPool from "./VoucherPool";
 import PlansGrid from "./PlansGrid";
 import { usePlansManager } from "@/hooks/usePlansManager";
 import { handleAddPlan, handleDeletePlan, handleVoucherUpload } from "@/utils/planOperations";
+import type { Plan } from "@/types/plans"; // Added this import
 
 const PlansManager = () => {
   const { plans, setPlans, vouchers, setVouchers, toast } = usePlansManager();
