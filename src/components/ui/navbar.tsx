@@ -2,7 +2,7 @@ import { useNavigate } from "react-router-dom";
 import { useSessionContext } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Button } from "./button";
 import { LogOut } from "lucide-react";
 
@@ -16,10 +16,7 @@ export function Navbar() {
     
     setIsLoggingOut(true);
     try {
-      // First invalidate the session
-      await supabase.auth.invalidateSession();
-      
-      // Then sign out
+      // Sign out with local scope to clear the current session
       const { error } = await supabase.auth.signOut({
         scope: 'local'
       });
