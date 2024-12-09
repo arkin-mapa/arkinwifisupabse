@@ -14,12 +14,20 @@ export function Navbar() {
   const handleLogout = async () => {
     if (isLoggingOut || isSessionLoading) return;
     
-    setIsLoggingOut(true);
     try {
-      // Sign out with local scope to clear the current session
-      const { error } = await supabase.auth.signOut({
-        scope: 'local'
-      });
+      setIsLoggingOut(true);
+      
+      // Check if we have an active session
+      const { data: currentSession } = await supabase.auth.getSession();
+      
+      if (!currentSession.session) {
+        // If no session exists, just redirect to login
+        navigate("/login");
+        return;
+      }
+
+      // Sign out only if we have an active session
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error("Logout error:", error);
