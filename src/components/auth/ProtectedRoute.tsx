@@ -28,23 +28,47 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
         // Check if user is admin when required
         if (requireAdmin) {
-          const { data: profile, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', session.user.id)
-            .single();
+          try {
+            const { data: profile, error: profileError } = await supabase
+              .from('profiles')
+              .select('role')
+              .eq('id', session.user.id)
+              .single();
 
-          if (profileError) {
-            console.error('Profile fetch error:', profileError);
-            throw profileError;
-          }
+            if (profileError) {
+              if (profileError.code === 'PGRST116') {
+                // Profile not found, create it
+                const { error: insertError } = await supabase
+                  .from('profiles')
+                  .insert([
+                    { 
+                      id: session.user.id,
+                      role: 'client' // Default role
+                    }
+                  ]);
 
-          if (profile?.role !== 'admin') {
-            toast.error("Access denied: Admin privileges required");
-            navigate('/client', { replace: true });
+                if (insertError) throw insertError;
+                
+                // Not an admin, redirect
+                toast.error("Access denied: Admin privileges required");
+                navigate('/client', { replace: true });
+                return;
+              }
+              throw profileError;
+            }
+
+            if (profile?.role !== 'admin') {
+              toast.error("Access denied: Admin privileges required");
+              navigate('/client', { replace: true });
+              return;
+            }
+            setIsAdmin(true);
+          } catch (error) {
+            console.error('Profile check error:', error);
+            toast.error("Error checking user permissions");
+            navigate('/login', { replace: true });
             return;
           }
-          setIsAdmin(true);
         }
 
         setIsAuthenticated(true);
