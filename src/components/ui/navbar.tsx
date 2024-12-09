@@ -16,13 +16,7 @@ export function Navbar() {
       setIsLoggingOut(true);
       console.log("Starting logout process");
       
-      // Clear any existing session first
-      await supabase.auth.clearSession();
-      
-      // Then perform the signOut
-      const { error } = await supabase.auth.signOut({
-        scope: 'local'
-      });
+      const { error } = await supabase.auth.signOut();
       
       if (error) {
         console.error('Logout error:', error);
