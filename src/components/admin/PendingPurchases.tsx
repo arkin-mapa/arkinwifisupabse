@@ -4,6 +4,7 @@ import { toast } from "sonner";
 import PaymentInstructionsCard from "./PaymentInstructionsCard";
 import PurchasesTable from "./PurchasesTable";
 import { usePurchases } from "@/hooks/usePurchases";
+import { supabase } from "@/integrations/supabase/client";
 import type { Purchase } from "@/types/plans";
 
 const paymentInstructions = {
