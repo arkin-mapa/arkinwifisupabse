@@ -1,69 +1,59 @@
 import { useEffect } from "react";
 import { useNavigate } from "react-router-dom";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { useSessionContext } from "@supabase/auth-helpers-react";
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 
 const Login = () => {
   const navigate = useNavigate();
+  const { session, isLoading } = useSessionContext();
 
   useEffect(() => {
-    const checkSession = async () => {
-      const { data: { session } } = await supabase.auth.getSession();
-      if (session) {
-        // Check user role and redirect accordingly
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
+    if (!isLoading && session) {
+      // Check if user is admin
+      const checkUserRole = async () => {
+        try {
+          const { data: profile, error } = await supabase
+            .from("profiles")
+            .select("role")
+            .eq("id", session.user.id)
+            .single();
 
-        if (profile?.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/client');
+          if (error) throw error;
+
+          // Redirect based on role
+          if (profile?.role === "admin") {
+            navigate("/admin", { replace: true });
+          } else {
+            navigate("/client", { replace: true });
+          }
+        } catch (error) {
+          console.error("Error checking user role:", error);
+          navigate("/client", { replace: true }); // Default to client route
         }
-      }
-    };
+      };
 
-    checkSession();
+      checkUserRole();
+    }
+  }, [session, isLoading, navigate]);
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log("Auth state changed:", event, session);
-      
-      if (event === 'SIGNED_IN' && session) {
-        // Check user role and redirect accordingly
-        const { data: profile } = await supabase
-          .from('profiles')
-          .select('role')
-          .eq('id', session.user.id)
-          .single();
-
-        if (profile?.role === 'admin') {
-          navigate('/admin');
-        } else {
-          navigate('/client');
-        }
-      } else if (event === 'SIGNED_OUT') {
-        navigate('/login');
-      }
-    });
-
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate]);
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center min-h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
-      <Card className="w-full max-w-md">
+    <div className="flex items-center justify-center min-h-screen bg-gray-50">
+      <Card className="w-full max-w-md mx-4">
         <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold">Welcome back</CardTitle>
-          <CardDescription>
-            Sign in to your account to continue
-          </CardDescription>
+          <CardTitle className="text-2xl text-center">
+            WiFi Voucher System
+          </CardTitle>
         </CardHeader>
         <CardContent>
           <Auth
@@ -73,33 +63,14 @@ const Login = () => {
               variables: {
                 default: {
                   colors: {
-                    brand: '#000000',
-                    brandAccent: '#333333',
+                    brand: 'hsl(var(--primary))',
+                    brandAccent: 'hsl(var(--primary))',
                   },
                 },
               },
             }}
             providers={[]}
-            localization={{
-              variables: {
-                sign_in: {
-                  email_label: 'Email address',
-                  password_label: 'Password',
-                  email_input_placeholder: 'Your email address',
-                  password_input_placeholder: 'Your password',
-                  button_label: 'Sign in',
-                  loading_button_label: 'Signing in ...',
-                },
-                sign_up: {
-                  email_label: 'Email address',
-                  password_label: 'Create a Password',
-                  email_input_placeholder: 'Your email address',
-                  password_input_placeholder: 'Your password',
-                  button_label: 'Sign up',
-                  loading_button_label: 'Signing up ...',
-                }
-              }
-            }}
+            redirectTo={window.location.origin}
           />
         </CardContent>
       </Card>

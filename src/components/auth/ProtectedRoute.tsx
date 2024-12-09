@@ -22,7 +22,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
         if (!session?.user) {
           console.log('No active session found');
           setIsAuthenticated(false);
-          navigate('/login');
+          navigate('/login', { replace: true });
           return;
         }
 
@@ -41,7 +41,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
           if (profile?.role !== 'admin') {
             toast.error("Access denied: Admin privileges required");
-            navigate('/client');
+            navigate('/client', { replace: true });
             return;
           }
           setIsAdmin(true);
@@ -51,7 +51,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
       } catch (error) {
         console.error('Auth error:', error);
         toast.error("Authentication error occurred");
-        navigate('/login');
+        navigate('/login', { replace: true });
       } finally {
         setLoading(false);
       }
