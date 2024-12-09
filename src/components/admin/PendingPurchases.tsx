@@ -19,13 +19,65 @@ const PendingPurchases = () => {
 
   const handleApprove = async (purchaseId: string) => {
     try {
-      const { error } = await supabase
+      // Get the purchase details first
+      const { data: purchase, error: fetchError } = await supabase
+        .from("purchases")
+        .select("*, wifi_plans(duration)")
+        .eq("id", purchaseId)
+        .single();
+
+      if (fetchError) throw fetchError;
+      if (!purchase) {
+        toast.error("Purchase not found");
+        return;
+      }
+
+      // Get available vouchers for the plan
+      const { data: vouchers, error: vouchersError } = await supabase
+        .from("vouchers")
+        .select("id")
+        .eq("plan_id", purchase.plan_id)
+        .is("user_id", null)
+        .is("purchase_id", null)
+        .limit(purchase.quantity);
+
+      if (vouchersError) throw vouchersError;
+
+      if (!vouchers || vouchers.length < purchase.quantity) {
+        toast.error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${vouchers?.length || 0}`);
+        return;
+      }
+
+      // Update purchase status to approved
+      const { error: updateError } = await supabase
         .from("purchases")
         .update({ status: "approved" })
         .eq("id", purchaseId);
 
-      if (error) throw error;
-      toast.success("Purchase approved successfully");
+      if (updateError) throw updateError;
+
+      // Assign vouchers to the user
+      const { error: assignError } = await supabase
+        .from("vouchers")
+        .update({
+          user_id: purchase.user_id,
+          purchase_id: purchaseId
+        })
+        .in("id", vouchers.map(v => v.id));
+
+      if (assignError) throw assignError;
+
+      // Update available vouchers count in the plan
+      const { error: planError } = await supabase
+        .from("wifi_plans")
+        .update({
+          available_vouchers: supabase.sql`available_vouchers - ${purchase.quantity}`
+        })
+        .eq("id", purchase.plan_id);
+
+      if (planError) throw planError;
+
+      toast.success("Purchase approved and vouchers assigned successfully");
     } catch (error) {
       console.error('Error approving purchase:', error);
       toast.error("Failed to approve purchase");
