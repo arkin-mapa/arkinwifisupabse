@@ -1,6 +1,7 @@
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { useSessionContext } from '@supabase/auth-helpers-react';
 import type { Purchase } from "@/types/plans";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -19,8 +20,17 @@ const PurchaseActions = ({
   onReject, 
   onDelete 
 }: PurchaseActionsProps) => {
+  const { session } = useSessionContext();
+
   const handleApprove = async (id: string) => {
     try {
+      if (!session) {
+        toast.error("You must be logged in to perform this action");
+        return;
+      }
+
+      console.log('Starting approval process for purchase:', id);
+      
       // Get the purchase details
       const { data: purchase, error: fetchError } = await supabase
         .from("purchases")
@@ -28,11 +38,17 @@ const PurchaseActions = ({
         .eq("id", id)
         .single();
       
-      if (fetchError) throw fetchError;
+      if (fetchError) {
+        console.error('Error fetching purchase:', fetchError);
+        throw fetchError;
+      }
+      
       if (!purchase) {
         toast.error("Purchase not found");
         return;
       }
+
+      console.log('Purchase details:', purchase);
 
       // Update purchase status
       onApprove(id);
