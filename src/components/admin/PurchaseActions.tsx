@@ -1,8 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { transferVouchersToClient } from "@/utils/voucherManagement";
 import type { Purchase } from "@/types/plans";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PurchaseActionsProps {
   purchaseId: string;
@@ -22,23 +22,23 @@ const PurchaseActions = ({
   const handleApprove = async (id: string) => {
     try {
       // Get the purchase details
-      const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
-      const purchase = purchases.find((p: Purchase) => p.id === id);
+      const { data: purchase, error: fetchError } = await supabase
+        .from("purchases")
+        .select("*")
+        .eq("id", id)
+        .single();
       
+      if (fetchError) throw fetchError;
       if (!purchase) {
         toast.error("Purchase not found");
         return;
       }
 
-      // Transfer vouchers
-      transferVouchersToClient(purchase);
-      
       // Update purchase status
       onApprove(id);
-      toast.success("Vouchers successfully transferred to client wallet");
     } catch (error) {
-      console.error('Error during voucher transfer:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to transfer vouchers. Please try again.");
+      console.error('Error during purchase approval:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to approve purchase. Please try again.");
     }
   };
 
