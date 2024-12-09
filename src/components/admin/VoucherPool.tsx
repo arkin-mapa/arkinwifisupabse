@@ -5,7 +5,8 @@ import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { deleteVoucher } from "@/utils/voucherManagement";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Voucher } from "@/types/plans";
 
 interface VoucherPoolProps {
@@ -14,32 +15,80 @@ interface VoucherPoolProps {
 
 const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
-  const [localVouchers, setLocalVouchers] = useState<Record<string, Voucher[]>>(vouchers || {});
+  const queryClient = useQueryClient();
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
-  const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
-    try {
-      deleteVoucher(voucherId, planDuration);
-      
-      const updatedVouchers = {
-        ...localVouchers,
-        [planDuration]: localVouchers[planDuration].filter(v => v.id !== voucherId)
-      };
-      setLocalVouchers(updatedVouchers);
+  const { data: voucherData = {}, isLoading } = useQuery({
+    queryKey: ["vouchers"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("vouchers")
+        .select(`
+          *,
+          wifi_plans (
+            duration
+          )
+        `)
+        .order("created_at");
 
-      toast({
-        title: "Voucher deleted",
-        description: "The voucher has been removed from both pool and client wallet.",
+      if (error) throw error;
+
+      // Group vouchers by plan duration
+      const groupedVouchers: Record<string, Voucher[]> = {};
+      data.forEach((voucher) => {
+        const duration = voucher.wifi_plans.duration;
+        if (!groupedVouchers[duration]) {
+          groupedVouchers[duration] = [];
+        }
+        groupedVouchers[duration].push({
+          id: voucher.id,
+          code: voucher.code,
+          planId: voucher.plan_id,
+          isUsed: voucher.is_used
+        });
       });
-    } catch (error) {
+
+      return groupedVouchers;
+    },
+  });
+
+  const deleteVoucherMutation = useMutation({
+    mutationFn: async ({ voucherId, planId }: { voucherId: string, planId: string }) => {
+      // Delete the voucher
+      const { error: deleteError } = await supabase
+        .from("vouchers")
+        .delete()
+        .eq("id", voucherId);
+
+      if (deleteError) throw deleteError;
+
+      // Update the available_vouchers count
+      const { error: updateError } = await supabase
+        .from("wifi_plans")
+        .update({
+          available_vouchers: supabase.raw('available_vouchers - 1')
+        })
+        .eq("id", planId);
+
+      if (updateError) throw updateError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["vouchers"] });
+      queryClient.invalidateQueries({ queryKey: ["plans"] });
+      toast({
+        title: "Success",
+        description: "Voucher deleted successfully",
+      });
+    },
+    onError: (error) => {
       console.error('Error deleting voucher:', error);
       toast({
-        title: "Error",
-        description: "Failed to delete voucher. Please try again.",
         variant: "destructive",
+        title: "Error",
+        description: "Failed to delete voucher",
       });
-    }
-  };
+    },
+  });
 
   const togglePlanExpansion = (planDuration: string) => {
     setExpandedPlans(prev => ({
@@ -48,8 +97,16 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
     }));
   };
 
-  if (JSON.stringify(vouchers) !== JSON.stringify(localVouchers)) {
-    setLocalVouchers(vouchers);
+  const handleDeleteVoucher = (voucherId: string, planId: string) => {
+    deleteVoucherMutation.mutate({ voucherId, planId });
+  };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-4">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return (
@@ -59,11 +116,11 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
           <CardTitle>Voucher Pool</CardTitle>
         </CardHeader>
         <CardContent>
-          {!localVouchers || Object.keys(localVouchers).length === 0 ? (
+          {Object.keys(voucherData).length === 0 ? (
             <p className="text-muted-foreground">No vouchers available in the pool.</p>
           ) : (
             <ScrollArea className="h-[400px] pr-4">
-              {Object.entries(localVouchers).map(([planDuration, planVouchers]) => {
+              {Object.entries(voucherData).map(([planDuration, planVouchers]) => {
                 if (!planVouchers || planVouchers.length === 0) return null;
                 
                 const unusedCount = planVouchers.filter(v => !v.isUsed).length;
@@ -97,7 +154,7 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                               variant="ghost"
                               size="icon"
                               className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                              onClick={() => handleDeleteVoucher(planDuration, voucher.id)}
+                              onClick={() => handleDeleteVoucher(voucher.id, voucher.planId)}
                             >
                               <Trash2 className="h-3 w-3" />
                             </Button>

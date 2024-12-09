@@ -3,138 +3,147 @@ import { useToast } from "@/hooks/use-toast";
 import PlanCard from "./PlanCard";
 import VoucherPool from "./VoucherPool";
 import AddPlanDialog from "./AddPlanDialog";
+import { supabase } from "@/integrations/supabase/client";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Plan, Voucher } from "@/types/plans";
 
 const PlansManager = () => {
-  const [plans, setPlans] = useState<Plan[]>([]);
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
   const { toast } = useToast();
+  const queryClient = useQueryClient();
 
-  // Load plans and vouchers from localStorage on component mount
-  useEffect(() => {
-    const storedPlans = localStorage.getItem('wifiPlans');
-    const storedVouchers = localStorage.getItem('vouchers');
-    
-    if (storedPlans) {
-      const parsedPlans = JSON.parse(storedPlans);
-      // Update available vouchers count to only include unused vouchers
-      const updatedPlans = parsedPlans.map(plan => ({
-        ...plan,
-        availableVouchers: (JSON.parse(storedVouchers || '{}')[plan.duration] || [])
-          .filter(v => !v.isUsed).length
+  const { data: plans = [], isLoading } = useQuery({
+    queryKey: ["plans"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("wifi_plans")
+        .select("*")
+        .order("price");
+
+      if (error) throw error;
+      return data.map(plan => ({
+        id: plan.id,
+        duration: plan.duration,
+        price: plan.price,
+        availableVouchers: plan.available_vouchers
       }));
-      setPlans(updatedPlans);
-      localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    } else {
-      // Initialize with default plans if none exist
-      const defaultPlans: Plan[] = [
-        { id: "1", duration: "2 hrs", price: 5, availableVouchers: 0 },
-        { id: "2", duration: "4 hrs", price: 10, availableVouchers: 0 },
-        { id: "3", duration: "6 hrs", price: 15, availableVouchers: 0 },
-        { id: "4", duration: "8 hrs", price: 20, availableVouchers: 0 },
-        { id: "5", duration: "5 days", price: 50, availableVouchers: 0 },
-        { id: "6", duration: "30 days", price: 200, availableVouchers: 0 },
-      ];
-      localStorage.setItem('wifiPlans', JSON.stringify(defaultPlans));
-      setPlans(defaultPlans);
-    }
+    },
+  });
 
-    if (storedVouchers) {
-      setVouchers(JSON.parse(storedVouchers));
-    }
-  }, []);
+  const addPlanMutation = useMutation({
+    mutationFn: async (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
+      const { data, error } = await supabase
+        .from("wifi_plans")
+        .insert([{
+          duration: newPlan.duration,
+          price: newPlan.price,
+          available_vouchers: 0
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plans"] });
+      toast({
+        title: "Success",
+        description: "New plan added successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error adding plan:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add plan. Please try again.",
+      });
+    },
+  });
+
+  const deletePlanMutation = useMutation({
+    mutationFn: async (planId: string) => {
+      const { error } = await supabase
+        .from("wifi_plans")
+        .delete()
+        .eq("id", planId);
+
+      if (error) throw error;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["plans"] });
+      toast({
+        title: "Success",
+        description: "Plan deleted successfully",
+      });
+    },
+    onError: (error) => {
+      console.error('Error deleting plan:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to delete plan. Please try again.",
+      });
+    },
+  });
 
   const handleAddPlan = (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
-    const newPlanObj: Plan = {
-      id: (plans.length + 1).toString(),
-      ...newPlan,
-      availableVouchers: 0,
-    };
-
-    const updatedPlans = [...plans, newPlanObj];
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    setPlans(updatedPlans);
-
-    toast({
-      title: "Success",
-      description: "New plan added successfully",
-    });
+    addPlanMutation.mutate(newPlan);
   };
 
   const handleDeletePlan = (planId: string) => {
-    const updatedPlans = plans.filter(plan => plan.id !== planId);
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    setPlans(updatedPlans);
-    
-    // Also remove vouchers for this plan
-    const plan = plans.find(p => p.id === planId);
-    if (plan) {
-      const { [plan.duration]: _, ...remainingVouchers } = vouchers;
-      localStorage.setItem('vouchers', JSON.stringify(remainingVouchers));
-      setVouchers(remainingVouchers);
-    }
-    
-    toast({
-      title: "Plan deleted",
-      description: "The plan has been removed successfully.",
-    });
+    deletePlanMutation.mutate(planId);
   };
 
-  const handleVoucherExtracted = (planId: string, voucherCodes: string[]) => {
-    const plan = plans.find(p => p.id === planId);
-    if (!plan) return;
+  const handleVoucherExtracted = async (planId: string, voucherCodes: string[]) => {
+    try {
+      // Insert new vouchers into Supabase
+      const { error } = await supabase
+        .from("vouchers")
+        .insert(
+          voucherCodes.map(code => ({
+            plan_id: planId,
+            code,
+            is_used: false
+          }))
+        );
 
-    // Check for duplicates across all plans
-    const allExistingCodes = new Set<string>();
-    Object.values(vouchers).forEach(planVouchers => {
-      planVouchers.forEach(v => allExistingCodes.add(v.code));
-    });
+      if (error) throw error;
 
-    // Filter out duplicates
-    const uniqueNewCodes = voucherCodes.filter(code => !allExistingCodes.has(code));
+      // Update available_vouchers count in wifi_plans
+      const { error: updateError } = await supabase
+        .from("wifi_plans")
+        .update({ 
+          available_vouchers: voucherCodes.length 
+        })
+        .eq("id", planId);
 
-    if (uniqueNewCodes.length < voucherCodes.length) {
-      const duplicateCount = voucherCodes.length - uniqueNewCodes.length;
+      if (updateError) throw updateError;
+
+      queryClient.invalidateQueries({ queryKey: ["plans"] });
+      
       toast({
-        title: "Duplicate vouchers found",
-        description: `${duplicateCount} duplicate voucher(s) were skipped. Vouchers must be unique across all plans.`,
+        title: "Success",
+        description: `${voucherCodes.length} vouchers added successfully`,
       });
-
-      if (uniqueNewCodes.length === 0) {
-        return; // Exit if all vouchers were duplicates
-      }
+    } catch (error) {
+      console.error('Error handling vouchers:', error);
+      toast({
+        variant: "destructive",
+        title: "Error",
+        description: "Failed to add vouchers. Please try again.",
+      });
     }
-
-    const newVouchers = uniqueNewCodes.map((code, index) => ({
-      id: `${planId}-${Date.now()}-${index}`,
-      code,
-      planId,
-      isUsed: false
-    }));
-
-    // Update vouchers state
-    const updatedVouchers = {
-      ...vouchers,
-      [plan.duration]: [...(vouchers[plan.duration] || []), ...newVouchers]
-    };
-    setVouchers(updatedVouchers);
-    localStorage.setItem('vouchers', JSON.stringify(updatedVouchers));
-
-    // Update plans with new voucher count
-    const updatedPlans = plans.map(p => 
-      p.id === planId 
-        ? { ...p, availableVouchers: (updatedVouchers[plan.duration] || []).filter(v => !v.isUsed).length }
-        : p
-    );
-    
-    localStorage.setItem('wifiPlans', JSON.stringify(updatedPlans));
-    setPlans(updatedPlans);
-
-    toast({
-      title: "Vouchers uploaded",
-      description: `${uniqueNewCodes.length} new vouchers added to ${plan.duration} plan`,
-    });
   };
+
+  if (isLoading) {
+    return (
+      <div className="flex items-center justify-center p-8">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

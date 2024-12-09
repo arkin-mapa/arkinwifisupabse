@@ -44,11 +44,6 @@ const AddPlanDialog = ({ onAddPlan }: AddPlanDialogProps) => {
 
     setNewPlan({ duration: "", price: "" });
     setOpen(false);
-    
-    toast({
-      title: "Success",
-      description: "New plan added successfully",
-    });
   };
 
   return (
