@@ -11,30 +11,18 @@ export function Navbar() {
   const { session, isLoading: isSessionLoading } = useSessionContext();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
-  useEffect(() => {
-    const checkSession = async () => {
-      const { data } = await supabase.auth.getSession();
-      console.log("Current session:", data.session);
-    };
-    
-    checkSession();
-  }, []);
-
   const handleLogout = async () => {
     if (isLoggingOut || isSessionLoading) return;
     
     setIsLoggingOut(true);
     try {
-      const { data: sessionData } = await supabase.auth.getSession();
+      // First invalidate the session
+      await supabase.auth.invalidateSession();
       
-      if (!sessionData.session) {
-        console.log("No active session found, redirecting to login");
-        navigate("/login");
-        return;
-      }
-
-      console.log("Logging out with session:", sessionData.session);
-      const { error } = await supabase.auth.signOut();
+      // Then sign out
+      const { error } = await supabase.auth.signOut({
+        scope: 'local'
+      });
       
       if (error) {
         console.error("Logout error:", error);

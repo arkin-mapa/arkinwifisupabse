@@ -17,7 +17,9 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session } } = await supabase.auth.getSession();
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+        
+        if (sessionError) throw sessionError;
         
         if (!session) {
           console.log('No active session found');
@@ -62,7 +64,7 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
     // Set up auth state listener
     const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event);
+      console.log('Auth state changed:', event, session);
       
       if (event === 'SIGNED_OUT' || !session) {
         setIsAuthenticated(false);
