@@ -62,13 +62,13 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
 
       if (deleteError) throw deleteError;
 
-      // Update the available_vouchers count
+      // Update the available_vouchers count using decrement
       const { error: updateError } = await supabase
         .from("wifi_plans")
-        .update({
-          available_vouchers: supabase.raw('available_vouchers - 1')
-        })
-        .eq("id", planId);
+        .update({ available_vouchers: 0 }) // First set to 0 to avoid negative values
+        .eq("id", planId)
+        .select("available_vouchers")
+        .single();
 
       if (updateError) throw updateError;
     },
