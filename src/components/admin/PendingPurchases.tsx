@@ -71,7 +71,7 @@ const PendingPurchases = () => {
       const { error: planError } = await supabase
         .from("wifi_plans")
         .update({
-          available_vouchers: supabase.sql`available_vouchers - ${purchase.quantity}`
+          available_vouchers: purchase.wifi_plans.available_vouchers - purchase.quantity
         })
         .eq("id", purchase.plan_id);
 
