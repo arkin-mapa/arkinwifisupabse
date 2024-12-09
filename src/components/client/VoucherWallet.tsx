@@ -49,8 +49,8 @@ const VoucherWallet = () => {
     );
   }
 
-  // Ensure vouchers is an array before using reduce
-  const safeVouchers = vouchers || [];
+  // Ensure vouchers is an array and has items before processing
+  const safeVouchers = Array.isArray(vouchers) ? vouchers : [];
   
   if (safeVouchers.length === 0) {
     return (
@@ -60,7 +60,7 @@ const VoucherWallet = () => {
     );
   }
 
-  // Group vouchers by plan
+  // Group vouchers by plan, ensuring we're working with an array
   const groupedVouchers = safeVouchers.reduce((acc, voucher) => {
     if (!acc[voucher.planId]) {
       acc[voucher.planId] = [];
