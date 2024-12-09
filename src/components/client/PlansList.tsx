@@ -4,12 +4,14 @@ import { usePlans } from "@/hooks/usePlans";
 import { supabase } from "@/integrations/supabase/client";
 import { PlanCard } from "./plans/PlanCard";
 import { PurchaseDialog } from "./plans/PurchaseDialog";
+import { useSessionContext } from "@supabase/auth-helpers-react";
 import type { Plan } from "@/types/plans";
 
 const PlansList = () => {
   const { data: plans = [] } = usePlans();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [isProcessing, setIsProcessing] = useState(false);
+  const { session } = useSessionContext();
   const [purchaseDetails, setPurchaseDetails] = useState({
     customerName: "",
     quantity: 1,
@@ -17,6 +19,10 @@ const PlansList = () => {
   });
 
   const handlePurchase = (plan: Plan) => {
+    if (!session) {
+      toast.error("Please log in to make a purchase");
+      return;
+    }
     setSelectedPlan(plan);
   };
 
@@ -28,6 +34,11 @@ const PlansList = () => {
   };
 
   const handleSubmitPurchase = async () => {
+    if (!session) {
+      toast.error("Please log in to make a purchase");
+      return;
+    }
+
     if (!purchaseDetails.customerName) {
       toast.error("Please enter your name");
       return;
@@ -43,19 +54,11 @@ const PlansList = () => {
     setIsProcessing(true);
     
     try {
-      // Get the current user's ID
-      const { data: { user } } = await supabase.auth.getUser();
-      
-      if (!user) {
-        toast.error("You must be logged in to make a purchase");
-        return;
-      }
-
       const { error } = await supabase
         .from("purchases")
         .insert({
           plan_id: selectedPlan.id,
-          user_id: user.id, // Set the user_id to the current user's ID
+          user_id: session.user.id,
           quantity: purchaseDetails.quantity,
           total: selectedPlan.price * purchaseDetails.quantity,
           payment_method: purchaseDetails.paymentMethod,
