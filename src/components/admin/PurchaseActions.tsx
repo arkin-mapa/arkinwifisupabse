@@ -5,11 +5,11 @@ import { transferVouchersToClient } from "@/utils/voucherManagement";
 import type { Purchase } from "@/types/plans";
 
 interface PurchaseActionsProps {
-  purchaseId: number;
+  purchaseId: string;
   status: string;
-  onApprove: (id: number) => void;
-  onReject: (id: number) => void;
-  onDelete: (id: number) => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 const PurchaseActions = ({ 
@@ -19,7 +19,7 @@ const PurchaseActions = ({
   onReject, 
   onDelete 
 }: PurchaseActionsProps) => {
-  const handleApprove = async (id: number) => {
+  const handleApprove = async (id: string) => {
     try {
       // Get the purchase details
       const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');

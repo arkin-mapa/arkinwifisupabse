@@ -2,16 +2,13 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/types/database.types";
 import type { Plan, Voucher, Purchase } from "@/types/plans";
 
-export async function fetchClientPlans(): Promise<Plan[]> {
+export async function fetchPlans(): Promise<Plan[]> {
   const { data: plans, error } = await supabase
     .from('plans')
     .select('*, vouchers(count)')
     .order('created_at', { ascending: true });
 
-  if (error) {
-    console.error('Error fetching plans:', error);
-    throw error;
-  }
+  if (error) throw error;
 
   return plans.map(plan => ({
     id: plan.id,
@@ -21,35 +18,78 @@ export async function fetchClientPlans(): Promise<Plan[]> {
   }));
 }
 
-export async function createPurchase(purchase: {
-  customerName: string;
-  planId: string;
-  quantity: number;
-  totalAmount: number;
-  paymentMethod: 'cash' | 'gcash' | 'paymaya';
-}) {
-  const { data, error } = await supabase
-    .from('purchases')
-    .insert([{
-      customer_name: purchase.customerName,
-      plan_id: purchase.planId,
-      quantity: purchase.quantity,
-      total_amount: purchase.totalAmount,
-      payment_method: purchase.paymentMethod,
-      user_id: (await supabase.auth.getUser()).data.user?.id
-    }])
-    .select()
-    .single();
+export async function createPlan(plan: { duration: string; price: number }): Promise<void> {
+  const { error } = await supabase
+    .from('plans')
+    .insert([plan]);
 
-  if (error) {
-    console.error('Error creating purchase:', error);
-    throw error;
-  }
-
-  return data;
+  if (error) throw error;
 }
 
-export async function fetchClientPurchases(): Promise<Purchase[]> {
+export async function deletePlan(planId: string): Promise<void> {
+  const { error } = await supabase
+    .from('plans')
+    .delete()
+    .eq('id', planId);
+
+  if (error) throw error;
+}
+
+export async function fetchVouchers(): Promise<Record<string, Voucher[]>> {
+  const { data: vouchers, error } = await supabase
+    .from('vouchers')
+    .select(`
+      *,
+      plans (
+        duration
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  // Group vouchers by plan duration
+  const groupedVouchers: Record<string, Voucher[]> = {};
+  vouchers.forEach(voucher => {
+    const duration = voucher.plans?.duration || 'unknown';
+    if (!groupedVouchers[duration]) {
+      groupedVouchers[duration] = [];
+    }
+    groupedVouchers[duration].push({
+      id: voucher.id,
+      code: voucher.code,
+      planId: voucher.plan_id || '',
+      isUsed: voucher.is_used || false
+    });
+  });
+
+  return groupedVouchers;
+}
+
+export async function addVouchers(planId: string, codes: string[]): Promise<void> {
+  const vouchers = codes.map(code => ({
+    code,
+    plan_id: planId,
+    is_used: false
+  }));
+
+  const { error } = await supabase
+    .from('vouchers')
+    .insert(vouchers);
+
+  if (error) throw error;
+}
+
+export async function deleteVoucher(voucherId: string): Promise<void> {
+  const { error } = await supabase
+    .from('vouchers')
+    .delete()
+    .eq('id', voucherId);
+
+  if (error) throw error;
+}
+
+export async function fetchPurchases(): Promise<Purchase[]> {
   const { data: purchases, error } = await supabase
     .from('purchases')
     .select(`
@@ -60,10 +100,7 @@ export async function fetchClientPurchases(): Promise<Purchase[]> {
     `)
     .order('created_at', { ascending: false });
 
-  if (error) {
-    console.error('Error fetching purchases:', error);
-    throw error;
-  }
+  if (error) throw error;
 
   return purchases.map(p => ({
     id: p.id,
@@ -77,45 +114,23 @@ export async function fetchClientPurchases(): Promise<Purchase[]> {
   }));
 }
 
-export async function cancelPurchase(purchaseId: string) {
+export async function updatePurchaseStatus(
+  purchaseId: string, 
+  status: 'approved' | 'rejected' | 'cancelled'
+): Promise<void> {
   const { error } = await supabase
     .from('purchases')
-    .update({ status: 'cancelled' })
+    .update({ status })
     .eq('id', purchaseId);
 
-  if (error) {
-    console.error('Error cancelling purchase:', error);
-    throw error;
-  }
+  if (error) throw error;
 }
 
-export async function fetchClientVouchers(): Promise<Voucher[]> {
-  const { data: clientVouchers, error } = await supabase
-    .from('client_vouchers')
-    .select(`
-      vouchers (
-        id,
-        code,
-        plan_id,
-        is_used,
-        plans (
-          duration
-        )
-      )
-    `);
+export async function deletePurchase(purchaseId: string): Promise<void> {
+  const { error } = await supabase
+    .from('purchases')
+    .delete()
+    .eq('id', purchaseId);
 
-  if (error) {
-    console.error('Error fetching vouchers:', error);
-    throw error;
-  }
-
-  return clientVouchers
-    .map(cv => cv.vouchers)
-    .filter((v): v is NonNullable<typeof v> => v !== null)
-    .map(v => ({
-      id: v.id,
-      code: v.code,
-      planId: v.plan_id || '',
-      isUsed: v.is_used || false
-    }));
+  if (error) throw error;
 }

@@ -5,9 +5,9 @@ import type { Purchase } from "@/types/plans";
 
 interface PurchasesTableProps {
   purchases: Purchase[];
-  onApprove: (id: number) => void;
-  onReject: (id: number) => void;
-  onDelete: (id: number) => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 const PurchasesTable = ({ purchases, onApprove, onReject, onDelete }: PurchasesTableProps) => {
@@ -55,15 +55,13 @@ const PurchasesTable = ({ purchases, onApprove, onReject, onDelete }: PurchasesT
               </Badge>
             </TableCell>
             <TableCell>
-              <div className="flex items-center gap-2">
-                <PurchaseActions
-                  purchaseId={purchase.id}
-                  status={purchase.status}
-                  onApprove={onApprove}
-                  onReject={onReject}
-                  onDelete={onDelete}
-                />
-              </div>
+              <PurchaseActions
+                purchaseId={purchase.id}
+                status={purchase.status}
+                onApprove={onApprove}
+                onReject={onReject}
+                onDelete={onDelete}
+              />
             </TableCell>
           </TableRow>
         ))}
