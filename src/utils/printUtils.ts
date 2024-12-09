@@ -82,21 +82,18 @@ export const printVoucher = (voucher: Voucher, plan: Plan | undefined) => {
   return true;
 };
 
-export const printAllVouchers = (vouchers: Voucher[], plans: Plan[]) => {
+export const printPlanVouchers = (vouchers: Voucher[], plan: Plan) => {
   const printWindow = createPrintWindow();
   if (!printWindow) return false;
 
   printWindow.document.write(`
     <html>
       <head>
-        <title>WiFi Vouchers</title>
+        <title>${plan.duration} Vouchers</title>
         <style>${getStyles()}</style>
       </head>
       <body>
-        ${vouchers.map(voucher => {
-          const plan = plans.find(p => p.id === voucher.planId);
-          return generateVoucherHTML(voucher, plan);
-        }).join('')}
+        ${vouchers.map(voucher => generateVoucherHTML(voucher, plan)).join('')}
       </body>
     </html>
   `);

@@ -1,10 +1,8 @@
 import { Card } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { PrinterIcon } from "lucide-react";
-import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import type { Voucher, Plan } from "@/types/plans";
-import { printVoucher, printAllVouchers } from "@/utils/printUtils";
+import { toast } from "sonner";
+import { printVoucher } from "@/utils/printUtils";
 import PlanGroup from "./voucher/PlanGroup";
 
 const VoucherWallet = () => {
@@ -53,12 +51,6 @@ const VoucherWallet = () => {
     }
   };
 
-  const handlePrintAllVouchers = () => {
-    if (!printAllVouchers(vouchers, plans)) {
-      toast.error("Unable to open print window. Please check your popup settings.");
-    }
-  };
-
   const togglePlanExpansion = (planId: string) => {
     setExpandedPlans(prev => ({
       ...prev,
@@ -85,17 +77,6 @@ const VoucherWallet = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex justify-end">
-        <Button
-          onClick={handlePrintAllVouchers}
-          className="mb-4"
-          variant="outline"
-        >
-          <PrinterIcon className="mr-2 h-4 w-4" />
-          Print All Vouchers
-        </Button>
-      </div>
-
       {Object.entries(groupedVouchers).map(([planId, planVouchers]) => (
         <PlanGroup
           key={planId}
