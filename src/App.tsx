@@ -9,6 +9,7 @@ import AuthPage from "./pages/auth/AuthPage";
 import { SessionContextProvider, useSession, useUser } from '@supabase/auth-helpers-react';
 import { supabase } from "./integrations/supabase/client";
 import { useEffect, useState } from "react";
+import { Loader2 } from "lucide-react";
 
 const queryClient = new QueryClient();
 
@@ -27,26 +28,32 @@ const ProtectedRoute = ({
 
   useEffect(() => {
     async function getUserRole() {
-      if (!user) return;
-      
-      const { data, error } = await supabase
-        .from('profiles')
-        .select('role')
-        .eq('id', user.id)
-        .single();
-
-      if (error) {
-        console.error('Error fetching user role:', error);
+      if (!user) {
+        setLoading(false);
         return;
       }
+      
+      try {
+        const { data, error } = await supabase
+          .from('profiles')
+          .select('role')
+          .eq('id', user.id)
+          .single();
 
-      setUserRole(data?.role);
-      setLoading(false);
+        if (error) {
+          console.error('Error fetching user role:', error);
+          return;
+        }
+
+        setUserRole(data?.role);
+      } catch (error) {
+        console.error('Error in getUserRole:', error);
+      } finally {
+        setLoading(false);
+      }
     }
 
-    if (user) {
-      getUserRole();
-    }
+    getUserRole();
   }, [user]);
 
   if (!session) {
@@ -54,7 +61,11 @@ const ProtectedRoute = ({
   }
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="h-screen w-screen flex items-center justify-center">
+        <Loader2 className="h-8 w-8 animate-spin text-primary" />
+      </div>
+    );
   }
 
   if (allowedRole && userRole !== allowedRole) {
