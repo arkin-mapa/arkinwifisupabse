@@ -80,7 +80,7 @@ const PlansManager = () => {
     });
   };
 
-  const handleVoucherUpload = (planId: string, voucherCodes: string[]) => {
+  const handleVoucherExtracted = (planId: string, voucherCodes: string[]) => {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
 
@@ -147,7 +147,7 @@ const PlansManager = () => {
             key={plan.id}
             plan={plan}
             onDelete={handleDeletePlan}
-            onVoucherUpload={handleVoucherUpload}
+            onVoucherExtracted={handleVoucherExtracted}
           />
         ))}
       </div>
