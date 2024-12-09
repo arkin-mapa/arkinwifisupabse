@@ -8,7 +8,7 @@ import PlanGroup from "./voucher/PlanGroup";
 import { useState } from "react";
 
 const VoucherWallet = () => {
-  const { data: vouchers = [] } = useVouchers();
+  const { data: vouchers, isLoading } = useVouchers();
   const { data: plans = [] } = usePlans();
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
@@ -41,22 +41,33 @@ const VoucherWallet = () => {
     }));
   };
 
-  // Group vouchers by plan
-  const groupedVouchers = vouchers.reduce((acc, voucher) => {
-    if (!acc[voucher.planId]) {
-      acc[voucher.planId] = [];
-    }
-    acc[voucher.planId].push(voucher);
-    return acc;
-  }, {} as Record<string, typeof vouchers>);
+  if (isLoading) {
+    return (
+      <Card className="p-6 text-center border">
+        <p className="text-gray-600">Loading vouchers...</p>
+      </Card>
+    );
+  }
 
-  if (vouchers.length === 0) {
+  // Ensure vouchers is an array before using reduce
+  const safeVouchers = vouchers || [];
+  
+  if (safeVouchers.length === 0) {
     return (
       <Card className="p-6 text-center border">
         <p className="text-gray-600">No vouchers available in your wallet.</p>
       </Card>
     );
   }
+
+  // Group vouchers by plan
+  const groupedVouchers = safeVouchers.reduce((acc, voucher) => {
+    if (!acc[voucher.planId]) {
+      acc[voucher.planId] = [];
+    }
+    acc[voucher.planId].push(voucher);
+    return acc;
+  }, {} as Record<string, typeof safeVouchers>);
 
   return (
     <div className="space-y-6">
