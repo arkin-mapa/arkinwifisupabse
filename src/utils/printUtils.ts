@@ -28,14 +28,14 @@ const getStyles = () => `
     font-family: 'Courier New', monospace;
     width: 58mm;
     margin: 0;
-    padding: 0.5mm;
+    padding: 0;
     box-sizing: border-box;
   }
   .voucher {
     text-align: center;
     border-bottom: 1px dashed #000;
-    padding: 0.5mm 0;
-    margin-bottom: 0.25mm;
+    padding: 2mm 0;
+    margin: 0;
     height: 15mm;
     page-break-inside: avoid;
     display: flex;
