@@ -16,17 +16,8 @@ export function Navbar() {
     
     try {
       setIsLoggingOut(true);
+      console.log("Starting logout process");
       
-      // Check if we have an active session
-      const { data: currentSession } = await supabase.auth.getSession();
-      
-      if (!currentSession.session) {
-        // If no session exists, just redirect to login
-        navigate("/login");
-        return;
-      }
-
-      // Sign out only if we have an active session
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -35,6 +26,7 @@ export function Navbar() {
         return;
       }
 
+      console.log("Logout successful");
       toast.success("Logged out successfully");
       navigate("/login");
     } catch (error) {
