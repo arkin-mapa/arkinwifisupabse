@@ -1,10 +1,11 @@
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Copy, Trash2, ChevronDown, ChevronUp, Printer } from "lucide-react";
+import { Copy, Trash2, ChevronDown, ChevronUp, Printer, PrinterIcon } from "lucide-react";
 import { toast } from "sonner";
 import { useEffect, useState } from "react";
 import { motion } from "framer-motion";
 import type { Voucher, Plan } from "@/types/plans";
+import { printVoucher, printAllVouchers } from "@/utils/printUtils";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Voucher[]>([]);
@@ -36,13 +37,9 @@ const VoucherWallet = () => {
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
-      toast.success("Voucher code copied!", {
-        style: { background: '#fff', border: '1px solid #e2e8f0' }
-      });
+      toast.success("Voucher code copied!");
     } catch (err) {
-      toast.error("Failed to copy code. Please try again.", {
-        style: { background: '#fff', border: '1px solid #e2e8f0' }
-      });
+      toast.error("Failed to copy code. Please try again.");
     }
   };
 
@@ -58,68 +55,15 @@ const VoucherWallet = () => {
     }
   };
 
-  const printVoucher = (voucher: Voucher) => {
+  const handlePrintVoucher = (voucher: Voucher) => {
     const plan = plans.find(p => p.id === voucher.planId);
-    const printWindow = window.open('', '', 'width=600,height=600');
-    
-    if (printWindow) {
-      printWindow.document.write(`
-        <html>
-          <head>
-            <title>WiFi Voucher</title>
-            <style>
-              body {
-                font-family: Arial, sans-serif;
-                padding: 20px;
-                max-width: 400px;
-                margin: 0 auto;
-              }
-              .voucher {
-                border: 2px solid #000;
-                padding: 20px;
-                text-align: center;
-                margin-bottom: 20px;
-              }
-              .code {
-                font-size: 24px;
-                font-weight: bold;
-                padding: 10px;
-                background: #f0f0f0;
-                margin: 10px 0;
-              }
-              .plan {
-                font-size: 18px;
-                margin: 10px 0;
-              }
-              .instructions {
-                font-size: 14px;
-                margin-top: 20px;
-                text-align: left;
-              }
-            </style>
-          </head>
-          <body>
-            <div class="voucher">
-              <h2>WiFi Access Voucher</h2>
-              <div class="plan">${plan?.duration || 'Unknown Plan'}</div>
-              <div class="code">${voucher.code}</div>
-              <div class="instructions">
-                <p><strong>Instructions:</strong></p>
-                <ol>
-                  <li>Connect to the WiFi network</li>
-                  <li>Enter this voucher code when prompted</li>
-                  <li>Click connect to access the internet</li>
-                </ol>
-              </div>
-            </div>
-          </body>
-        </html>
-      `);
-      printWindow.document.close();
-      printWindow.focus();
-      printWindow.print();
-      printWindow.close();
-    } else {
+    if (!printVoucher(voucher, plan)) {
+      toast.error("Unable to open print window. Please check your popup settings.");
+    }
+  };
+
+  const handlePrintAllVouchers = () => {
+    if (!printAllVouchers(vouchers, plans)) {
       toast.error("Unable to open print window. Please check your popup settings.");
     }
   };
@@ -150,6 +94,17 @@ const VoucherWallet = () => {
 
   return (
     <div className="space-y-6">
+      <div className="flex justify-end">
+        <Button
+          onClick={handlePrintAllVouchers}
+          className="mb-4"
+          variant="outline"
+        >
+          <PrinterIcon className="mr-2 h-4 w-4" />
+          Print All Vouchers
+        </Button>
+      </div>
+
       {Object.entries(groupedVouchers).map(([planId, planVouchers], groupIndex) => {
         const plan = plans.find(p => p.id === planId);
         const isExpanded = expandedPlans[planId];
@@ -203,7 +158,7 @@ const VoucherWallet = () => {
                           <Button
                             size="icon"
                             variant="ghost"
-                            onClick={() => printVoucher(voucher)}
+                            onClick={() => handlePrintVoucher(voucher)}
                             className="text-gray-600 hover:bg-gray-100"
                           >
                             <Printer className="h-4 w-4" />
