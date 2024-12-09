@@ -84,7 +84,26 @@ const PlansManager = () => {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
 
-    const newVouchers = voucherCodes.map((code, index) => ({
+    // Get existing vouchers for this plan
+    const existingVouchers = vouchers[plan.duration] || [];
+    const existingCodes = new Set(existingVouchers.map(v => v.code));
+
+    // Filter out duplicates
+    const uniqueNewCodes = voucherCodes.filter(code => !existingCodes.has(code));
+
+    if (uniqueNewCodes.length < voucherCodes.length) {
+      const duplicateCount = voucherCodes.length - uniqueNewCodes.length;
+      toast({
+        title: "Duplicate vouchers found",
+        description: `${duplicateCount} duplicate voucher(s) were skipped.`,
+      });
+
+      if (uniqueNewCodes.length === 0) {
+        return; // Exit if all vouchers were duplicates
+      }
+    }
+
+    const newVouchers = uniqueNewCodes.map((code, index) => ({
       id: `${planId}-${Date.now()}-${index}`,
       code,
       planId,
@@ -111,7 +130,7 @@ const PlansManager = () => {
 
     toast({
       title: "Vouchers uploaded",
-      description: `${voucherCodes.length} vouchers added to ${plan.duration} plan`,
+      description: `${uniqueNewCodes.length} new vouchers added to ${plan.duration} plan`,
     });
   };
 
