@@ -1,10 +1,8 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import PaymentInstructionsCard from "./PaymentInstructionsCard";
 import PurchasesTable from "./PurchasesTable";
-import { usePurchases } from "@/hooks/usePurchases";
-import { supabase } from "@/integrations/supabase/client";
 import type { Purchase } from "@/types/plans";
 
 const paymentInstructions = {
@@ -15,131 +13,51 @@ const paymentInstructions = {
 
 const PendingPurchases = () => {
   const [instructions, setInstructions] = useState(paymentInstructions);
-  const { purchases, isLoading, cancelPurchase, deletePurchase } = usePurchases();
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
 
-  const handleApprove = async (purchaseId: string) => {
-    try {
-      console.log('Starting approval process for purchase:', purchaseId);
-      
-      // Get the purchase details first with all needed fields
-      const { data: purchase, error: fetchError } = await supabase
-        .from("purchases")
-        .select(`
-          *,
-          wifi_plans (
-            id,
-            duration,
-            available_vouchers
-          )
-        `)
-        .eq("id", purchaseId)
-        .single();
-
-      if (fetchError) throw fetchError;
-      if (!purchase) {
-        toast.error("Purchase not found");
-        return;
-      }
-
-      console.log('Purchase details:', purchase);
-
-      // Get available vouchers for the plan
-      const { data: vouchers, error: vouchersError } = await supabase
-        .from("vouchers")
-        .select("id")
-        .eq("plan_id", purchase.plan_id)
-        .is("user_id", null)
-        .is("purchase_id", null)
-        .limit(purchase.quantity);
-
-      if (vouchersError) throw vouchersError;
-      console.log('Available vouchers:', vouchers);
-
-      if (!vouchers || vouchers.length < purchase.quantity) {
-        toast.error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${vouchers?.length || 0}`);
-        return;
-      }
-
-      // First update purchase status to approved
-      const { error: updateError } = await supabase
-        .from("purchases")
-        .update({ status: "approved" })
-        .eq("id", purchaseId);
-
-      if (updateError) throw updateError;
-      console.log('Purchase status updated to approved');
-
-      // Then assign vouchers to the user
-      const { error: assignError } = await supabase
-        .from("vouchers")
-        .update({
-          user_id: purchase.user_id,
-          purchase_id: purchaseId
-        })
-        .in("id", vouchers.map(v => v.id));
-
-      if (assignError) {
-        console.error('Error assigning vouchers:', assignError);
-        throw assignError;
-      }
-      console.log('Vouchers assigned to user');
-
-      // Update available vouchers count in the plan
-      const newAvailableVouchers = (purchase.wifi_plans?.available_vouchers || 0) - purchase.quantity;
-      const { error: planError } = await supabase
-        .from("wifi_plans")
-        .update({
-          available_vouchers: newAvailableVouchers
-        })
-        .eq("id", purchase.plan_id);
-
-      if (planError) throw planError;
-      console.log('Plan voucher count updated');
-
-      toast.success("Purchase approved and vouchers assigned successfully");
-    } catch (error) {
-      console.error('Error approving purchase:', error);
-      toast.error("Failed to approve purchase");
+  useEffect(() => {
+    const storedPurchases = localStorage.getItem('purchases');
+    if (storedPurchases) {
+      setPurchases(JSON.parse(storedPurchases));
     }
+  }, []);
+
+  const handleApprove = (purchaseId: number) => {
+    const updatedPurchases = purchases.map(purchase =>
+      purchase.id === purchaseId
+        ? { ...purchase, status: "approved" as const }
+        : purchase
+    );
+    
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase approved successfully");
   };
 
-  const handleReject = async (purchaseId: string) => {
-    try {
-      const { error } = await supabase
-        .from("purchases")
-        .update({ status: "rejected" })
-        .eq("id", purchaseId);
-
-      if (error) throw error;
-      toast.success("Purchase rejected");
-    } catch (error) {
-      console.error('Error rejecting purchase:', error);
-      toast.error("Failed to reject purchase");
-    }
+  const handleReject = (purchaseId: number) => {
+    const updatedPurchases = purchases.map(purchase =>
+      purchase.id === purchaseId
+        ? { ...purchase, status: "rejected" as const }
+        : purchase
+    );
+    
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase rejected");
   };
 
-  const handleDelete = async (purchaseId: string) => {
+  const handleDelete = (purchaseId: number) => {
     const purchase = purchases.find(p => p.id === purchaseId);
     if (!purchase || purchase.status === "pending") {
       toast.error("Only approved, rejected, or cancelled purchases can be deleted");
       return;
     }
 
-    try {
-      await deletePurchase.mutateAsync(purchaseId);
-    } catch (error) {
-      console.error('Error deleting purchase:', error);
-      toast.error("Failed to delete purchase");
-    }
+    const updatedPurchases = purchases.filter(p => p.id !== purchaseId);
+    localStorage.setItem('purchases', JSON.stringify(updatedPurchases));
+    setPurchases(updatedPurchases);
+    toast.success("Purchase deleted successfully");
   };
-
-  if (isLoading) {
-    return (
-      <div className="flex items-center justify-center p-8">
-        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
-      </div>
-    );
-  }
 
   return (
     <div className="space-y-4">

@@ -1,25 +1,42 @@
 import { Card } from "@/components/ui/card";
-import { useVouchers } from "@/hooks/useVouchers";
-import { usePlans } from "@/hooks/usePlans";
+import { useEffect, useState } from "react";
+import type { Voucher, Plan } from "@/types/plans";
 import { toast } from "sonner";
 import { printVoucher } from "@/utils/printUtils";
-import { supabase } from "@/integrations/supabase/client";
 import PlanGroup from "./voucher/PlanGroup";
-import { useState } from "react";
 
 const VoucherWallet = () => {
-  const { data: vouchers, isLoading } = useVouchers();
-  const { data: plans = [] } = usePlans();
+  const [vouchers, setVouchers] = useState<Voucher[]>([]);
+  const [plans, setPlans] = useState<Plan[]>([]);
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
-  const deleteVoucher = async (voucherId: string) => {
-    try {
-      const { error } = await supabase
-        .from("vouchers")
-        .delete()
-        .eq("id", voucherId);
+  useEffect(() => {
+    const storedVouchers = localStorage.getItem('clientVouchers');
+    const storedPlans = localStorage.getItem('wifiPlans');
+    
+    if (storedVouchers) {
+      setVouchers(JSON.parse(storedVouchers));
+    }
+    if (storedPlans) {
+      setPlans(JSON.parse(storedPlans));
+    }
 
-      if (error) throw error;
+    const handleStorageChange = () => {
+      const updatedVouchers = localStorage.getItem('clientVouchers');
+      if (updatedVouchers) {
+        setVouchers(JSON.parse(updatedVouchers));
+      }
+    };
+
+    window.addEventListener('storage', handleStorageChange);
+    return () => window.removeEventListener('storage', handleStorageChange);
+  }, []);
+
+  const deleteVoucher = (voucherId: string) => {
+    try {
+      const updatedVouchers = vouchers.filter(v => v.id !== voucherId);
+      setVouchers(updatedVouchers);
+      localStorage.setItem('clientVouchers', JSON.stringify(updatedVouchers));
       toast.success("Voucher deleted successfully");
     } catch (error) {
       console.error('Error deleting voucher:', error);
@@ -27,7 +44,7 @@ const VoucherWallet = () => {
     }
   };
 
-  const handlePrintVoucher = (voucher: any) => {
+  const handlePrintVoucher = (voucher: Voucher) => {
     const plan = plans.find(p => p.id === voucher.planId);
     if (!printVoucher(voucher, plan)) {
       toast.error("Unable to open print window. Please check your popup settings.");
@@ -41,33 +58,22 @@ const VoucherWallet = () => {
     }));
   };
 
-  if (isLoading) {
-    return (
-      <Card className="p-6 text-center border">
-        <p className="text-gray-600">Loading vouchers...</p>
-      </Card>
-    );
-  }
+  // Group vouchers by plan
+  const groupedVouchers = vouchers.reduce((acc, voucher) => {
+    if (!acc[voucher.planId]) {
+      acc[voucher.planId] = [];
+    }
+    acc[voucher.planId].push(voucher);
+    return acc;
+  }, {} as Record<string, Voucher[]>);
 
-  // Ensure vouchers is an array and has items before processing
-  const safeVouchers = Array.isArray(vouchers) ? vouchers : [];
-  
-  if (safeVouchers.length === 0) {
+  if (vouchers.length === 0) {
     return (
       <Card className="p-6 text-center border">
         <p className="text-gray-600">No vouchers available in your wallet.</p>
       </Card>
     );
   }
-
-  // Group vouchers by plan, ensuring we're working with an array
-  const groupedVouchers = safeVouchers.reduce((acc, voucher) => {
-    if (!acc[voucher.planId]) {
-      acc[voucher.planId] = [];
-    }
-    acc[voucher.planId].push(voucher);
-    return acc;
-  }, {} as Record<string, typeof safeVouchers>);
 
   return (
     <div className="space-y-6">

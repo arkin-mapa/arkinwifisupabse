@@ -1,15 +1,15 @@
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useSessionContext } from "@supabase/auth-helpers-react";
+import { transferVouchersToClient } from "@/utils/voucherManagement";
 import type { Purchase } from "@/types/plans";
 
 interface PurchaseActionsProps {
-  purchaseId: string;
+  purchaseId: number;
   status: string;
-  onApprove: (id: string) => void;
-  onReject: (id: string) => void;
-  onDelete: (id: string) => void;
+  onApprove: (id: number) => void;
+  onReject: (id: number) => void;
+  onDelete: (id: number) => void;
 }
 
 const PurchaseActions = ({ 
@@ -19,29 +19,26 @@ const PurchaseActions = ({
   onReject, 
   onDelete 
 }: PurchaseActionsProps) => {
-  const { session } = useSessionContext();
-
-  const handleAction = async (action: 'approve' | 'reject' | 'delete') => {
-    if (!session?.user) {
-      toast.error("You must be logged in to perform this action");
-      return;
-    }
-
+  const handleApprove = async (id: number) => {
     try {
-      switch (action) {
-        case 'approve':
-          await onApprove(purchaseId);
-          break;
-        case 'reject':
-          await onReject(purchaseId);
-          break;
-        case 'delete':
-          await onDelete(purchaseId);
-          break;
+      // Get the purchase details
+      const purchases = JSON.parse(localStorage.getItem('purchases') || '[]');
+      const purchase = purchases.find((p: Purchase) => p.id === id);
+      
+      if (!purchase) {
+        toast.error("Purchase not found");
+        return;
       }
+
+      // Transfer vouchers
+      transferVouchersToClient(purchase);
+      
+      // Update purchase status
+      onApprove(id);
+      toast.success("Vouchers successfully transferred to client wallet");
     } catch (error) {
-      console.error(`Error during ${action} action:`, error);
-      toast.error(`Failed to ${action} purchase. Please try again.`);
+      console.error('Error during voucher transfer:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to transfer vouchers. Please try again.");
     }
   };
 
@@ -51,7 +48,7 @@ const PurchaseActions = ({
         <Button
           size="icon"
           className="h-7 w-7 bg-green-500 hover:bg-green-600 transition-colors"
-          onClick={() => handleAction('approve')}
+          onClick={() => handleApprove(purchaseId)}
           title="Approve"
         >
           <Check className="h-3 w-3" />
@@ -60,7 +57,7 @@ const PurchaseActions = ({
           size="icon"
           variant="destructive"
           className="h-7 w-7 transition-colors"
-          onClick={() => handleAction('reject')}
+          onClick={() => onReject(purchaseId)}
           title="Reject"
         >
           <X className="h-3 w-3" />
@@ -75,7 +72,7 @@ const PurchaseActions = ({
         size="icon"
         variant="ghost"
         className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
-        onClick={() => handleAction('delete')}
+        onClick={() => onDelete(purchaseId)}
         title="Delete"
       >
         <Trash2 className="h-3 w-3" />

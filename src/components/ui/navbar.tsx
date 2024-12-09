@@ -1,46 +1,46 @@
-import { useState } from "react";
-import { useNavigate } from "react-router-dom";
-import { Button } from "@/components/ui/button";
-import { toast } from "sonner";
+import { Link, useLocation } from "react-router-dom";
 
-export const Navbar = () => {
-  const [isLoggingOut, setIsLoggingOut] = useState(false);
-  const navigate = useNavigate();
-
-  const handleLogout = async () => {
-    try {
-      setIsLoggingOut(true);
-      // Implement your own logout logic here
-      navigate('/login');
-      toast.success("Successfully logged out");
-    } catch (error) {
-      console.error('Unexpected error during logout:', error);
-      toast.error("An unexpected error occurred");
-    } finally {
-      setIsLoggingOut(false);
-    }
-  };
+export function Navbar() {
+  const location = useLocation();
+  const isAdmin = location.pathname.includes('admin');
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b bg-white/75 backdrop-blur-lg">
       <div className="container flex h-14 items-center">
-        <div className="mr-4 flex">
-          <a className="mr-6 flex items-center space-x-2" href="/">
-            <span className="hidden font-bold sm:inline-block">
-              WiFi Voucher System
-            </span>
-          </a>
-        </div>
-        <div className="flex flex-1 items-center justify-between space-x-2 md:justify-end">
-          <Button
-            variant="outline"
-            onClick={handleLogout}
-            disabled={isLoggingOut}
+        <div className="flex flex-1 items-center justify-between">
+          <Link 
+            to="/" 
+            className="flex items-center space-x-2"
           >
-            {isLoggingOut ? "Logging out..." : "Logout"}
-          </Button>
+            <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+              WiFi Portal
+            </span>
+          </Link>
+          
+          <div className="flex items-center space-x-1">
+            <Link
+              to="/admin"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                isAdmin 
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              Admin
+            </Link>
+            <Link
+              to="/client"
+              className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
+                !isAdmin 
+                  ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                  : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+              }`}
+            >
+              Client
+            </Link>
+          </div>
         </div>
       </div>
     </nav>
   );
-};
+}
