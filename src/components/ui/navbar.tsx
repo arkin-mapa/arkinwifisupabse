@@ -13,6 +13,7 @@ export function Navbar() {
 
   const handleLogout = async () => {
     try {
+      // First check if we have an active session
       const { data: currentSession } = await supabase.auth.getSession();
       
       if (!currentSession.session) {
