@@ -1,7 +1,6 @@
 import { useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 
 export const Navbar = () => {
@@ -11,17 +10,9 @@ export const Navbar = () => {
   const handleLogout = async () => {
     try {
       setIsLoggingOut(true);
-      
-      const { error } = await supabase.auth.signOut();
-      
-      if (error) {
-        console.error('Logout error:', error);
-        toast.error("Failed to log out. Please try again.");
-        return;
-      }
-
-      toast.success("Successfully logged out");
+      // Implement your own logout logic here
       navigate('/login');
+      toast.success("Successfully logged out");
     } catch (error) {
       console.error('Unexpected error during logout:', error);
       toast.error("An unexpected error occurred");
