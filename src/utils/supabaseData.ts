@@ -1,14 +1,20 @@
 import { supabase } from "@/integrations/supabase/client";
+import type { Database } from "@/types/database.types";
 import type { Plan, Voucher, Purchase } from "@/types/plans";
 
-export async function fetchPlans() {
+export async function fetchPlans(): Promise<Plan[]> {
   const { data: plans, error } = await supabase
     .from('plans')
     .select('*')
     .order('created_at', { ascending: true });
 
   if (error) throw error;
-  return plans;
+  return plans.map(plan => ({
+    id: plan.id,
+    duration: plan.duration,
+    price: plan.price,
+    availableVouchers: 0 // This will be calculated later
+  }));
 }
 
 export async function createPlan(plan: Omit<Plan, 'id' | 'availableVouchers'>) {
@@ -31,20 +37,22 @@ export async function deletePlan(planId: string) {
   if (error) throw error;
 }
 
-export async function fetchVouchers() {
+export async function fetchVouchers(): Promise<Record<string, Voucher[]>> {
   const { data: vouchers, error } = await supabase
     .from('vouchers')
     .select(`
       *,
-      plan:plans(duration)
+      plans (
+        duration
+      )
     `);
 
   if (error) throw error;
 
-  // Transform data to match the expected format
   const groupedVouchers: Record<string, Voucher[]> = {};
+  
   vouchers.forEach((v) => {
-    const planDuration = v.plan?.duration;
+    const planDuration = v.plans?.duration;
     if (planDuration) {
       if (!groupedVouchers[planDuration]) {
         groupedVouchers[planDuration] = [];
@@ -86,12 +94,14 @@ export async function deleteVoucher(voucherId: string) {
   if (error) throw error;
 }
 
-export async function fetchPurchases() {
+export async function fetchPurchases(): Promise<Purchase[]> {
   const { data: purchases, error } = await supabase
     .from('purchases')
     .select(`
       *,
-      plan:plans(duration)
+      plans (
+        duration
+      )
     `)
     .order('created_at', { ascending: false });
 
@@ -101,7 +111,7 @@ export async function fetchPurchases() {
     id: p.id,
     date: new Date(p.created_at).toLocaleDateString(),
     customerName: p.customer_name,
-    plan: p.plan?.duration || '',
+    plan: p.plans?.duration || '',
     quantity: p.quantity,
     total: p.total_amount,
     paymentMethod: p.payment_method,

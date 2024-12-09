@@ -13,7 +13,7 @@ export interface Voucher {
 }
 
 export interface Purchase {
-  id: number;
+  id: string;
   date: string;
   customerName: string;
   plan: string;
