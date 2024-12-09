@@ -2,6 +2,7 @@ import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useSessionContext } from '@supabase/auth-helpers-react';
 
 interface ProtectedRouteProps {
   children: React.ReactNode;
@@ -13,15 +14,12 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
   const [isAuthenticated, setIsAuthenticated] = useState(false);
   const [isAdmin, setIsAdmin] = useState(false);
   const navigate = useNavigate();
+  const { session } = useSessionContext();
 
   useEffect(() => {
     const checkAuth = async () => {
       try {
-        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
-        
-        if (sessionError) throw sessionError;
-        
-        if (!session) {
+        if (!session?.user) {
           console.log('No active session found');
           setIsAuthenticated(false);
           navigate('/login');
@@ -59,30 +57,15 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
       }
     };
 
-    // Initial auth check
     checkAuth();
-
-    // Set up auth state listener
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(async (event, session) => {
-      console.log('Auth state changed:', event, session);
-      
-      if (event === 'SIGNED_OUT' || !session) {
-        setIsAuthenticated(false);
-        setIsAdmin(false);
-        navigate('/login');
-      } else if (event === 'SIGNED_IN' && session) {
-        checkAuth();
-      }
-    });
-
-    // Cleanup subscription
-    return () => {
-      subscription.unsubscribe();
-    };
-  }, [navigate, requireAdmin]);
+  }, [navigate, requireAdmin, session]);
 
   if (loading) {
-    return <div>Loading...</div>;
+    return (
+      <div className="flex items-center justify-center h-screen">
+        <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-primary"></div>
+      </div>
+    );
   }
 
   return isAuthenticated && (!requireAdmin || isAdmin) ? children : null;

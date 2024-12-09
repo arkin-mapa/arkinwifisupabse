@@ -1,9 +1,8 @@
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { useSessionContext } from '@supabase/auth-helpers-react';
+import { useSessionContext } from "@supabase/auth-helpers-react";
 import type { Purchase } from "@/types/plans";
-import { supabase } from "@/integrations/supabase/client";
 
 interface PurchaseActionsProps {
   purchaseId: string;
@@ -22,39 +21,27 @@ const PurchaseActions = ({
 }: PurchaseActionsProps) => {
   const { session } = useSessionContext();
 
-  const handleApprove = async (id: string) => {
+  const handleAction = async (action: 'approve' | 'reject' | 'delete') => {
+    if (!session?.user) {
+      toast.error("You must be logged in to perform this action");
+      return;
+    }
+
     try {
-      if (!session) {
-        toast.error("You must be logged in to perform this action");
-        return;
+      switch (action) {
+        case 'approve':
+          await onApprove(purchaseId);
+          break;
+        case 'reject':
+          await onReject(purchaseId);
+          break;
+        case 'delete':
+          await onDelete(purchaseId);
+          break;
       }
-
-      console.log('Starting approval process for purchase:', id);
-      
-      // Get the purchase details
-      const { data: purchase, error: fetchError } = await supabase
-        .from("purchases")
-        .select("*")
-        .eq("id", id)
-        .single();
-      
-      if (fetchError) {
-        console.error('Error fetching purchase:', fetchError);
-        throw fetchError;
-      }
-      
-      if (!purchase) {
-        toast.error("Purchase not found");
-        return;
-      }
-
-      console.log('Purchase details:', purchase);
-
-      // Update purchase status
-      onApprove(id);
     } catch (error) {
-      console.error('Error during purchase approval:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to approve purchase. Please try again.");
+      console.error(`Error during ${action} action:`, error);
+      toast.error(`Failed to ${action} purchase. Please try again.`);
     }
   };
 
@@ -64,7 +51,7 @@ const PurchaseActions = ({
         <Button
           size="icon"
           className="h-7 w-7 bg-green-500 hover:bg-green-600 transition-colors"
-          onClick={() => handleApprove(purchaseId)}
+          onClick={() => handleAction('approve')}
           title="Approve"
         >
           <Check className="h-3 w-3" />
@@ -73,7 +60,7 @@ const PurchaseActions = ({
           size="icon"
           variant="destructive"
           className="h-7 w-7 transition-colors"
-          onClick={() => onReject(purchaseId)}
+          onClick={() => handleAction('reject')}
           title="Reject"
         >
           <X className="h-3 w-3" />
@@ -88,7 +75,7 @@ const PurchaseActions = ({
         size="icon"
         variant="ghost"
         className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
-        onClick={() => onDelete(purchaseId)}
+        onClick={() => handleAction('delete')}
         title="Delete"
       >
         <Trash2 className="h-3 w-3" />

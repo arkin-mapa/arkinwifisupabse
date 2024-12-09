@@ -1,19 +1,17 @@
 import { useNavigate } from "react-router-dom";
-import { useSessionContext } from "@supabase/auth-helpers-react";
-import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import { useState } from "react";
-import { Button } from "./button";
-import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useSessionContext } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 export function Navbar() {
   const navigate = useNavigate();
-  const { session, isLoading: isSessionLoading } = useSessionContext();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
+  const { session } = useSessionContext();
 
   const handleLogout = async () => {
-    if (isLoggingOut || isSessionLoading) return;
-    
     try {
       setIsLoggingOut(true);
       console.log("Starting logout process");
@@ -21,8 +19,8 @@ export function Navbar() {
       const { error } = await supabase.auth.signOut();
       
       if (error) {
-        console.error("Logout error:", error);
-        toast.error("Failed to logout. Please try again.");
+        console.error('Logout error:', error);
+        toast.error("Failed to log out");
         return;
       }
 
@@ -30,7 +28,7 @@ export function Navbar() {
       toast.success("Logged out successfully");
       navigate("/login");
     } catch (error) {
-      console.error("Unexpected error during logout:", error);
+      console.error('Unexpected error during logout:', error);
       toast.error("An unexpected error occurred");
     } finally {
       setIsLoggingOut(false);
@@ -38,22 +36,27 @@ export function Navbar() {
   };
 
   return (
-    <nav className="border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+    <nav className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="container flex h-14 items-center justify-between">
-        <div className="flex items-center gap-6 text-lg font-semibold">
-          WiFi Voucher System
-        </div>
-        
-        {!isSessionLoading && session && (
+        <div className="flex items-center gap-2">
           <Button
             variant="ghost"
-            size="sm"
-            className="gap-2"
-            onClick={handleLogout}
-            disabled={isLoggingOut || isSessionLoading}
+            className="font-semibold"
+            onClick={() => navigate(session?.user ? "/client" : "/login")}
           >
-            <LogOut className="h-4 w-4" />
-            {isLoggingOut ? "Logging out..." : "Logout"}
+            WiFi Voucher System
+          </Button>
+        </div>
+
+        {session?.user && (
+          <Button
+            variant="ghost"
+            onClick={handleLogout}
+            disabled={isLoggingOut}
+            className="gap-2"
+          >
+            {isLoggingOut && <Loader2 className="h-4 w-4 animate-spin" />}
+            Logout
           </Button>
         )}
       </div>
