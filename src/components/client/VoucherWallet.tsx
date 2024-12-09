@@ -1,42 +1,25 @@
 import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import type { Voucher, Plan } from "@/types/plans";
+import { useVouchers } from "@/hooks/useVouchers";
+import { usePlans } from "@/hooks/usePlans";
 import { toast } from "sonner";
 import { printVoucher } from "@/utils/printUtils";
+import { supabase } from "@/integrations/supabase/client";
 import PlanGroup from "./voucher/PlanGroup";
+import { useState } from "react";
 
 const VoucherWallet = () => {
-  const [vouchers, setVouchers] = useState<Voucher[]>([]);
-  const [plans, setPlans] = useState<Plan[]>([]);
+  const { data: vouchers = [] } = useVouchers();
+  const { data: plans = [] } = usePlans();
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
-  useEffect(() => {
-    const storedVouchers = localStorage.getItem('clientVouchers');
-    const storedPlans = localStorage.getItem('wifiPlans');
-    
-    if (storedVouchers) {
-      setVouchers(JSON.parse(storedVouchers));
-    }
-    if (storedPlans) {
-      setPlans(JSON.parse(storedPlans));
-    }
-
-    const handleStorageChange = () => {
-      const updatedVouchers = localStorage.getItem('clientVouchers');
-      if (updatedVouchers) {
-        setVouchers(JSON.parse(updatedVouchers));
-      }
-    };
-
-    window.addEventListener('storage', handleStorageChange);
-    return () => window.removeEventListener('storage', handleStorageChange);
-  }, []);
-
-  const deleteVoucher = (voucherId: string) => {
+  const deleteVoucher = async (voucherId: string) => {
     try {
-      const updatedVouchers = vouchers.filter(v => v.id !== voucherId);
-      setVouchers(updatedVouchers);
-      localStorage.setItem('clientVouchers', JSON.stringify(updatedVouchers));
+      const { error } = await supabase
+        .from("vouchers")
+        .delete()
+        .eq("id", voucherId);
+
+      if (error) throw error;
       toast.success("Voucher deleted successfully");
     } catch (error) {
       console.error('Error deleting voucher:', error);
@@ -44,7 +27,7 @@ const VoucherWallet = () => {
     }
   };
 
-  const handlePrintVoucher = (voucher: Voucher) => {
+  const handlePrintVoucher = (voucher: any) => {
     const plan = plans.find(p => p.id === voucher.planId);
     if (!printVoucher(voucher, plan)) {
       toast.error("Unable to open print window. Please check your popup settings.");
@@ -65,7 +48,7 @@ const VoucherWallet = () => {
     }
     acc[voucher.planId].push(voucher);
     return acc;
-  }, {} as Record<string, Voucher[]>);
+  }, {} as Record<string, typeof vouchers>);
 
   if (vouchers.length === 0) {
     return (
