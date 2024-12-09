@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Trash2, Upload } from "lucide-react";
+import { Trash2 } from "lucide-react";
 import { Plan } from "@/types/plans";
 import { FileUploader } from "./FileUploader";
 
@@ -36,18 +35,6 @@ const PlanCard = ({ plan, onDelete, onVoucherUpload }: PlanCardProps) => {
           </div>
           <div className="text-sm text-muted-foreground bg-muted/30 px-3 py-2 rounded-md">
             Available vouchers: {plan.availableVouchers}
-          </div>
-          <div className="flex gap-2">
-            <Input 
-              placeholder="Enter voucher code" 
-              className="flex-1 text-sm" 
-            />
-            <Button 
-              variant="secondary"
-              className="shrink-0"
-            >
-              Add
-            </Button>
           </div>
           <FileUploader 
             onExtracted={handleVoucherExtracted}
