@@ -19,10 +19,17 @@ const PendingPurchases = () => {
 
   const handleApprove = async (purchaseId: string) => {
     try {
-      // Get the purchase details first
+      // Get the purchase details first with all needed fields
       const { data: purchase, error: fetchError } = await supabase
         .from("purchases")
-        .select("*, wifi_plans(duration)")
+        .select(`
+          *,
+          wifi_plans (
+            id,
+            duration,
+            available_vouchers
+          )
+        `)
         .eq("id", purchaseId)
         .single();
 
@@ -68,10 +75,11 @@ const PendingPurchases = () => {
       if (assignError) throw assignError;
 
       // Update available vouchers count in the plan
+      const newAvailableVouchers = (purchase.wifi_plans?.available_vouchers || 0) - purchase.quantity;
       const { error: planError } = await supabase
         .from("wifi_plans")
         .update({
-          available_vouchers: purchase.wifi_plans.available_vouchers - purchase.quantity
+          available_vouchers: newAvailableVouchers
         })
         .eq("id", purchase.plan_id);
 
