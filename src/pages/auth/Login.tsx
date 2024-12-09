@@ -4,6 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Auth } from "@supabase/auth-ui-react";
 import { ThemeSupa } from "@supabase/auth-ui-shared";
 import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 const Login = () => {
   const navigate = useNavigate();
@@ -43,6 +44,8 @@ const Login = () => {
         } else {
           navigate('/client');
         }
+      } else if (event === 'SIGNED_OUT') {
+        navigate('/login');
       }
     });
 
