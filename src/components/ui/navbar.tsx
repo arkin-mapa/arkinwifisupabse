@@ -17,13 +17,14 @@ export function Navbar() {
       
       // First check if we have a session
       if (!session) {
-        console.log("No active session found, redirecting to login");
         navigate("/login");
         return;
       }
 
-      console.log("Starting logout process");
-      const { error } = await supabase.auth.signOut();
+      // Sign out with local scope to avoid session validation issues
+      const { error } = await supabase.auth.signOut({
+        scope: 'local'
+      });
       
       if (error) {
         console.error('Logout error:', error);
@@ -31,10 +32,10 @@ export function Navbar() {
         return;
       }
 
-      // Only navigate and show success message if there were no errors
-      console.log("Logout successful");
-      toast.success("Logged out successfully");
+      // Navigate first, then show success message
       navigate("/login", { replace: true });
+      toast.success("Logged out successfully");
+      
     } catch (error) {
       console.error('Unexpected error during logout:', error);
       toast.error("An unexpected error occurred");
