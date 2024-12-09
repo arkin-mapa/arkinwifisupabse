@@ -43,10 +43,19 @@ const PlansList = () => {
     setIsProcessing(true);
     
     try {
+      // Get the current user's ID
+      const { data: { user } } = await supabase.auth.getUser();
+      
+      if (!user) {
+        toast.error("You must be logged in to make a purchase");
+        return;
+      }
+
       const { error } = await supabase
         .from("purchases")
         .insert({
           plan_id: selectedPlan.id,
+          user_id: user.id, // Set the user_id to the current user's ID
           quantity: purchaseDetails.quantity,
           total: selectedPlan.price * purchaseDetails.quantity,
           payment_method: purchaseDetails.paymentMethod,
@@ -62,6 +71,7 @@ const PlansList = () => {
         paymentMethod: "cash"
       });
     } catch (error) {
+      console.error("Purchase error:", error);
       toast.error("Failed to submit purchase request");
     } finally {
       setIsProcessing(false);
