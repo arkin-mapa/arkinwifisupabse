@@ -15,10 +15,6 @@ export function Navbar() {
     try {
       setIsLoggingOut(true);
       
-      // First clear any existing session
-      await supabase.auth.clearSession();
-      
-      // Then perform the signOut
       const { error } = await supabase.auth.signOut();
       
       if (error) {
