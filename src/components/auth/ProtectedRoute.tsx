@@ -28,36 +28,44 @@ const ProtectedRoute = ({ children, requireAdmin = false }: ProtectedRouteProps)
 
         // Check if user is admin when required
         if (requireAdmin) {
+          let profile;
           try {
-            const { data: profile, error: profileError } = await supabase
+            // First try to get the profile
+            const { data: existingProfile, error: fetchError } = await supabase
               .from('profiles')
               .select('role')
               .eq('id', session.user.id)
               .single();
 
-            if (profileError) {
-              if (profileError.code === 'PGRST116') {
-                // Profile not found, create it
-                const { error: insertError } = await supabase
+            if (fetchError) {
+              console.log('Error fetching profile:', fetchError);
+              if (fetchError.code === 'PGRST116') {
+                // Profile doesn't exist, create it
+                const { data: newProfile, error: insertError } = await supabase
                   .from('profiles')
                   .insert([
                     { 
                       id: session.user.id,
                       role: 'client' // Default role
                     }
-                  ]);
+                  ])
+                  .select('role')
+                  .single();
 
-                if (insertError) throw insertError;
-                
-                // Not an admin, redirect
-                toast.error("Access denied: Admin privileges required");
-                navigate('/client', { replace: true });
-                return;
+                if (insertError) {
+                  console.error('Error creating profile:', insertError);
+                  throw insertError;
+                }
+                profile = newProfile;
+              } else {
+                throw fetchError;
               }
-              throw profileError;
+            } else {
+              profile = existingProfile;
             }
 
             if (profile?.role !== 'admin') {
+              console.log('User is not an admin:', profile);
               toast.error("Access denied: Admin privileges required");
               navigate('/client', { replace: true });
               return;
