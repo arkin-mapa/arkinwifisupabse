@@ -2,26 +2,38 @@ import { useNavigate } from "react-router-dom";
 import { useSessionContext } from "@supabase/auth-helpers-react";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Button } from "./button";
 import { LogOut } from "lucide-react";
 
 export function Navbar() {
   const navigate = useNavigate();
-  const { session } = useSessionContext();
+  const { session, isLoading: isSessionLoading } = useSessionContext();
   const [isLoggingOut, setIsLoggingOut] = useState(false);
 
+  useEffect(() => {
+    const checkSession = async () => {
+      const { data } = await supabase.auth.getSession();
+      console.log("Current session:", data.session);
+    };
+    
+    checkSession();
+  }, []);
+
   const handleLogout = async () => {
-    if (isLoggingOut) return;
+    if (isLoggingOut || isSessionLoading) return;
     
     setIsLoggingOut(true);
     try {
-      if (!session) {
+      const { data: sessionData } = await supabase.auth.getSession();
+      
+      if (!sessionData.session) {
         console.log("No active session found, redirecting to login");
         navigate("/login");
         return;
       }
 
+      console.log("Logging out with session:", sessionData.session);
       const { error } = await supabase.auth.signOut();
       
       if (error) {
@@ -47,13 +59,13 @@ export function Navbar() {
           WiFi Voucher System
         </div>
         
-        {session && (
+        {!isSessionLoading && session && (
           <Button
             variant="ghost"
             size="sm"
             className="gap-2"
             onClick={handleLogout}
-            disabled={isLoggingOut}
+            disabled={isLoggingOut || isSessionLoading}
           >
             <LogOut className="h-4 w-4" />
             {isLoggingOut ? "Logging out..." : "Logout"}
