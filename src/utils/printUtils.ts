@@ -28,28 +28,32 @@ const getStyles = () => `
     font-family: 'Courier New', monospace;
     width: 58mm;
     margin: 0;
-    padding: 4mm;
+    padding: 2mm;
     box-sizing: border-box;
   }
   .voucher {
     text-align: center;
     border-bottom: 1px dashed #000;
-    padding-bottom: 4mm;
-    margin-bottom: 4mm;
+    padding: 2mm 0;
+    margin-bottom: 1mm;
+    height: 25mm;
     page-break-inside: avoid;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-around;
   }
   .plan {
-    font-size: 14px;
-    margin: 2mm 0;
+    font-size: 12px;
+    margin: 1mm 0;
   }
   .code {
-    font-size: 16px;
+    font-size: 14px;
     font-weight: bold;
-    margin: 2mm 0;
+    margin: 1mm 0;
   }
   .price {
-    font-size: 14px;
-    margin: 2mm 0;
+    font-size: 12px;
+    margin: 1mm 0;
   }
 `;
 
