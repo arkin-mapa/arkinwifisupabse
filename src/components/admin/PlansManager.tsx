@@ -84,18 +84,20 @@ const PlansManager = () => {
     const plan = plans.find(p => p.id === planId);
     if (!plan) return;
 
-    // Get existing vouchers for this plan
-    const existingVouchers = vouchers[plan.duration] || [];
-    const existingCodes = new Set(existingVouchers.map(v => v.code));
+    // Check for duplicates across all plans
+    const allExistingCodes = new Set<string>();
+    Object.values(vouchers).forEach(planVouchers => {
+      planVouchers.forEach(v => allExistingCodes.add(v.code));
+    });
 
     // Filter out duplicates
-    const uniqueNewCodes = voucherCodes.filter(code => !existingCodes.has(code));
+    const uniqueNewCodes = voucherCodes.filter(code => !allExistingCodes.has(code));
 
     if (uniqueNewCodes.length < voucherCodes.length) {
       const duplicateCount = voucherCodes.length - uniqueNewCodes.length;
       toast({
         title: "Duplicate vouchers found",
-        description: `${duplicateCount} duplicate voucher(s) were skipped.`,
+        description: `${duplicateCount} duplicate voucher(s) were skipped. Vouchers must be unique across all plans.`,
       });
 
       if (uniqueNewCodes.length === 0) {
