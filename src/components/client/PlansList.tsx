@@ -13,21 +13,10 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion } from "framer-motion";
-import PaymentMethodInstructions from "./PaymentMethodInstructions";
 
 const getStoredPurchases = (): Purchase[] => {
   const stored = localStorage.getItem('purchases');
-  if (!stored) return [];
-  
-  // Filter out completed purchases
-  const purchases = JSON.parse(stored);
-  const activePurchases = purchases.filter(
-    (p: Purchase) => p.status === "pending"
-  );
-  
-  // Update localStorage with only active purchases
-  localStorage.setItem('purchases', JSON.stringify(activePurchases));
-  return activePurchases;
+  return stored ? JSON.parse(stored) : [];
 };
 
 const PlansList = () => {
@@ -37,7 +26,7 @@ const PlansList = () => {
   const [purchaseDetails, setPurchaseDetails] = useState({
     customerName: "",
     quantity: 1,
-    paymentMethod: "cash" as "cash" | "gcash" | "paymaya"
+    paymentMethod: "cash"
   });
 
   useEffect(() => {
@@ -79,7 +68,7 @@ const PlansList = () => {
       plan: selectedPlan.duration,
       quantity: purchaseDetails.quantity,
       total: selectedPlan.price * purchaseDetails.quantity,
-      paymentMethod: purchaseDetails.paymentMethod,
+      paymentMethod: purchaseDetails.paymentMethod as "cash" | "gcash" | "paymaya",
       status: "pending"
     };
 
@@ -96,7 +85,7 @@ const PlansList = () => {
       paymentMethod: "cash"
     });
 
-    toast.success("Purchase request submitted! You will receive your voucher after payment verification.");
+    toast.success("Purchase request submitted successfully!");
   };
 
   return (
@@ -172,7 +161,7 @@ const PlansList = () => {
               <Label>Payment Method</Label>
               <RadioGroup
                 value={purchaseDetails.paymentMethod}
-                onValueChange={(value: "cash" | "gcash" | "paymaya") => setPurchaseDetails({
+                onValueChange={(value) => setPurchaseDetails({
                   ...purchaseDetails,
                   paymentMethod: value
                 })}
@@ -192,8 +181,6 @@ const PlansList = () => {
                 </div>
               </RadioGroup>
             </div>
-
-            <PaymentMethodInstructions method={purchaseDetails.paymentMethod} />
 
             <div className="pt-4">
               <Button
