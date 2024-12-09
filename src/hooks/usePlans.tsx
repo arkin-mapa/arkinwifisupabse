@@ -13,7 +13,12 @@ export const usePlans = () => {
 
       if (error) throw error;
       
-      return data as Plan[];
+      return data.map(plan => ({
+        id: plan.id,
+        duration: plan.duration,
+        price: plan.price,
+        availableVouchers: plan.available_vouchers
+      })) as Plan[];
     },
   });
 };

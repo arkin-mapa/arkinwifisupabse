@@ -13,9 +13,8 @@ export interface Voucher {
 }
 
 export interface Purchase {
-  id: number;
+  id: string;  // Changed from number to string since it's a UUID
   date: string;
-  customerName: string;
   plan: string;
   quantity: number;
   total: number;
