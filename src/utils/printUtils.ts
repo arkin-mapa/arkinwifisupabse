@@ -11,8 +11,8 @@ const PAPER_SIZES = {
   LARGE: { width: 58, height: 3276 }
 };
 
-const generateVoucherHTML = (voucher: Voucher, plan: Plan | undefined, isFirst: boolean = false) => `
-  <div class="voucher ${isFirst ? 'first-voucher' : ''}">
+const generateVoucherHTML = (voucher: Voucher, plan: Plan | undefined) => `
+  <div class="voucher">
     <div class="plan">${plan?.duration || 'Unknown Plan'}</div>
     <div class="code">${voucher.code}</div>
     <div class="price">Price: ₱${plan?.price.toFixed(2) || '0.00'}</div>
@@ -36,29 +36,12 @@ const getStyles = () => `
     border-bottom: 1px dashed #000;
     padding: 0.5mm 0;
     margin-bottom: 0.25mm;
-    height: 20mm;
+    height: 15mm;
     page-break-inside: avoid;
     display: flex;
     flex-direction: column;
     justify-content: center;
     gap: 0.25mm;
-  }
-  .first-voucher {
-    position: relative;
-  }
-  .first-voucher::before,
-  .first-voucher::after {
-    content: '';
-    position: absolute;
-    left: -2mm;
-    right: -2mm;
-    border-top: 1px dashed #000;
-  }
-  .first-voucher::before {
-    top: -0.5mm;
-  }
-  .first-voucher::after {
-    bottom: -0.5mm;
   }
   .plan {
     font-size: 12px;
@@ -97,7 +80,7 @@ export const printVoucher = (voucher: Voucher, plan: Plan | undefined) => {
         <style>${getStyles()}</style>
       </head>
       <body>
-        ${generateVoucherHTML(voucher, plan, true)}
+        ${generateVoucherHTML(voucher, plan)}
       </body>
     </html>
   `);
@@ -120,7 +103,7 @@ export const printPlanVouchers = (vouchers: Voucher[], plan: Plan) => {
         <style>${getStyles()}</style>
       </head>
       <body>
-        ${vouchers.map((voucher, index) => generateVoucherHTML(voucher, plan, index === 0)).join('')}
+        ${vouchers.map(voucher => generateVoucherHTML(voucher, plan)).join('')}
       </body>
     </html>
   `);
