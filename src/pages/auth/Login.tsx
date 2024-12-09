@@ -46,11 +46,28 @@ const Login = () => {
         }
       } else if (event === 'SIGNED_OUT') {
         navigate('/login');
+      } else if (event === 'USER_UPDATED') {
+        // Handle user update events if needed
+        console.log('User updated:', session);
+      } else if (event === 'PASSWORD_RECOVERY') {
+        // Handle password recovery events if needed
+        console.log('Password recovery:', session);
+      }
+    });
+
+    // Listen for auth errors
+    const authListener = supabase.auth.onAuthStateChange((event, session) => {
+      if (event === 'AUTH_ERROR') {
+        const error = session?.error;
+        if (error?.message?.includes('user_already_exists')) {
+          toast.error("This email is already registered. Please sign in instead.");
+        }
       }
     });
 
     return () => {
       subscription.unsubscribe();
+      authListener.data.subscription.unsubscribe();
     };
   }, [navigate]);
 
@@ -78,6 +95,13 @@ const Login = () => {
               },
             }}
             providers={[]}
+            onError={(error) => {
+              if (error.message?.includes('user_already_exists')) {
+                toast.error("This email is already registered. Please sign in instead.");
+              } else {
+                toast.error(error.message || "An error occurred during authentication");
+              }
+            }}
           />
         </CardContent>
       </Card>
