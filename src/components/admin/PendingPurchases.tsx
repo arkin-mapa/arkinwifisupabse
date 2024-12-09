@@ -22,7 +22,7 @@ const PendingPurchases = () => {
     }
   }, []);
 
-  const handleApprove = (purchaseId: number) => {
+  const handleApprove = (purchaseId: string) => {
     const updatedPurchases = purchases.map(purchase =>
       purchase.id === purchaseId
         ? { ...purchase, status: "approved" as const }
@@ -34,7 +34,7 @@ const PendingPurchases = () => {
     toast.success("Purchase approved successfully");
   };
 
-  const handleReject = (purchaseId: number) => {
+  const handleReject = (purchaseId: string) => {
     const updatedPurchases = purchases.map(purchase =>
       purchase.id === purchaseId
         ? { ...purchase, status: "rejected" as const }
@@ -46,7 +46,7 @@ const PendingPurchases = () => {
     toast.success("Purchase rejected");
   };
 
-  const handleDelete = (purchaseId: number) => {
+  const handleDelete = (purchaseId: string) => {
     const purchase = purchases.find(p => p.id === purchaseId);
     if (!purchase || purchase.status === "pending") {
       toast.error("Only approved, rejected, or cancelled purchases can be deleted");

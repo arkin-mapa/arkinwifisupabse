@@ -5,9 +5,9 @@ import type { Purchase } from "@/types/plans";
 
 interface PurchasesTableProps {
   purchases: Purchase[];
-  onApprove: (id: number) => void;
-  onReject: (id: number) => void;
-  onDelete: (id: number) => void;
+  onApprove: (id: string) => void;
+  onReject: (id: string) => void;
+  onDelete: (id: string) => void;
 }
 
 const PurchasesTable = ({ purchases, onApprove, onReject, onDelete }: PurchasesTableProps) => {
@@ -31,7 +31,6 @@ const PurchasesTable = ({ purchases, onApprove, onReject, onDelete }: PurchasesT
       <TableHeader>
         <TableRow>
           <TableHead>Date</TableHead>
-          <TableHead>Customer</TableHead>
           <TableHead>Plan</TableHead>
           <TableHead>Quantity</TableHead>
           <TableHead>Total</TableHead>
@@ -44,7 +43,6 @@ const PurchasesTable = ({ purchases, onApprove, onReject, onDelete }: PurchasesT
         {purchases.map((purchase) => (
           <TableRow key={purchase.id}>
             <TableCell>{purchase.date}</TableCell>
-            <TableCell>{purchase.customerName}</TableCell>
             <TableCell>{purchase.plan}</TableCell>
             <TableCell>{purchase.quantity}</TableCell>
             <TableCell>₱{purchase.total}</TableCell>
