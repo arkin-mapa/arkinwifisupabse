@@ -19,6 +19,8 @@ const PendingPurchases = () => {
 
   const handleApprove = async (purchaseId: string) => {
     try {
+      console.log('Starting approval process for purchase:', purchaseId);
+      
       // Get the purchase details first with all needed fields
       const { data: purchase, error: fetchError } = await supabase
         .from("purchases")
@@ -39,6 +41,8 @@ const PendingPurchases = () => {
         return;
       }
 
+      console.log('Purchase details:', purchase);
+
       // Get available vouchers for the plan
       const { data: vouchers, error: vouchersError } = await supabase
         .from("vouchers")
@@ -49,21 +53,23 @@ const PendingPurchases = () => {
         .limit(purchase.quantity);
 
       if (vouchersError) throw vouchersError;
+      console.log('Available vouchers:', vouchers);
 
       if (!vouchers || vouchers.length < purchase.quantity) {
         toast.error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${vouchers?.length || 0}`);
         return;
       }
 
-      // Update purchase status to approved
+      // First update purchase status to approved
       const { error: updateError } = await supabase
         .from("purchases")
         .update({ status: "approved" })
         .eq("id", purchaseId);
 
       if (updateError) throw updateError;
+      console.log('Purchase status updated to approved');
 
-      // Assign vouchers to the user
+      // Then assign vouchers to the user
       const { error: assignError } = await supabase
         .from("vouchers")
         .update({
@@ -72,7 +78,11 @@ const PendingPurchases = () => {
         })
         .in("id", vouchers.map(v => v.id));
 
-      if (assignError) throw assignError;
+      if (assignError) {
+        console.error('Error assigning vouchers:', assignError);
+        throw assignError;
+      }
+      console.log('Vouchers assigned to user');
 
       // Update available vouchers count in the plan
       const newAvailableVouchers = (purchase.wifi_plans?.available_vouchers || 0) - purchase.quantity;
@@ -84,6 +94,7 @@ const PendingPurchases = () => {
         .eq("id", purchase.plan_id);
 
       if (planError) throw planError;
+      console.log('Plan voucher count updated');
 
       toast.success("Purchase approved and vouchers assigned successfully");
     } catch (error) {
