@@ -6,17 +6,59 @@ import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import ClientDashboard from "./pages/client/ClientDashboard";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import AuthPage from "./pages/auth/AuthPage";
-import { SessionContextProvider, useSession } from '@supabase/auth-helpers-react';
+import { SessionContextProvider, useSession, useUser } from '@supabase/auth-helpers-react';
 import { supabase } from "./integrations/supabase/client";
+import { useEffect, useState } from "react";
 
 const queryClient = new QueryClient();
 
-// Protected Route Component
-const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
+// Protected Route Component with Role Check
+const ProtectedRoute = ({ 
+  children, 
+  allowedRole 
+}: { 
+  children: React.ReactNode;
+  allowedRole?: 'admin' | 'client';
+}) => {
   const session = useSession();
-  
+  const user = useUser();
+  const [userRole, setUserRole] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    async function getUserRole() {
+      if (!user) return;
+      
+      const { data, error } = await supabase
+        .from('profiles')
+        .select('role')
+        .eq('id', user.id)
+        .single();
+
+      if (error) {
+        console.error('Error fetching user role:', error);
+        return;
+      }
+
+      setUserRole(data?.role);
+      setLoading(false);
+    }
+
+    if (user) {
+      getUserRole();
+    }
+  }, [user]);
+
   if (!session) {
     return <Navigate to="/auth" replace />;
+  }
+
+  if (loading) {
+    return <div>Loading...</div>;
+  }
+
+  if (allowedRole && userRole !== allowedRole) {
+    return <Navigate to={userRole === 'admin' ? '/admin' : '/client'} replace />;
   }
 
   return <>{children}</>;
@@ -33,14 +75,21 @@ const App = () => (
             <Route path="/" element={<Navigate to="/auth" replace />} />
             <Route path="/auth" element={<AuthPage />} />
             <Route
-              path="/client"
+              path="/client/*"
               element={
-                <ProtectedRoute>
+                <ProtectedRoute allowedRole="client">
                   <ClientDashboard />
                 </ProtectedRoute>
               }
             />
-            <Route path="/admin" element={<AdminDashboard />} />
+            <Route
+              path="/admin/*"
+              element={
+                <ProtectedRoute allowedRole="admin">
+                  <AdminDashboard />
+                </ProtectedRoute>
+              }
+            />
           </Routes>
         </BrowserRouter>
       </TooltipProvider>
