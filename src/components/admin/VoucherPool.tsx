@@ -36,6 +36,7 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
       // Group vouchers by plan duration
       const groupedVouchers: Record<string, Voucher[]> = {};
       data.forEach((voucher) => {
+        if (!voucher.wifi_plans?.duration) return; // Skip if no duration
         const duration = voucher.wifi_plans.duration;
         if (!groupedVouchers[duration]) {
           groupedVouchers[duration] = [];
@@ -44,7 +45,7 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
           id: voucher.id,
           code: voucher.code,
           planId: voucher.plan_id,
-          isUsed: voucher.is_used
+          isUsed: voucher.is_used || false
         });
       });
 
@@ -54,7 +55,6 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
 
   const deleteVoucherMutation = useMutation({
     mutationFn: async ({ voucherId, planId }: { voucherId: string, planId: string }) => {
-      // Delete the voucher
       const { error: deleteError } = await supabase
         .from("vouchers")
         .delete()
@@ -62,10 +62,9 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
 
       if (deleteError) throw deleteError;
 
-      // Update the available_vouchers count using decrement
       const { error: updateError } = await supabase
         .from("wifi_plans")
-        .update({ available_vouchers: 0 }) // First set to 0 to avoid negative values
+        .update({ available_vouchers: 0 })
         .eq("id", planId)
         .select("available_vouchers")
         .single();
@@ -121,7 +120,7 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
           ) : (
             <ScrollArea className="h-[400px] pr-4">
               {Object.entries(voucherData).map(([planDuration, planVouchers]) => {
-                if (!planVouchers || planVouchers.length === 0) return null;
+                if (!Array.isArray(planVouchers) || planVouchers.length === 0) return null;
                 
                 const unusedCount = planVouchers.filter(v => !v.isUsed).length;
                 const isExpanded = expandedPlans[planDuration];
