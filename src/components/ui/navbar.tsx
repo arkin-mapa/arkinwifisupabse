@@ -8,19 +8,48 @@ import { toast } from "sonner";
 export function Navbar() {
   const location = useLocation();
   const navigate = useNavigate();
-  const { session } = useSessionContext();
+  const { session, isLoading } = useSessionContext();
   const isAdmin = location.pathname.includes('admin');
 
   const handleLogout = async () => {
     try {
-      await supabase.auth.signOut();
+      // Check if we have a session before attempting to log out
+      if (!session) {
+        console.log('No active session found');
+        navigate('/login');
+        return;
+      }
+
+      const { error } = await supabase.auth.signOut();
+      if (error) {
+        console.error('Error during logout:', error);
+        throw error;
+      }
+
       toast.success("Logged out successfully");
       navigate('/login');
     } catch (error) {
       console.error('Error logging out:', error);
       toast.error("Failed to log out");
+      // Even if logout fails, redirect to login page for safety
+      navigate('/login');
     }
   };
+
+  // Don't show navigation items while checking session
+  if (isLoading) {
+    return (
+      <nav className="sticky top-0 z-50 w-full border-b bg-white/75 backdrop-blur-lg">
+        <div className="container flex h-14 items-center">
+          <div className="flex flex-1 items-center justify-between">
+            <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+              WiFi Portal
+            </span>
+          </div>
+        </div>
+      </nav>
+    );
+  }
 
   return (
     <nav className="sticky top-0 z-50 w-full border-b bg-white/75 backdrop-blur-lg">
