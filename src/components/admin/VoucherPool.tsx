@@ -19,23 +19,6 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
 
   const handleDeleteVoucher = (planDuration: string, voucherId: string) => {
     try {
-      // Get the voucher to be deleted
-      const voucher = localVouchers[planDuration]?.find(v => v.id === voucherId);
-      
-      if (!voucher) {
-        throw new Error("Voucher not found");
-      }
-
-      // Only allow deletion if the voucher is not used
-      if (voucher.isUsed) {
-        toast({
-          title: "Cannot delete voucher",
-          description: "This voucher is already in use and cannot be deleted.",
-          variant: "destructive",
-        });
-        return;
-      }
-
       deleteVoucher(voucherId, planDuration);
       
       const updatedVouchers = {
@@ -83,8 +66,8 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
               {Object.entries(localVouchers).map(([planDuration, planVouchers]) => {
                 if (!planVouchers || planVouchers.length === 0) return null;
                 
-                const availableVouchers = planVouchers.filter(v => !v.isUsed);
-                const usedVouchers = planVouchers.filter(v => v.isUsed);
+                const usedCount = planVouchers.filter(v => v.isUsed).length;
+                const unusedCount = planVouchers.length - usedCount;
                 const isExpanded = expandedPlans[planDuration];
                 
                 return (
@@ -98,8 +81,8 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                         <h3 className="font-medium">{planDuration}</h3>
                       </div>
                       <div className="flex gap-4 text-sm text-muted-foreground">
-                        <Badge variant="secondary">Used: {usedVouchers.length}</Badge>
-                        <Badge variant="default">Available: {availableVouchers.length}</Badge>
+                        <Badge variant="secondary">Used: {usedCount}</Badge>
+                        <Badge variant="default">Available: {unusedCount}</Badge>
                         <Badge variant="outline">Total: {planVouchers.length}</Badge>
                       </div>
                     </div>
@@ -113,16 +96,14 @@ const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
                             >
                               <span className="truncate">{voucher.code}</span>
                             </Badge>
-                            {!voucher.isUsed && (
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => handleDeleteVoucher(planDuration, voucher.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            )}
+                            <Button
+                              variant="ghost"
+                              size="icon"
+                              className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                              onClick={() => handleDeleteVoucher(planDuration, voucher.id)}
+                            >
+                              <Trash2 className="h-3 w-3" />
+                            </Button>
                           </div>
                         ))}
                       </div>
