@@ -36,7 +36,7 @@ const getStyles = () => `
     border-bottom: 1px dashed #000;
     padding: 0.5mm 0;
     margin-bottom: 0.25mm;
-    height: 15mm;
+    height: 20mm;
     page-break-inside: avoid;
     display: flex;
     flex-direction: column;
