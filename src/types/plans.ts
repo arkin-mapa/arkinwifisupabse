@@ -1,3 +1,5 @@
+import type { Database } from "@/integrations/supabase/types";
+
 export interface Plan {
   id: string;
   duration: string;
@@ -19,7 +21,7 @@ export interface Purchase {
   plan: string;
   quantity: number;
   total: number;
-  paymentMethod: "cash" | "gcash" | "paymaya";
-  status: "pending" | "approved" | "rejected" | "cancelled";
+  paymentMethod: Database["public"]["Enums"]["payment_method"];
+  status: Database["public"]["Enums"]["purchase_status"];
   vouchers?: Voucher[];
 }
