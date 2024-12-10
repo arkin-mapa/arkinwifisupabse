@@ -2,13 +2,15 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 
 export async function fetchPlans(): Promise<Plan[]> {
+  console.log('Fetching plans...'); // Debug log
+
   const { data: plans, error } = await supabase
     .from('plans')
     .select(`
       id,
       duration,
       price,
-      vouchers!inner (
+      vouchers (
         id,
         is_used
       )
@@ -20,12 +22,18 @@ export async function fetchPlans(): Promise<Plan[]> {
     throw error;
   }
 
-  return plans.map(plan => ({
+  console.log('Raw plans data:', plans); // Debug log
+
+  const formattedPlans = plans.map(plan => ({
     id: plan.id,
     duration: plan.duration,
     price: Number(plan.price),
     availableVouchers: plan.vouchers?.filter(v => !v.is_used).length ?? 0
   }));
+
+  console.log('Formatted plans:', formattedPlans); // Debug log
+
+  return formattedPlans;
 }
 
 // Alias for client-side use
