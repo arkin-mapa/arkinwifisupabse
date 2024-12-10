@@ -29,37 +29,44 @@ export async function fetchPlans(): Promise<Plan[]> {
   }));
 }
 
-export async function createPlan(plan: Omit<Plan, 'id' | 'availableVouchers'>) {
-  const { data, error } = await supabase
-    .from('plans')
-    .insert([{
-      duration: plan.duration,
-      price: plan.price
-    }])
-    .select()
-    .single();
+// Alias for client-side use
+export const fetchClientPlans = fetchPlans;
+
+export async function fetchClientPurchases(): Promise<Purchase[]> {
+  const { data: purchases, error } = await supabase
+    .from('purchases')
+    .select(`
+      id,
+      created_at,
+      customer_name,
+      quantity,
+      total_amount,
+      payment_method,
+      status,
+      plans (
+        duration
+      )
+    `)
+    .order('created_at', { ascending: false });
 
   if (error) {
-    console.error('Error creating plan:', error);
+    console.error('Error fetching purchases:', error);
     throw error;
   }
 
-  return data;
+  return purchases.map(p => ({
+    id: p.id,
+    date: new Date(p.created_at).toLocaleDateString(),
+    customerName: p.customer_name,
+    plan: p.plans?.duration || '',
+    quantity: p.quantity,
+    total: Number(p.total_amount),
+    paymentMethod: p.payment_method,
+    status: p.status
+  }));
 }
 
-export async function deletePlan(planId: string) {
-  const { error } = await supabase
-    .from('plans')
-    .delete()
-    .eq('id', planId);
-
-  if (error) {
-    console.error('Error deleting plan:', error);
-    throw error;
-  }
-}
-
-export async function fetchVouchers(): Promise<Record<string, Voucher[]>> {
+export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> {
   const { data: vouchers, error } = await supabase
     .from('vouchers')
     .select(`
@@ -86,13 +93,61 @@ export async function fetchVouchers(): Promise<Record<string, Voucher[]>> {
       vouchersByPlan[v.plans.duration].push({
         id: v.id,
         code: v.code,
-        planId: v.plan_id,
+        planId: v.plan_id || '',
         isUsed: v.is_used || false
       });
     }
   });
 
   return vouchersByPlan;
+}
+
+export async function createPurchase(data: {
+  customerName: string;
+  planId: string;
+  quantity: number;
+  totalAmount: number;
+  paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
+}): Promise<void> {
+  const { error } = await supabase
+    .from('purchases')
+    .insert([{
+      customer_name: data.customerName,
+      plan_id: data.planId,
+      quantity: data.quantity,
+      total_amount: data.totalAmount,
+      payment_method: data.paymentMethod,
+      status: 'pending'
+    }]);
+
+  if (error) {
+    console.error('Error creating purchase:', error);
+    throw error;
+  }
+}
+
+export async function cancelPurchase(purchaseId: string): Promise<void> {
+  const { error } = await supabase
+    .from('purchases')
+    .update({ status: 'cancelled' })
+    .eq('id', purchaseId);
+
+  if (error) {
+    console.error('Error cancelling purchase:', error);
+    throw error;
+  }
+}
+
+export async function deletePlan(planId: string) {
+  const { error } = await supabase
+    .from('plans')
+    .delete()
+    .eq('id', planId);
+
+  if (error) {
+    console.error('Error deleting plan:', error);
+    throw error;
+  }
 }
 
 export async function addVouchers(planId: string, codes: string[]) {
