@@ -5,7 +5,15 @@ import type { Plan, Voucher, Purchase } from "@/types/plans";
 export async function fetchClientPlans(): Promise<Plan[]> {
   const { data: plans, error } = await supabase
     .from('plans')
-    .select('*, vouchers(count)')
+    .select(`
+      id,
+      duration,
+      price,
+      vouchers (
+        id,
+        is_used
+      )
+    `)
     .order('created_at', { ascending: true });
 
   if (error) {
@@ -17,7 +25,7 @@ export async function fetchClientPlans(): Promise<Plan[]> {
     id: plan.id,
     duration: plan.duration,
     price: Number(plan.price),
-    availableVouchers: plan.vouchers?.[0]?.count ?? 0
+    availableVouchers: plan.vouchers?.filter(v => !v.is_used).length ?? 0
   }));
 }
 
@@ -26,7 +34,7 @@ export async function createPurchase(purchase: {
   planId: string;
   quantity: number;
   totalAmount: number;
-  paymentMethod: 'cash' | 'gcash' | 'paymaya';
+  paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
 }) {
   const { data, error } = await supabase
     .from('purchases')
@@ -36,7 +44,7 @@ export async function createPurchase(purchase: {
       quantity: purchase.quantity,
       total_amount: purchase.totalAmount,
       payment_method: purchase.paymentMethod,
-      user_id: (await supabase.auth.getUser()).data.user?.id
+      status: 'pending'
     }])
     .select()
     .single();
@@ -90,9 +98,10 @@ export async function cancelPurchase(purchaseId: string) {
 }
 
 export async function fetchClientVouchers(): Promise<Voucher[]> {
-  const { data: clientVouchers, error } = await supabase
+  const { data: vouchers, error } = await supabase
     .from('client_vouchers')
     .select(`
+      voucher_id,
       vouchers (
         id,
         code,
@@ -109,13 +118,40 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     throw error;
   }
 
-  return clientVouchers
+  return vouchers
     .map(cv => cv.vouchers)
     .filter((v): v is NonNullable<typeof v> => v !== null)
     .map(v => ({
       id: v.id,
       code: v.code,
-      planId: v.plan_id || '',
-      isUsed: v.is_used || false
+      planId: v.plan_id,
+      isUsed: v.is_used
     }));
+}
+
+export async function updatePurchaseStatus(
+  purchaseId: string,
+  status: Database['public']['Tables']['purchases']['Row']['status']
+) {
+  const { error } = await supabase
+    .from('purchases')
+    .update({ status })
+    .eq('id', purchaseId);
+
+  if (error) {
+    console.error('Error updating purchase status:', error);
+    throw error;
+  }
+}
+
+export async function deletePurchase(purchaseId: string) {
+  const { error } = await supabase
+    .from('purchases')
+    .delete()
+    .eq('id', purchaseId);
+
+  if (error) {
+    console.error('Error deleting purchase:', error);
+    throw error;
+  }
 }

@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
 import { useEffect, useState } from "react";
-import type { Voucher, Plan } from "@/types/plans";
+import type { Voucher } from "@/types/plans";
 import { toast } from "sonner";
 import { printVoucher } from "@/utils/printUtils";
 import PlanGroup from "./voucher/PlanGroup";
@@ -59,6 +59,8 @@ const VoucherWallet = () => {
           isExpanded={expandedPlans[planId]}
           onToggle={() => togglePlanExpansion(planId)}
           onPrintVoucher={handlePrintVoucher}
+          onDeleteVoucher={() => {}}
+          plan={undefined}
         />
       ))}
     </div>

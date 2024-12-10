@@ -1,3 +1,5 @@
+import type { Database } from "./database.types";
+
 export interface Plan {
   id: string;
   duration: string;
@@ -19,7 +21,6 @@ export interface Purchase {
   plan: string;
   quantity: number;
   total: number;
-  paymentMethod: "cash" | "gcash" | "paymaya";
-  status: "pending" | "approved" | "rejected" | "cancelled";
-  vouchers?: Voucher[];
+  paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
+  status: Database['public']['Tables']['purchases']['Row']['status'];
 }

@@ -15,20 +15,24 @@ import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion } from "framer-motion";
 import { fetchClientPlans, createPurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Database } from "@/types/database.types";
+
+type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
 const PlansList = () => {
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [purchaseDetails, setPurchaseDetails] = useState({
     customerName: "",
     quantity: 1,
-    paymentMethod: "cash" as const
+    paymentMethod: 'cash' as PaymentMethod
   });
 
   const queryClient = useQueryClient();
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['clientPlans'],
-    queryFn: fetchClientPlans
+    queryFn: fetchClientPlans,
+    refetchInterval: 5000 // Refetch every 5 seconds
   });
 
   const purchaseMutation = useMutation({
@@ -46,7 +50,7 @@ const PlansList = () => {
       setPurchaseDetails({
         customerName: "",
         quantity: 1,
-        paymentMethod: "cash"
+        paymentMethod: 'cash'
       });
     },
     onError: (error) => {
@@ -152,7 +156,7 @@ const PlansList = () => {
               <Label>Payment Method</Label>
               <RadioGroup
                 value={purchaseDetails.paymentMethod}
-                onValueChange={(value: 'cash' | 'gcash' | 'paymaya') => setPurchaseDetails({
+                onValueChange={(value: PaymentMethod) => setPurchaseDetails({
                   ...purchaseDetails,
                   paymentMethod: value
                 })}
