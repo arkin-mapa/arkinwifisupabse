@@ -19,7 +19,7 @@ export async function fetchPlans(): Promise<Plan[]> {
     id: plan.id,
     duration: plan.duration,
     price: Number(plan.price),
-    availableVouchers: plan.vouchers?.[0]?.count ?? 0
+    availableVouchers: Number(plan.vouchers?.[0]?.count ?? 0)
   }));
 }
 
@@ -40,7 +40,7 @@ export async function fetchClientPlans(): Promise<Plan[]> {
     id: plan.id,
     duration: plan.duration,
     price: Number(plan.price),
-    availableVouchers: plan.vouchers?.[0]?.count ?? 0
+    availableVouchers: Number(plan.vouchers?.[0]?.count ?? 0)
   }));
 }
 
@@ -75,18 +75,21 @@ export async function fetchVouchers(): Promise<Record<string, Voucher[]>> {
   if (error) throw error;
 
   const groupedVouchers: Record<string, Voucher[]> = {};
-  vouchers.forEach(voucher => {
-    const duration = voucher.plans?.duration || 'unknown';
-    if (!groupedVouchers[duration]) {
-      groupedVouchers[duration] = [];
-    }
-    groupedVouchers[duration].push({
-      id: voucher.id,
-      code: voucher.code,
-      planId: voucher.plan_id || '',
-      isUsed: voucher.is_used || false
+  
+  if (vouchers) {
+    vouchers.forEach(voucher => {
+      const duration = voucher.plans?.duration || 'unknown';
+      if (!groupedVouchers[duration]) {
+        groupedVouchers[duration] = [];
+      }
+      groupedVouchers[duration].push({
+        id: voucher.id,
+        code: voucher.code,
+        planId: voucher.plan_id || '',
+        isUsed: voucher.is_used || false
+      });
     });
-  });
+  }
 
   return groupedVouchers;
 }
@@ -144,7 +147,7 @@ export async function createPurchase(purchase: {
   planId: string;
   quantity: number;
   totalAmount: number;
-  paymentMethod: "cash" | "gcash" | "paymaya";
+  paymentMethod: Database["public"]["Enums"]["payment_method"];
 }): Promise<void> {
   const { error } = await supabase
     .from('purchases')
@@ -160,22 +163,10 @@ export async function createPurchase(purchase: {
   if (error) throw error;
 }
 
-export async function updatePurchaseStatus(
-  purchaseId: string, 
-  status: 'approved' | 'rejected' | 'cancelled'
-): Promise<void> {
+export async function cancelPurchase(purchaseId: string): Promise<void> {
   const { error } = await supabase
     .from('purchases')
-    .update({ status })
-    .eq('id', purchaseId);
-
-  if (error) throw error;
-}
-
-export async function deletePurchase(purchaseId: string): Promise<void> {
-  const { error } = await supabase
-    .from('purchases')
-    .delete()
+    .update({ status: 'cancelled' })
     .eq('id', purchaseId);
 
   if (error) throw error;
@@ -206,6 +197,23 @@ export async function fetchClientPurchases(): Promise<Purchase[]> {
   }));
 }
 
-export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> {
-  return fetchVouchers();
+export async function fetchClientVouchers(): Promise<Voucher[]> {
+  const { data: vouchers, error } = await supabase
+    .from('vouchers')
+    .select(`
+      *,
+      plans (
+        duration
+      )
+    `)
+    .order('created_at', { ascending: false });
+
+  if (error) throw error;
+
+  return vouchers.map(voucher => ({
+    id: voucher.id,
+    code: voucher.code,
+    planId: voucher.plan_id || '',
+    isUsed: voucher.is_used || false
+  }));
 }
