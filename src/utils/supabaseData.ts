@@ -5,12 +5,7 @@ import type { Plan, Voucher, Purchase } from "@/types/plans";
 export async function fetchPlans(): Promise<Plan[]> {
   const { data: plans, error } = await supabase
     .from('plans')
-    .select(`
-      *,
-      vouchers!vouchers_plan_id_fkey (
-        count(*)
-      )
-    `)
+    .select('*, vouchers(count)')
     .order('created_at', { ascending: true });
 
   if (error) throw error;
@@ -24,24 +19,7 @@ export async function fetchPlans(): Promise<Plan[]> {
 }
 
 export async function fetchClientPlans(): Promise<Plan[]> {
-  const { data: plans, error } = await supabase
-    .from('plans')
-    .select(`
-      *,
-      vouchers!vouchers_plan_id_fkey (
-        count(*) FILTER (WHERE is_used = false)
-      )
-    `)
-    .order('created_at', { ascending: true });
-
-  if (error) throw error;
-
-  return plans.map(plan => ({
-    id: plan.id,
-    duration: plan.duration,
-    price: Number(plan.price),
-    availableVouchers: plan.vouchers?.[0]?.count ?? 0
-  }));
+  return fetchPlans();
 }
 
 export async function createPlan(plan: { duration: string; price: number }): Promise<void> {
