@@ -1,5 +1,5 @@
 import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import type { Voucher } from "@/types/plans";
 import { toast } from "sonner";
 import { printVoucher } from "@/utils/printUtils";
@@ -55,10 +55,12 @@ const VoucherWallet = () => {
         <PlanGroup
           key={planId}
           planId={planId}
+          plan={planVouchers[0]?.code || ''}
           vouchers={planVouchers}
           isExpanded={expandedPlans[planId]}
           onToggle={() => togglePlanExpansion(planId)}
           onPrintVoucher={handlePrintVoucher}
+          onDeleteVoucher={() => {}}
         />
       ))}
     </div>
