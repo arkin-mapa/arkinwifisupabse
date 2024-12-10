@@ -1,69 +1,81 @@
-import { Card } from "@/components/ui/card";
-import { useEffect, useState } from "react";
-import type { Voucher } from "@/types/plans";
-import { toast } from "sonner";
-import { printVoucher } from "@/utils/printUtils";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Button } from "@/components/ui/button";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import PlanGroup from "./voucher/PlanGroup";
 import { fetchClientVouchers } from "@/utils/supabaseData";
-import { useQuery } from "@tanstack/react-query";
+import type { Voucher } from "@/types/plans";
 
 const VoucherWallet = () => {
+  const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
-  const { data: vouchers = [], isLoading } = useQuery({
-    queryKey: ['clientVouchers'],
-    queryFn: fetchClientVouchers
-  });
+  useEffect(() => {
+    loadVouchers();
+  }, []);
 
-  const handlePrintVoucher = (voucher: Voucher) => {
-    if (!printVoucher(voucher)) {
-      toast.error("Unable to open print window. Please check your popup settings.");
+  const loadVouchers = async () => {
+    try {
+      const vouchersData = await fetchClientVouchers();
+      setVouchers(vouchersData);
+    } catch (error) {
+      console.error('Error loading vouchers:', error);
     }
   };
 
-  const togglePlanExpansion = (planId: string) => {
+  const handlePrintVoucher = (voucher: Voucher) => {
+    // Implementation for printing voucher
+    console.log('Printing voucher:', voucher);
+  };
+
+  const handleDeleteVoucher = async (voucherId: string) => {
+    try {
+      // Implementation for deleting voucher
+      await loadVouchers(); // Reload vouchers after deletion
+    } catch (error) {
+      console.error('Error deleting voucher:', error);
+    }
+  };
+
+  const togglePlanExpansion = (planDuration: string) => {
     setExpandedPlans(prev => ({
       ...prev,
-      [planId]: !prev[planId]
+      [planDuration]: !prev[planDuration]
     }));
   };
 
-  // Group vouchers by plan
-  const groupedVouchers = vouchers.reduce((acc, voucher) => {
-    if (!acc[voucher.planId]) {
-      acc[voucher.planId] = [];
-    }
-    acc[voucher.planId].push(voucher);
-    return acc;
-  }, {} as Record<string, Voucher[]>);
-
-  if (isLoading) {
-    return <div className="text-center">Loading vouchers...</div>;
-  }
-
-  if (vouchers.length === 0) {
+  if (!vouchers || Object.keys(vouchers).length === 0) {
     return (
-      <Card className="p-6 text-center border">
-        <p className="text-gray-600">No vouchers available in your wallet.</p>
+      <Card className="mt-6">
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">No vouchers available in your wallet.</p>
+        </CardContent>
       </Card>
     );
   }
 
   return (
-    <div className="space-y-6">
-      {Object.entries(groupedVouchers).map(([planId, planVouchers]) => (
-        <PlanGroup
-          key={planId}
-          planId={planId}
-          vouchers={planVouchers}
-          isExpanded={expandedPlans[planId]}
-          onToggle={() => togglePlanExpansion(planId)}
-          onPrintVoucher={handlePrintVoucher}
-          onDeleteVoucher={() => {}}
-          plan={undefined}
-        />
-      ))}
-    </div>
+    <Card className="mt-6">
+      <CardHeader>
+        <CardTitle>Your Vouchers</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <ScrollArea className="h-[400px] pr-4">
+          {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
+            <PlanGroup
+              key={planDuration}
+              plan={planDuration}
+              vouchers={planVouchers}
+              isExpanded={expandedPlans[planDuration] || false}
+              onToggle={() => togglePlanExpansion(planDuration)}
+              onPrintVoucher={handlePrintVoucher}
+              onDeleteVoucher={handleDeleteVoucher}
+            />
+          ))}
+        </ScrollArea>
+      </CardContent>
+    </Card>
   );
 };
 

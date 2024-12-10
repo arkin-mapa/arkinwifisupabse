@@ -2,7 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Database } from "@/types/database.types";
 import type { Plan, Voucher, Purchase } from "@/types/plans";
 
-export async function fetchClientPlans(): Promise<Plan[]> {
+export async function fetchPlans(): Promise<Plan[]> {
   const { data: plans, error } = await supabase
     .from('plans')
     .select(`
@@ -29,35 +29,100 @@ export async function fetchClientPlans(): Promise<Plan[]> {
   }));
 }
 
-export async function createPurchase(purchase: {
-  customerName: string;
-  planId: string;
-  quantity: number;
-  totalAmount: number;
-  paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
-}) {
+export async function createPlan(plan: Omit<Plan, 'id' | 'availableVouchers'>) {
   const { data, error } = await supabase
-    .from('purchases')
+    .from('plans')
     .insert([{
-      customer_name: purchase.customerName,
-      plan_id: purchase.planId,
-      quantity: purchase.quantity,
-      total_amount: purchase.totalAmount,
-      payment_method: purchase.paymentMethod,
-      status: 'pending'
+      duration: plan.duration,
+      price: plan.price
     }])
     .select()
     .single();
 
   if (error) {
-    console.error('Error creating purchase:', error);
+    console.error('Error creating plan:', error);
     throw error;
   }
 
   return data;
 }
 
-export async function fetchClientPurchases(): Promise<Purchase[]> {
+export async function deletePlan(planId: string) {
+  const { error } = await supabase
+    .from('plans')
+    .delete()
+    .eq('id', planId);
+
+  if (error) {
+    console.error('Error deleting plan:', error);
+    throw error;
+  }
+}
+
+export async function fetchVouchers(): Promise<Record<string, Voucher[]>> {
+  const { data: vouchers, error } = await supabase
+    .from('vouchers')
+    .select(`
+      id,
+      code,
+      plan_id,
+      is_used,
+      plans (
+        duration
+      )
+    `);
+
+  if (error) {
+    console.error('Error fetching vouchers:', error);
+    throw error;
+  }
+
+  const vouchersByPlan: Record<string, Voucher[]> = {};
+  vouchers.forEach(v => {
+    if (v.plans?.duration) {
+      if (!vouchersByPlan[v.plans.duration]) {
+        vouchersByPlan[v.plans.duration] = [];
+      }
+      vouchersByPlan[v.plans.duration].push({
+        id: v.id,
+        code: v.code,
+        planId: v.plan_id,
+        isUsed: v.is_used || false
+      });
+    }
+  });
+
+  return vouchersByPlan;
+}
+
+export async function addVouchers(planId: string, codes: string[]) {
+  const { error } = await supabase
+    .from('vouchers')
+    .insert(codes.map(code => ({
+      code,
+      plan_id: planId,
+      is_used: false
+    })));
+
+  if (error) {
+    console.error('Error adding vouchers:', error);
+    throw error;
+  }
+}
+
+export async function deleteVoucher(voucherId: string) {
+  const { error } = await supabase
+    .from('vouchers')
+    .delete()
+    .eq('id', voucherId);
+
+  if (error) {
+    console.error('Error deleting voucher:', error);
+    throw error;
+  }
+}
+
+export async function fetchPurchases(): Promise<Purchase[]> {
   const { data: purchases, error } = await supabase
     .from('purchases')
     .select(`
@@ -83,50 +148,6 @@ export async function fetchClientPurchases(): Promise<Purchase[]> {
     paymentMethod: p.payment_method,
     status: p.status
   }));
-}
-
-export async function cancelPurchase(purchaseId: string) {
-  const { error } = await supabase
-    .from('purchases')
-    .update({ status: 'cancelled' })
-    .eq('id', purchaseId);
-
-  if (error) {
-    console.error('Error cancelling purchase:', error);
-    throw error;
-  }
-}
-
-export async function fetchClientVouchers(): Promise<Voucher[]> {
-  const { data: vouchers, error } = await supabase
-    .from('client_vouchers')
-    .select(`
-      voucher_id,
-      vouchers (
-        id,
-        code,
-        plan_id,
-        is_used,
-        plans (
-          duration
-        )
-      )
-    `);
-
-  if (error) {
-    console.error('Error fetching vouchers:', error);
-    throw error;
-  }
-
-  return vouchers
-    .map(cv => cv.vouchers)
-    .filter((v): v is NonNullable<typeof v> => v !== null)
-    .map(v => ({
-      id: v.id,
-      code: v.code,
-      planId: v.plan_id,
-      isUsed: v.is_used
-    }));
 }
 
 export async function updatePurchaseStatus(
