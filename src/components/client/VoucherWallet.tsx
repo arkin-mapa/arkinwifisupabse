@@ -63,7 +63,8 @@ const VoucherWallet = () => {
           {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
             <PlanGroup
               key={planDuration}
-              plan={planDuration}
+              planId={planDuration}
+              plan={undefined}
               vouchers={planVouchers}
               isExpanded={expandedPlans[planDuration] || false}
               onToggle={() => togglePlanExpansion(planDuration)}
