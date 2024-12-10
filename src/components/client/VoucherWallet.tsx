@@ -1,6 +1,6 @@
 import { Card } from "@/components/ui/card";
-import { useState } from "react";
-import type { Voucher } from "@/types/plans";
+import { useEffect, useState } from "react";
+import type { Voucher, Plan } from "@/types/plans";
 import { toast } from "sonner";
 import { printVoucher } from "@/utils/printUtils";
 import PlanGroup from "./voucher/PlanGroup";
@@ -29,13 +29,13 @@ const VoucherWallet = () => {
   };
 
   // Group vouchers by plan
-  const groupedVouchers = vouchers.reduce<Record<string, Voucher[]>>((acc, voucher) => {
+  const groupedVouchers = vouchers.reduce((acc, voucher) => {
     if (!acc[voucher.planId]) {
       acc[voucher.planId] = [];
     }
     acc[voucher.planId].push(voucher);
     return acc;
-  }, {});
+  }, {} as Record<string, Voucher[]>);
 
   if (isLoading) {
     return <div className="text-center">Loading vouchers...</div>;
@@ -55,12 +55,10 @@ const VoucherWallet = () => {
         <PlanGroup
           key={planId}
           planId={planId}
-          plan={planVouchers[0]?.code || ''}
           vouchers={planVouchers}
           isExpanded={expandedPlans[planId]}
           onToggle={() => togglePlanExpansion(planId)}
           onPrintVoucher={handlePrintVoucher}
-          onDeleteVoucher={() => {}}
         />
       ))}
     </div>
