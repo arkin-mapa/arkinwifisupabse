@@ -35,6 +35,8 @@ const PlansList = () => {
     refetchInterval: 5000 // Refetch every 5 seconds
   });
 
+  console.log('Fetched plans:', plans); // Debug log
+
   const purchaseMutation = useMutation({
     mutationFn: (plan: Plan) => createPurchase({
       customerName: purchaseDetails.customerName,

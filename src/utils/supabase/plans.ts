@@ -8,7 +8,7 @@ export async function fetchPlans(): Promise<Plan[]> {
       id,
       duration,
       price,
-      vouchers (
+      vouchers!inner (
         id,
         is_used
       )
