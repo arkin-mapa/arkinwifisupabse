@@ -25,9 +25,22 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
     try {
       await deleteVoucher(voucherId);
       
-      // Refresh vouchers data
-      const updatedVouchers = await fetchVouchers();
-      setLocalVouchers(updatedVouchers);
+      // Fetch updated vouchers and transform into the required format
+      const updatedVouchersArray = await fetchVouchers();
+      const updatedVouchersByPlan = updatedVouchersArray.reduce((acc: Record<string, Voucher[]>, voucher) => {
+        const planDuration = Object.keys(localVouchers).find(duration => 
+          localVouchers[duration].some(v => v.planId === voucher.planId)
+        );
+        if (planDuration) {
+          if (!acc[planDuration]) {
+            acc[planDuration] = [];
+          }
+          acc[planDuration].push(voucher);
+        }
+        return acc;
+      }, {});
+
+      setLocalVouchers(updatedVouchersByPlan);
 
       toast({
         title: "Voucher deleted",

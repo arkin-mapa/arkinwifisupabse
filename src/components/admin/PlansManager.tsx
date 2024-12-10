@@ -22,14 +22,26 @@ const PlansManager = () => {
         fetchVouchers()
       ]);
 
+      // Transform vouchers data into the required format
+      const vouchersByPlan = vouchersData.reduce((acc: Record<string, Voucher[]>, voucher) => {
+        const plan = plansData.find(p => p.id === voucher.planId);
+        if (plan) {
+          if (!acc[plan.duration]) {
+            acc[plan.duration] = [];
+          }
+          acc[plan.duration].push(voucher);
+        }
+        return acc;
+      }, {});
+
       // Transform plans data to include available vouchers count
       const plansWithCounts = plansData.map(plan => ({
         ...plan,
-        availableVouchers: (vouchersData[plan.duration] || []).filter(v => !v.isUsed).length
+        availableVouchers: (vouchersByPlan[plan.duration] || []).filter(v => !v.isUsed).length
       }));
 
       setPlans(plansWithCounts);
-      setVouchers(vouchersData);
+      setVouchers(vouchersByPlan);
     } catch (error) {
       console.error('Error loading data:', error);
       toast({
