@@ -10,7 +10,7 @@ export async function fetchPlans(): Promise<Plan[]> {
       id,
       duration,
       price,
-      vouchers (
+      vouchers!left (
         id,
         is_used
       )
@@ -24,12 +24,20 @@ export async function fetchPlans(): Promise<Plan[]> {
 
   console.log('Raw plans data:', plans); // Debug log
 
-  const formattedPlans = plans.map(plan => ({
-    id: plan.id,
-    duration: plan.duration,
-    price: Number(plan.price),
-    availableVouchers: plan.vouchers?.filter(v => !v.is_used).length ?? 0
-  }));
+  const formattedPlans = plans.map(plan => {
+    const availableVouchers = plan.vouchers 
+      ? plan.vouchers.filter(v => v.is_used === false).length 
+      : 0;
+    
+    console.log(`Plan ${plan.duration}: Found ${availableVouchers} available vouchers`); // Debug log
+    
+    return {
+      id: plan.id,
+      duration: plan.duration,
+      price: Number(plan.price),
+      availableVouchers
+    };
+  });
 
   console.log('Formatted plans:', formattedPlans); // Debug log
 
