@@ -28,7 +28,8 @@ const PlansList = () => {
 
   const { data: plans = [], isLoading } = useQuery({
     queryKey: ['clientPlans'],
-    queryFn: fetchClientPlans
+    queryFn: fetchClientPlans,
+    refetchInterval: 5000, // Refetch every 5 seconds to keep plans synchronized
   });
 
   const purchaseMutation = useMutation({
