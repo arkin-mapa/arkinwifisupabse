@@ -17,7 +17,17 @@ const VoucherWallet = () => {
   const loadVouchers = async () => {
     try {
       const vouchersData = await fetchClientVouchers();
-      setVouchers(vouchersData);
+      // Group vouchers by plan duration
+      const groupedVouchers = vouchersData.reduce((acc, voucher) => {
+        const planDuration = voucher.planId || 'unknown';
+        if (!acc[planDuration]) {
+          acc[planDuration] = [];
+        }
+        acc[planDuration].push(voucher);
+        return acc;
+      }, {} as Record<string, Voucher[]>);
+      
+      setVouchers(groupedVouchers);
     } catch (error) {
       console.error('Error loading vouchers:', error);
       toast.error("Failed to load vouchers");
