@@ -19,6 +19,11 @@ const PurchaseActions = ({
 }: PurchaseActionsProps) => {
   const handleApprove = async () => {
     try {
+      if (!purchase.client_id) {
+        toast.error("Cannot process: No client ID associated with this purchase");
+        return;
+      }
+      
       await transferVouchersToClient(purchase);
       onApprove(purchase.id);
       toast.success("Vouchers successfully transferred to client wallet");

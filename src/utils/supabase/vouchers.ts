@@ -57,60 +57,38 @@ export async function deleteVoucher(voucherId: string): Promise<void> {
 }
 
 export async function fetchClientVouchers(): Promise<Voucher[]> {
-  const { data: vouchers, error } = await supabase
-    .from('vouchers')
+  const { data: session } = await supabase.auth.getSession();
+  const userId = session?.session?.user?.id;
+
+  if (!userId) {
+    throw new Error('User must be logged in to fetch vouchers');
+  }
+
+  const { data: walletVouchers, error } = await supabase
+    .from('voucher_wallet')
     .select(`
-      id,
-      code,
-      plan_id,
-      is_used
+      voucher_id,
+      vouchers (
+        id,
+        code,
+        plan_id,
+        is_used
+      )
     `)
-    .eq('is_used', false);
+    .eq('client_id', userId)
+    .eq('status', 'approved');
 
   if (error) {
     console.error('Error fetching client vouchers:', error);
     throw error;
   }
 
-  return (vouchers || []).map(v => ({
-    id: v.id,
-    code: v.code,
-    planId: v.plan_id || '',
-    isUsed: v.is_used || false
+  return (walletVouchers || []).map(wv => ({
+    id: wv.vouchers.id,
+    code: wv.vouchers.code,
+    planId: wv.vouchers.plan_id || '',
+    isUsed: wv.vouchers.is_used || false
   }));
-}
-
-export async function fetchClientPlans(): Promise<Plan[]> {
-  const { data: plans, error } = await supabase
-    .from('plans')
-    .select(`
-      id,
-      duration,
-      price,
-      vouchers!left (
-        id,
-        is_used
-      )
-    `)
-    .order('created_at', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching plans:', error);
-    throw error;
-  }
-
-  return plans.map(plan => {
-    const availableVouchers = plan.vouchers 
-      ? plan.vouchers.filter(v => v.is_used === false).length 
-      : 0;
-    
-    return {
-      id: plan.id,
-      duration: plan.duration,
-      price: Number(plan.price),
-      availableVouchers
-    };
-  });
 }
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {

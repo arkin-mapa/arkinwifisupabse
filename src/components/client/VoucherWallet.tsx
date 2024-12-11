@@ -5,14 +5,18 @@ import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
 import { fetchClientVouchers } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
+import { useSession } from "@supabase/auth-helpers-react";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
+  const session = useSession();
 
   useEffect(() => {
-    loadVouchers();
-  }, []);
+    if (session?.user?.id) {
+      loadVouchers();
+    }
+  }, [session?.user?.id]);
 
   const loadVouchers = async () => {
     try {
@@ -55,6 +59,16 @@ const VoucherWallet = () => {
       [planDuration]: !prev[planDuration]
     }));
   };
+
+  if (!session) {
+    return (
+      <Card className="mt-6">
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">Please log in to view your vouchers.</p>
+        </CardContent>
+      </Card>
+    );
+  }
 
   if (!vouchers || Object.keys(vouchers).length === 0) {
     return (
