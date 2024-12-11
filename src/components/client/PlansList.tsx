@@ -29,7 +29,7 @@ const PlansList = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: plans = [], isLoading } = useQuery({
+  const { data: plans = [], isLoading } = useQuery<Plan[]>({
     queryKey: ['clientPlans'],
     queryFn: fetchClientPlans,
     refetchInterval: 5000 // Refetch every 5 seconds

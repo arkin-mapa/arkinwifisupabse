@@ -91,6 +91,46 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
   }));
 }
 
+export async function fetchClientPlans(): Promise<Plan[]> {
+  console.log('Fetching client plans...'); // Debug log
+
+  const { data: plans, error } = await supabase
+    .from('plans')
+    .select(`
+      id,
+      duration,
+      price,
+      vouchers!left (
+        id,
+        is_used
+      )
+    `)
+    .order('created_at', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching plans:', error);
+    throw error;
+  }
+
+  console.log('Raw plans data:', plans); // Debug log
+
+  const formattedPlans = plans.map(plan => {
+    const availableVouchers = plan.vouchers 
+      ? plan.vouchers.filter(v => v.is_used === false).length 
+      : 0;
+    
+    return {
+      id: plan.id,
+      duration: plan.duration,
+      price: Number(plan.price),
+      availableVouchers
+    };
+  });
+
+  console.log('Formatted plans:', formattedPlans); // Debug log
+  return formattedPlans;
+}
+
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
   const { data: vouchers, error } = await supabase
     .from('vouchers')
