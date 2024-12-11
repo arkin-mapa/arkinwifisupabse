@@ -1,6 +1,7 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
 import { fetchClientVouchers } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
@@ -19,6 +20,7 @@ const VoucherWallet = () => {
       setVouchers(vouchersData);
     } catch (error) {
       console.error('Error loading vouchers:', error);
+      toast.error("Failed to load vouchers");
     }
   };
 
@@ -33,6 +35,7 @@ const VoucherWallet = () => {
       await loadVouchers(); // Reload vouchers after deletion
     } catch (error) {
       console.error('Error deleting voucher:', error);
+      toast.error("Failed to delete voucher");
     }
   };
 

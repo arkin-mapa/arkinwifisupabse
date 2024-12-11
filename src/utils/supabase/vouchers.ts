@@ -1,40 +1,31 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher } from "@/types/plans";
 
-export async function fetchVouchers(planId?: string): Promise<Voucher[]> {
-  let query = supabase
+export async function generateVouchers(planId: string, quantity: number): Promise<void> {
+  // Implementation for generating vouchers
+  const { error } = await supabase
     .from('vouchers')
-    .select(`
-      id,
-      code,
-      plan_id,
-      is_used,
-      plans (
-        duration
-      )
-    `);
-
-  if (planId) {
-    query = query.eq('plan_id', planId);
-  }
-
-  const { data: vouchers, error } = await query;
+    .insert(Array.from({ length: quantity }, () => ({
+      plan_id: planId,
+      is_used: false,
+      created_at: new Date().toISOString(),
+      updated_at: new Date().toISOString(),
+    })));
 
   if (error) {
-    console.error('Error fetching vouchers:', error);
+    console.error('Error generating vouchers:', error);
     throw error;
   }
-
-  return vouchers.map(v => ({
-    id: v.id,
-    code: v.code,
-    planId: v.plan_id || '',
-    isUsed: v.is_used || false
-  }));
 }
 
 export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> {
-  // Only fetch vouchers that are in the client's wallet
+  const { data: { user }, error: authError } = await supabase.auth.getUser();
+  
+  if (authError || !user?.id) {
+    console.error('Error getting authenticated user:', authError);
+    return {};
+  }
+
   const { data: walletVouchers, error } = await supabase
     .from('voucher_wallet')
     .select(`
@@ -49,16 +40,16 @@ export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> 
         )
       )
     `)
-    .eq('client_id', (await supabase.auth.getUser()).data.user?.id);
+    .eq('client_id', user.id);
 
   if (error) {
     console.error('Error fetching vouchers:', error);
-    throw error;
+    return {};
   }
 
   const vouchersByPlan: Record<string, Voucher[]> = {};
   
-  walletVouchers.forEach(wv => {
+  walletVouchers?.forEach(wv => {
     if (wv.vouchers?.plans?.duration) {
       const duration = wv.vouchers.plans.duration;
       if (!vouchersByPlan[duration]) {
@@ -76,22 +67,25 @@ export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> 
   return vouchersByPlan;
 }
 
-export async function addVouchers(planId: string, codes: string[]) {
-  const { error } = await supabase
+export async function fetchAvailableVouchers(): Promise<Record<string, number>> {
+  const { data: availableVouchers, error } = await supabase
     .from('vouchers')
-    .insert(codes.map(code => ({
-      code,
-      plan_id: planId,
-      is_used: false
-    })));
+    .select('plan_id, count(*)')
+    .eq('is_used', false)
+    .group('plan_id');
 
   if (error) {
-    console.error('Error adding vouchers:', error);
-    throw error;
+    console.error('Error fetching available vouchers:', error);
+    return {};
   }
+
+  return availableVouchers.reduce((acc, { plan_id, count }) => {
+    acc[plan_id] = count;
+    return acc;
+  }, {} as Record<string, number>);
 }
 
-export async function deleteVoucher(voucherId: string) {
+export async function deleteVoucher(voucherId: string): Promise<void> {
   const { error } = await supabase
     .from('vouchers')
     .delete()
