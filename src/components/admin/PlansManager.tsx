@@ -55,7 +55,7 @@ const PlansManager = () => {
   const handleAddPlan = async (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
     try {
       await createPlan(newPlan);
-      await loadData(); // Reload all data
+      await loadData();
       
       toast({
         title: "Success",
@@ -74,7 +74,7 @@ const PlansManager = () => {
   const handleDeletePlan = async (planId: string) => {
     try {
       await deletePlan(planId);
-      await loadData(); // Reload all data
+      await loadData();
       
       toast({
         title: "Plan deleted",
@@ -93,7 +93,7 @@ const PlansManager = () => {
   const handleVoucherExtracted = async (planId: string, voucherCodes: string[]) => {
     try {
       await addVouchers(planId, voucherCodes);
-      await loadData(); // Reload all data
+      await loadData();
 
       toast({
         title: "Vouchers uploaded",
