@@ -6,6 +6,10 @@ import type { Database } from "@/types/database.types";
 type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 export async function transferVouchersToClient(purchase: Purchase) {
+  if (!purchase.client_id) {
+    throw new Error('Client ID is required for voucher transfer');
+  }
+
   const { data: availableVouchers, error: fetchError } = await supabase
     .from('vouchers')
     .select('id')
@@ -14,6 +18,7 @@ export async function transferVouchersToClient(purchase: Purchase) {
     .limit(purchase.quantity);
 
   if (fetchError || !availableVouchers) {
+    console.error('Fetch error:', fetchError);
     throw new Error('Failed to fetch available vouchers');
   }
 
@@ -30,14 +35,15 @@ export async function transferVouchersToClient(purchase: Purchase) {
     .in('id', voucherIds);
 
   if (updateError) {
+    console.error('Update error:', updateError);
     throw new Error('Failed to update vouchers');
   }
 
-  // Add vouchers to client's wallet
+  // Add vouchers to client's wallet with explicit status
   const walletEntries = voucherIds.map(voucherId => ({
     client_id: purchase.client_id,
     voucher_id: voucherId,
-    status: 'active' as PurchaseStatus
+    status: 'approved' as PurchaseStatus
   }));
 
   const { error: insertError } = await supabase
@@ -45,6 +51,7 @@ export async function transferVouchersToClient(purchase: Purchase) {
     .insert(walletEntries);
 
   if (insertError) {
+    console.error('Insert error:', insertError);
     throw new Error('Failed to transfer vouchers to client wallet');
   }
 
