@@ -55,15 +55,12 @@ const PurchasesTable = ({ purchases, onApprove, onReject, onDelete }: PurchasesT
               </Badge>
             </TableCell>
             <TableCell>
-              <div className="flex items-center gap-2">
-                <PurchaseActions
-                  purchaseId={purchase.id}
-                  status={purchase.status}
-                  onApprove={onApprove}
-                  onReject={onReject}
-                  onDelete={onDelete}
-                />
-              </div>
+              <PurchaseActions
+                purchase={purchase}
+                onApprove={onApprove}
+                onReject={onReject}
+                onDelete={onDelete}
+              />
             </TableCell>
           </TableRow>
         ))}

@@ -18,6 +18,8 @@ export interface Purchase {
   id: string;
   date: string;
   customerName: string;
+  client_id: string;
+  plan_id: string;
   plan: string;
   quantity: number;
   total: number;
