@@ -1,19 +1,45 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher } from "@/types/plans";
 
-export async function generateVouchers(planId: string, quantity: number): Promise<void> {
-  // Implementation for generating vouchers
-  const { error } = await supabase
+export async function fetchVouchers(): Promise<Voucher[]> {
+  const { data: vouchers, error } = await supabase
     .from('vouchers')
-    .insert(Array.from({ length: quantity }, () => ({
-      plan_id: planId,
-      is_used: false,
-      created_at: new Date().toISOString(),
-      updated_at: new Date().toISOString(),
-    })));
+    .select(`
+      id,
+      code,
+      plan_id,
+      is_used,
+      plans (
+        duration
+      )
+    `);
 
   if (error) {
-    console.error('Error generating vouchers:', error);
+    console.error('Error fetching vouchers:', error);
+    throw error;
+  }
+
+  return (vouchers || []).map(v => ({
+    id: v.id,
+    code: v.code,
+    planId: v.plan_id || '',
+    isUsed: v.is_used || false
+  }));
+}
+
+export async function addVouchers(planId: string, codes: string[]): Promise<void> {
+  const { error } = await supabase
+    .from('vouchers')
+    .insert(
+      codes.map(code => ({
+        code,
+        plan_id: planId,
+        is_used: false
+      }))
+    );
+
+  if (error) {
+    console.error('Error adding vouchers:', error);
     throw error;
   }
 }
@@ -67,22 +93,24 @@ export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> 
   return vouchersByPlan;
 }
 
-export async function fetchAvailableVouchers(): Promise<Record<string, number>> {
-  const { data: availableVouchers, error } = await supabase
+export async function fetchAvailableVouchersCount(): Promise<Record<string, number>> {
+  const { data, error } = await supabase
     .from('vouchers')
-    .select('plan_id, count(*)')
-    .eq('is_used', false)
-    .group('plan_id');
+    .select('plan_id, is_used')
+    .eq('is_used', false);
 
   if (error) {
     console.error('Error fetching available vouchers:', error);
     return {};
   }
 
-  return availableVouchers.reduce((acc, { plan_id, count }) => {
-    acc[plan_id] = count;
+  return (data || []).reduce((acc: Record<string, number>, voucher) => {
+    const planId = voucher.plan_id;
+    if (planId) {
+      acc[planId] = (acc[planId] || 0) + 1;
+    }
     return acc;
-  }, {} as Record<string, number>);
+  }, {});
 }
 
 export async function deleteVoucher(voucherId: string): Promise<void> {
