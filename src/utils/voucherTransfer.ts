@@ -1,6 +1,9 @@
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import type { Purchase } from "@/types/plans";
+import type { Database } from "@/types/database.types";
+
+type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 export async function transferVouchersToClient(purchase: Purchase) {
   const { data: availableVouchers, error: fetchError } = await supabase
@@ -18,7 +21,6 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers.length}`);
   }
 
-  // Start a transaction by using multiple operations
   const voucherIds = availableVouchers.map(v => v.id);
   
   // Mark vouchers as used
@@ -35,7 +37,7 @@ export async function transferVouchersToClient(purchase: Purchase) {
   const walletEntries = voucherIds.map(voucherId => ({
     client_id: purchase.client_id,
     voucher_id: voucherId,
-    status: 'active'
+    status: 'active' as PurchaseStatus
   }));
 
   const { error: insertError } = await supabase

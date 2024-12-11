@@ -46,6 +46,8 @@ export async function fetchPurchases(): Promise<Purchase[]> {
     id: p.id,
     date: new Date(p.created_at).toLocaleDateString(),
     customerName: p.customer_name,
+    client_id: p.client_id || '',
+    plan_id: p.plan_id || '',
     plan: p.plans?.duration || '',
     quantity: p.quantity,
     total: Number(p.total_amount),

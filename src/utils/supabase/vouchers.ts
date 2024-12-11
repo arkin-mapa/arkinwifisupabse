@@ -34,17 +34,22 @@ export async function fetchVouchers(planId?: string): Promise<Voucher[]> {
 }
 
 export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> {
-  const { data: vouchers, error } = await supabase
-    .from('vouchers')
+  // Only fetch vouchers that are in the client's wallet
+  const { data: walletVouchers, error } = await supabase
+    .from('voucher_wallet')
     .select(`
-      id,
-      code,
-      plan_id,
-      is_used,
-      plans (
-        duration
+      voucher_id,
+      vouchers (
+        id,
+        code,
+        plan_id,
+        is_used,
+        plans (
+          duration
+        )
       )
-    `);
+    `)
+    .eq('client_id', (await supabase.auth.getUser()).data.user?.id);
 
   if (error) {
     console.error('Error fetching vouchers:', error);
@@ -52,16 +57,18 @@ export async function fetchClientVouchers(): Promise<Record<string, Voucher[]>> 
   }
 
   const vouchersByPlan: Record<string, Voucher[]> = {};
-  vouchers.forEach(v => {
-    if (v.plans?.duration) {
-      if (!vouchersByPlan[v.plans.duration]) {
-        vouchersByPlan[v.plans.duration] = [];
+  
+  walletVouchers.forEach(wv => {
+    if (wv.vouchers?.plans?.duration) {
+      const duration = wv.vouchers.plans.duration;
+      if (!vouchersByPlan[duration]) {
+        vouchersByPlan[duration] = [];
       }
-      vouchersByPlan[v.plans.duration].push({
-        id: v.id,
-        code: v.code,
-        planId: v.plan_id || '',
-        isUsed: v.is_used || false
+      vouchersByPlan[duration].push({
+        id: wv.vouchers.id,
+        code: wv.vouchers.code,
+        planId: wv.vouchers.plan_id || '',
+        isUsed: wv.vouchers.is_used || false
       });
     }
   });
