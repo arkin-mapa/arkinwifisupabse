@@ -42,7 +42,7 @@ export async function fetchPurchases(): Promise<Purchase[]> {
     throw error;
   }
 
-  return purchases.map(p => ({
+  return (purchases || []).map(p => ({
     id: p.id,
     date: new Date(p.created_at).toLocaleDateString(),
     customerName: p.customer_name,
@@ -74,7 +74,7 @@ export async function cancelPurchase(purchaseId: string): Promise<void> {
 export async function updatePurchaseStatus(
   purchaseId: string,
   status: Database['public']['Tables']['purchases']['Row']['status']
-) {
+): Promise<void> {
   const { error } = await supabase
     .from('purchases')
     .update({ status })
@@ -86,7 +86,7 @@ export async function updatePurchaseStatus(
   }
 }
 
-export async function deletePurchase(purchaseId: string) {
+export async function deletePurchase(purchaseId: string): Promise<void> {
   const { error } = await supabase
     .from('purchases')
     .delete()

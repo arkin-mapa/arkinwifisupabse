@@ -7,7 +7,10 @@ export {
 export {
   fetchPurchases,
   createPurchase,
-  updatePurchaseStatus
+  updatePurchaseStatus,
+  deletePurchase,
+  fetchClientPurchases,
+  cancelPurchase
 } from './supabase/purchases';
 
 export {
@@ -15,5 +18,6 @@ export {
   addVouchers,
   deleteVoucher,
   fetchClientVouchers,
-  fetchAvailableVouchersCount
+  fetchAvailableVouchersCount,
+  fetchClientPlans
 } from './supabase/vouchers';
