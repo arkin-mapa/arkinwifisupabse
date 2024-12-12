@@ -12,6 +12,7 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
+import { Loader2 } from "lucide-react";
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -26,32 +27,51 @@ const AuthPage = () => {
     setIsLoading(true);
 
     try {
-      const { error } = isSignUp
-        ? await supabase.auth.signUp({
-            email,
-            password,
-            options: {
-              emailRedirectTo: `${window.location.origin}/client`,
-            },
-          })
-        : await supabase.auth.signInWithPassword({
-            email,
-            password,
-          });
+      if (isSignUp) {
+        const { error: signUpError } = await supabase.auth.signUp({
+          email,
+          password,
+          options: {
+            emailRedirectTo: `${window.location.origin}/client`,
+          },
+        });
 
-      if (error) {
-        toast.error(error.message);
-      } else {
-        if (isSignUp) {
-          toast.success("Check your email to confirm your account!");
-        } else {
-          toast.success("Successfully signed in!");
-          navigate("/client");
+        if (signUpError) {
+          console.error("SignUp error:", signUpError);
+          if (signUpError.message.includes("already registered")) {
+            toast.error("This email is already registered. Please sign in instead.");
+          } else {
+            toast.error(signUpError.message);
+          }
+          return;
         }
+
+        toast.success("Check your email to confirm your account!");
+        setIsSignUp(false); // Switch to sign in view
+      } else {
+        const { error: signInError } = await supabase.auth.signInWithPassword({
+          email,
+          password,
+        });
+
+        if (signInError) {
+          console.error("SignIn error:", signInError);
+          if (signInError.message.includes("Invalid login credentials")) {
+            toast.error("Invalid email or password. Please try again.");
+          } else if (signInError.message.includes("Email not confirmed")) {
+            toast.error("Please confirm your email before signing in.");
+          } else {
+            toast.error(signInError.message);
+          }
+          return;
+        }
+
+        toast.success("Successfully signed in!");
+        navigate("/client");
       }
     } catch (error) {
       console.error("Auth error:", error);
-      toast.error("An unexpected error occurred");
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -79,6 +99,7 @@ const AuthPage = () => {
                 value={email}
                 onChange={(e) => setEmail(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <div className="space-y-2">
@@ -90,6 +111,7 @@ const AuthPage = () => {
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
                 required
+                disabled={isLoading}
               />
             </div>
             <Button
@@ -97,11 +119,14 @@ const AuthPage = () => {
               className="w-full"
               disabled={isLoading}
             >
-              {isLoading
-                ? "Loading..."
-                : isSignUp
-                ? "Create Account"
-                : "Sign In"}
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isSignUp ? "Creating Account..." : "Signing In..."}
+                </>
+              ) : (
+                isSignUp ? "Create Account" : "Sign In"
+              )}
             </Button>
           </form>
           <div className="mt-4 text-center">
@@ -109,6 +134,7 @@ const AuthPage = () => {
               variant="link"
               onClick={() => setIsSignUp(!isSignUp)}
               className="text-sm"
+              disabled={isLoading}
             >
               {isSignUp
                 ? "Already have an account? Sign in"
