@@ -3,6 +3,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import { Plan } from "@/types/plans";
 import { FileUploader } from "./FileUploader";
+import { Badge } from "@/components/ui/badge";
 
 interface PlanCardProps {
   plan: Plan;
@@ -34,8 +35,10 @@ const PlanCard = ({ plan, onDelete, onVoucherExtracted }: PlanCardProps) => {
         </div>
 
         <div className="space-y-4 mt-4">
-          <div className="text-sm text-muted-foreground bg-muted/30 px-3 py-2 rounded-md">
-            Available vouchers: {plan.availableVouchers}
+          <div className="flex items-center gap-2">
+            <Badge variant={plan.availableVouchers > 0 ? "default" : "destructive"}>
+              {plan.availableVouchers} voucher{plan.availableVouchers !== 1 ? 's' : ''} available
+            </Badge>
           </div>
           <FileUploader 
             onExtracted={handleVoucherExtracted}
