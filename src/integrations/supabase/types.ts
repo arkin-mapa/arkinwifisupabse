@@ -9,6 +9,30 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      plans: {
+        Row: {
+          created_at: string
+          duration: string
+          id: string
+          price: number
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          duration: string
+          id?: string
+          price: number
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          duration?: string
+          id?: string
+          price?: number
+          updated_at?: string
+        }
+        Relationships: []
+      }
       profiles: {
         Row: {
           created_at: string
@@ -30,6 +54,133 @@ export type Database = {
         }
         Relationships: []
       }
+      purchases: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          customer_name: string
+          id: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          plan_id: string | null
+          quantity: number
+          status: Database["public"]["Enums"]["purchase_status"] | null
+          total_amount: number
+          updated_at: string
+          voucher_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          customer_name: string
+          id?: string
+          payment_method: Database["public"]["Enums"]["payment_method"]
+          plan_id?: string | null
+          quantity: number
+          status?: Database["public"]["Enums"]["purchase_status"] | null
+          total_amount: number
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          customer_name?: string
+          id?: string
+          payment_method?: Database["public"]["Enums"]["payment_method"]
+          plan_id?: string | null
+          quantity?: number
+          status?: Database["public"]["Enums"]["purchase_status"] | null
+          total_amount?: number
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchases_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchases_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      voucher_wallet: {
+        Row: {
+          client_id: string | null
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["purchase_status"] | null
+          updated_at: string
+          voucher_id: string | null
+        }
+        Insert: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["purchase_status"] | null
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Update: {
+          client_id?: string | null
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["purchase_status"] | null
+          updated_at?: string
+          voucher_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "voucher_wallet_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      vouchers: {
+        Row: {
+          code: string
+          created_at: string
+          id: string
+          is_used: boolean | null
+          plan_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          code: string
+          created_at?: string
+          id?: string
+          is_used?: boolean | null
+          plan_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          code?: string
+          created_at?: string
+          id?: string
+          is_used?: boolean | null
+          plan_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "vouchers_plan_id_fkey"
+            columns: ["plan_id"]
+            isOneToOne: false
+            referencedRelation: "plans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
@@ -38,6 +189,8 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
+      payment_method: "cash" | "gcash" | "paymaya"
+      purchase_status: "pending" | "approved" | "rejected" | "cancelled"
       user_role: "admin" | "client"
     }
     CompositeTypes: {
