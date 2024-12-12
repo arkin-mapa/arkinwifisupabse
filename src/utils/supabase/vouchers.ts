@@ -115,9 +115,12 @@ export async function fetchClientPlans(): Promise<Plan[]> {
   console.log('Raw plans data:', plans); // Debug log
 
   const formattedPlans = plans.map(plan => {
+    // Count only unused vouchers
     const availableVouchers = plan.vouchers 
       ? plan.vouchers.filter(v => v.is_used === false).length 
       : 0;
+    
+    console.log(`Plan ${plan.duration}: Found ${availableVouchers} available vouchers`); // Debug log
     
     return {
       id: plan.id,
