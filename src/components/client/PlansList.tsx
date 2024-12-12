@@ -1,22 +1,12 @@
-import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Plan } from "@/types/plans";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion } from "framer-motion";
 import { fetchClientPlans, createPurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Database } from "@/types/database.types";
-import { Badge } from "@/components/ui/badge";
+import PlanCard from "./plans/PlanCard";
+import PurchaseDialog from "./plans/PurchaseDialog";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -30,13 +20,13 @@ const PlansList = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: plans = [], isLoading } = useQuery<Plan[]>({
+  const { data: plans = [], isLoading } = useQuery({
     queryKey: ['clientPlans'],
     queryFn: fetchClientPlans,
-    refetchInterval: 5000 // Refetch every 5 seconds
+    refetchInterval: 5000
   });
 
-  console.log('Fetched plans:', plans); // Debug log
+  console.log('Fetched plans:', plans);
 
   const purchaseMutation = useMutation({
     mutationFn: (plan: Plan) => createPurchase({
@@ -97,105 +87,23 @@ const PlansList = () => {
             transition={{ delay: index * 0.1 }}
             className="relative group"
           >
-            <div className="border rounded-lg p-6 bg-white/90 backdrop-blur-sm shadow-sm 
-                          transition-all duration-300 hover:shadow-lg hover:scale-105">
-              <h3 className="text-xl font-semibold mb-2">{plan.duration}</h3>
-              <p className="text-3xl font-bold text-primary mb-4">₱{plan.price}</p>
-              <div className="mb-4">
-                <Badge variant={plan.availableVouchers > 0 ? "default" : "destructive"}>
-                  {plan.availableVouchers} voucher{plan.availableVouchers !== 1 ? 's' : ''} available
-                </Badge>
-              </div>
-              <Button 
-                className="w-full bg-primary hover:bg-primary/90"
-                onClick={() => handlePurchase(plan)}
-                disabled={purchaseMutation.isPending || plan.availableVouchers === 0}
-              >
-                {purchaseMutation.isPending ? "Processing..." : 
-                 plan.availableVouchers === 0 ? "Out of Stock" : "Purchase"}
-              </Button>
-            </div>
+            <PlanCard
+              plan={plan}
+              onPurchase={handlePurchase}
+              isProcessing={purchaseMutation.isPending}
+            />
           </motion.div>
         ))}
       </div>
 
-      <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && setSelectedPlan(null)}>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Purchase {selectedPlan?.duration} Plan</DialogTitle>
-            <DialogDescription>
-              Please fill in your details to complete the purchase.
-            </DialogDescription>
-          </DialogHeader>
-          
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="customerName">Your Name</Label>
-              <Input
-                id="customerName"
-                value={purchaseDetails.customerName}
-                onChange={(e) => setPurchaseDetails({
-                  ...purchaseDetails,
-                  customerName: e.target.value
-                })}
-                placeholder="Enter your name"
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label htmlFor="quantity">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                max={selectedPlan?.availableVouchers || 1}
-                value={purchaseDetails.quantity}
-                onChange={(e) => setPurchaseDetails({
-                  ...purchaseDetails,
-                  quantity: parseInt(e.target.value)
-                })}
-                className="mt-1"
-              />
-            </div>
-
-            <div>
-              <Label>Payment Method</Label>
-              <RadioGroup
-                value={purchaseDetails.paymentMethod}
-                onValueChange={(value: PaymentMethod) => setPurchaseDetails({
-                  ...purchaseDetails,
-                  paymentMethod: value
-                })}
-                className="mt-2 space-y-2"
-              >
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cash" id="cash" />
-                  <Label htmlFor="cash">Cash</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="gcash" id="gcash" />
-                  <Label htmlFor="gcash">GCash</Label>
-                </div>
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="paymaya" id="paymaya" />
-                  <Label htmlFor="paymaya">PayMaya</Label>
-                </div>
-              </RadioGroup>
-            </div>
-
-            <div className="pt-4">
-              <Button
-                className="w-full"
-                onClick={handleSubmitPurchase}
-                disabled={purchaseMutation.isPending}
-              >
-                {purchaseMutation.isPending ? "Processing..." : "Confirm Purchase"}
-              </Button>
-            </div>
-          </div>
-        </DialogContent>
-      </Dialog>
+      <PurchaseDialog
+        selectedPlan={selectedPlan}
+        onClose={() => setSelectedPlan(null)}
+        onSubmit={handleSubmitPurchase}
+        purchaseDetails={purchaseDetails}
+        onDetailsChange={(details) => setPurchaseDetails(prev => ({ ...prev, ...details }))}
+        isProcessing={purchaseMutation.isPending}
+      />
     </>
   );
 };
