@@ -16,6 +16,7 @@ import { motion } from "framer-motion";
 import { fetchClientPlans, createPurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Database } from "@/types/database.types";
+import { Badge } from "@/components/ui/badge";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -100,7 +101,11 @@ const PlansList = () => {
                           transition-all duration-300 hover:shadow-lg hover:scale-105">
               <h3 className="text-xl font-semibold mb-2">{plan.duration}</h3>
               <p className="text-3xl font-bold text-primary mb-4">₱{plan.price}</p>
-              <p className="text-gray-600 mb-4">Available Vouchers: {plan.availableVouchers}</p>
+              <div className="mb-4">
+                <Badge variant={plan.availableVouchers > 0 ? "default" : "destructive"}>
+                  {plan.availableVouchers} voucher{plan.availableVouchers !== 1 ? 's' : ''} available
+                </Badge>
+              </div>
               <Button 
                 className="w-full bg-primary hover:bg-primary/90"
                 onClick={() => handlePurchase(plan)}
