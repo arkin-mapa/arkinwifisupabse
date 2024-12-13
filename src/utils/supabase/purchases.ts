@@ -9,20 +9,47 @@ export async function createPurchase(data: {
   totalAmount: number;
   paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
 }): Promise<void> {
-  const { error } = await supabase
+  const { data: session } = await supabase.auth.getSession();
+  const clientId = session?.session?.user?.id;
+
+  if (!clientId) {
+    throw new Error('User must be logged in to make a purchase');
+  }
+
+  // First, get available vouchers for this plan
+  const { data: availableVouchers, error: voucherError } = await supabase
+    .from('vouchers')
+    .select('id')
+    .eq('plan_id', data.planId)
+    .eq('is_used', false)
+    .limit(data.quantity);
+
+  if (voucherError) {
+    console.error('Error fetching vouchers:', voucherError);
+    throw voucherError;
+  }
+
+  if (!availableVouchers || availableVouchers.length < data.quantity) {
+    throw new Error('Not enough vouchers available');
+  }
+
+  // Create the purchase with the first voucher
+  const { error: purchaseError } = await supabase
     .from('purchases')
     .insert([{
       customer_name: data.customerName,
+      client_id: clientId,
       plan_id: data.planId,
+      voucher_id: availableVouchers[0].id,
       quantity: data.quantity,
       total_amount: data.totalAmount,
       payment_method: data.paymentMethod,
       status: 'pending'
     }]);
 
-  if (error) {
-    console.error('Error creating purchase:', error);
-    throw error;
+  if (purchaseError) {
+    console.error('Error creating purchase:', purchaseError);
+    throw purchaseError;
   }
 }
 
@@ -56,7 +83,6 @@ export async function fetchPurchases(): Promise<Purchase[]> {
   }));
 }
 
-// Alias for client-side use
 export const fetchClientPurchases = fetchPurchases;
 
 export async function cancelPurchase(purchaseId: string): Promise<void> {
@@ -75,14 +101,40 @@ export async function updatePurchaseStatus(
   purchaseId: string,
   status: Database['public']['Tables']['purchases']['Row']['status']
 ): Promise<void> {
-  const { error } = await supabase
+  // First get the purchase details
+  const { data: purchase, error: fetchError } = await supabase
+    .from('purchases')
+    .select('voucher_id')
+    .eq('id', purchaseId)
+    .single();
+
+  if (fetchError) {
+    console.error('Error fetching purchase:', fetchError);
+    throw fetchError;
+  }
+
+  // Update the purchase status
+  const { error: updateError } = await supabase
     .from('purchases')
     .update({ status })
     .eq('id', purchaseId);
 
-  if (error) {
-    console.error('Error updating purchase status:', error);
-    throw error;
+  if (updateError) {
+    console.error('Error updating purchase status:', updateError);
+    throw updateError;
+  }
+
+  // If approved, mark the voucher as used
+  if (status === 'approved' && purchase?.voucher_id) {
+    const { error: voucherError } = await supabase
+      .from('vouchers')
+      .update({ is_used: true })
+      .eq('id', purchase.voucher_id);
+
+    if (voucherError) {
+      console.error('Error updating voucher:', voucherError);
+      throw voucherError;
+    }
   }
 }
 

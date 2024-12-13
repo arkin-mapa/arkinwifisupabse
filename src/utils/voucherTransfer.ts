@@ -1,5 +1,4 @@
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
 import type { Purchase } from "@/types/plans";
 import type { Database } from "@/types/database.types";
 
@@ -10,50 +9,31 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error('Client ID is required for voucher transfer');
   }
 
-  const { data: availableVouchers, error: fetchError } = await supabase
-    .from('vouchers')
-    .select('id')
-    .eq('plan_id', purchase.plan_id)
-    .eq('is_used', false)
-    .limit(purchase.quantity);
+  // Get the voucher associated with this purchase
+  const { data: purchaseData, error: purchaseError } = await supabase
+    .from('purchases')
+    .select('voucher_id')
+    .eq('id', purchase.id)
+    .single();
 
-  if (fetchError || !availableVouchers) {
-    console.error('Fetch error:', fetchError);
-    throw new Error('Failed to fetch available vouchers');
+  if (purchaseError || !purchaseData?.voucher_id) {
+    console.error('Purchase fetch error:', purchaseError);
+    throw new Error('Failed to fetch purchase voucher');
   }
 
-  if (availableVouchers.length < purchase.quantity) {
-    throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers.length}`);
-  }
-
-  const voucherIds = availableVouchers.map(v => v.id);
-  
-  // Mark vouchers as used
-  const { error: updateError } = await supabase
-    .from('vouchers')
-    .update({ is_used: true })
-    .in('id', voucherIds);
-
-  if (updateError) {
-    console.error('Update error:', updateError);
-    throw new Error('Failed to update vouchers');
-  }
-
-  // Add vouchers to client's wallet with explicit status
-  const walletEntries = voucherIds.map(voucherId => ({
-    client_id: purchase.client_id,
-    voucher_id: voucherId,
-    status: 'approved' as PurchaseStatus
-  }));
-
+  // Add voucher to client's wallet with explicit status
   const { error: insertError } = await supabase
     .from('voucher_wallet')
-    .insert(walletEntries);
+    .insert([{
+      client_id: purchase.client_id,
+      voucher_id: purchaseData.voucher_id,
+      status: 'approved' as PurchaseStatus
+    }]);
 
   if (insertError) {
     console.error('Insert error:', insertError);
-    throw new Error('Failed to transfer vouchers to client wallet');
+    throw new Error('Failed to transfer voucher to client wallet');
   }
 
-  return voucherIds;
+  return [purchaseData.voucher_id];
 }
