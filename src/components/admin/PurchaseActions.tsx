@@ -7,14 +7,16 @@ interface PurchaseActionsProps {
   purchase: Purchase;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
-  onDelete: (id: string) => void;
+  onDelete?: (id: string) => void;
+  isUpdating?: boolean;
 }
 
 const PurchaseActions = ({ 
   purchase,
   onApprove, 
   onReject, 
-  onDelete 
+  onDelete,
+  isUpdating 
 }: PurchaseActionsProps) => {
   const handleApprove = async () => {
     try {
@@ -38,6 +40,7 @@ const PurchaseActions = ({
           className="h-7 w-7 bg-green-500 hover:bg-green-600 transition-colors"
           onClick={handleApprove}
           title="Approve"
+          disabled={isUpdating}
         >
           <Check className="h-3 w-3" />
         </Button>
@@ -47,6 +50,7 @@ const PurchaseActions = ({
           className="h-7 w-7 transition-colors"
           onClick={() => onReject(purchase.id)}
           title="Reject"
+          disabled={isUpdating}
         >
           <X className="h-3 w-3" />
         </Button>
@@ -54,7 +58,7 @@ const PurchaseActions = ({
     );
   }
 
-  if (["approved", "rejected", "cancelled"].includes(purchase.status)) {
+  if (["approved", "rejected", "cancelled"].includes(purchase.status) && onDelete) {
     return (
       <Button
         size="icon"
@@ -62,6 +66,7 @@ const PurchaseActions = ({
         className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
         onClick={() => onDelete(purchase.id)}
         title="Delete"
+        disabled={isUpdating}
       >
         <Trash2 className="h-3 w-3" />
       </Button>
