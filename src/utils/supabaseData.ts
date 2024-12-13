@@ -8,7 +8,6 @@ export {
   fetchPurchases,
   createPurchase,
   updatePurchaseStatus,
-  deletePurchase,
   fetchClientPurchases,
   cancelPurchase
 } from './supabase/purchases';
