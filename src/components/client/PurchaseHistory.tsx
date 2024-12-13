@@ -30,7 +30,8 @@ const PurchaseHistory = () => {
 
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['clientPurchases'],
-    queryFn: fetchClientPurchases
+    queryFn: fetchClientPurchases,
+    refetchInterval: 5000 // Refetch every 5 seconds to check for status updates
   });
 
   const cancelMutation = useMutation({

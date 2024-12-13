@@ -1,59 +1,70 @@
-import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
 import PurchasesTable from "./PurchasesTable";
 import { fetchPurchases, updatePurchaseStatus, deletePurchase } from "@/utils/supabaseData";
-import type { Purchase } from "@/types/plans";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 
 const PendingPurchases = () => {
-  const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const queryClient = useQueryClient();
 
-  useEffect(() => {
-    loadPurchases();
-  }, []);
+  const { data: purchases = [], isLoading } = useQuery({
+    queryKey: ['purchases'],
+    queryFn: fetchPurchases
+  });
 
-  const loadPurchases = async () => {
-    try {
-      const purchasesData = await fetchPurchases();
-      setPurchases(purchasesData);
-    } catch (error) {
-      console.error('Error loading purchases:', error);
-      toast.error("Failed to load purchases");
+  const updateMutation = useMutation({
+    mutationFn: ({ purchaseId, status }: { purchaseId: string, status: 'approved' | 'rejected' }) => 
+      updatePurchaseStatus(purchaseId, status),
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] });
+    },
+    onError: (error) => {
+      console.error('Error updating purchase:', error);
+      toast.error("Failed to update purchase status");
     }
-  };
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: deletePurchase,
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['purchases'] });
+      toast.success("Purchase deleted successfully");
+    },
+    onError: (error) => {
+      console.error('Error deleting purchase:', error);
+      toast.error("Failed to delete purchase");
+    }
+  });
 
   const handleApprove = async (purchaseId: string) => {
     try {
-      await updatePurchaseStatus(purchaseId, "approved");
-      await loadPurchases();
+      await updateMutation.mutateAsync({ purchaseId, status: "approved" });
       toast.success("Purchase approved successfully");
     } catch (error) {
       console.error('Error approving purchase:', error);
-      toast.error("Failed to approve purchase");
     }
   };
 
   const handleReject = async (purchaseId: string) => {
     try {
-      await updatePurchaseStatus(purchaseId, "rejected");
-      await loadPurchases();
+      await updateMutation.mutateAsync({ purchaseId, status: "rejected" });
       toast.success("Purchase rejected");
     } catch (error) {
       console.error('Error rejecting purchase:', error);
-      toast.error("Failed to reject purchase");
     }
   };
 
   const handleDelete = async (purchaseId: string) => {
     try {
-      await deletePurchase(purchaseId);
-      await loadPurchases();
-      toast.success("Purchase deleted successfully");
+      await deleteMutation.mutateAsync(purchaseId);
     } catch (error) {
       console.error('Error deleting purchase:', error);
-      toast.error("Failed to delete purchase");
     }
   };
+
+  if (isLoading) {
+    return <div>Loading...</div>;
+  }
 
   return (
     <div className="space-y-4">

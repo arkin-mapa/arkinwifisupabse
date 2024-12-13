@@ -104,7 +104,7 @@ export async function updatePurchaseStatus(
   // First get the purchase details
   const { data: purchase, error: fetchError } = await supabase
     .from('purchases')
-    .select('voucher_id')
+    .select('*')
     .eq('id', purchaseId)
     .single();
 
@@ -124,8 +124,22 @@ export async function updatePurchaseStatus(
     throw updateError;
   }
 
-  // If approved, mark the voucher as used
-  if (status === 'approved' && purchase?.voucher_id) {
+  // If approved, update the voucher_wallet table
+  if (status === 'approved' && purchase?.voucher_id && purchase?.client_id) {
+    const { error: walletError } = await supabase
+      .from('voucher_wallet')
+      .insert([{
+        client_id: purchase.client_id,
+        voucher_id: purchase.voucher_id,
+        status: 'approved'
+      }]);
+
+    if (walletError) {
+      console.error('Error updating voucher wallet:', walletError);
+      throw walletError;
+    }
+
+    // Mark the voucher as used
     const { error: voucherError } = await supabase
       .from('vouchers')
       .update({ is_used: true })
