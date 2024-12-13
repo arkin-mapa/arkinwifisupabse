@@ -24,6 +24,8 @@ import { toast } from "sonner";
 import type { Purchase } from "@/types/plans";
 import { fetchClientPurchases, cancelPurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const PurchaseHistory = () => {
   const queryClient = useQueryClient();
@@ -31,8 +33,31 @@ const PurchaseHistory = () => {
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['clientPurchases'],
     queryFn: fetchClientPurchases,
-    refetchInterval: 5000 // Refetch every 5 seconds to check for status updates
   });
+
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('purchase-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'purchases'
+        },
+        () => {
+          // Refetch purchases when any change occurs
+          queryClient.invalidateQueries({ queryKey: ['clientPurchases'] });
+          toast.info("Purchase status updated");
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
 
   const cancelMutation = useMutation({
     mutationFn: cancelPurchase,

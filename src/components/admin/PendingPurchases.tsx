@@ -1,8 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import PurchasesTable from "./PurchasesTable";
-import { fetchPurchases, updatePurchaseStatus, deletePurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { fetchPurchases, updatePurchaseStatus } from "@/utils/supabaseData";
+import PurchasesTable from "./PurchasesTable";
+import { toast } from "sonner";
+import { useEffect } from "react";
+import { supabase } from "@/integrations/supabase/client";
 
 const PendingPurchases = () => {
   const queryClient = useQueryClient();
@@ -10,11 +11,34 @@ const PendingPurchases = () => {
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['purchases'],
     queryFn: fetchPurchases,
-    refetchInterval: 5000 // Refetch every 5 seconds
   });
 
+  // Set up real-time subscription
+  useEffect(() => {
+    const channel = supabase
+      .channel('admin-purchase-updates')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'purchases'
+        },
+        () => {
+          // Refetch purchases when any change occurs
+          queryClient.invalidateQueries({ queryKey: ['purchases'] });
+          toast.info("Purchase status updated");
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, [queryClient]);
+
   const updateMutation = useMutation({
-    mutationFn: ({ purchaseId, status }: { purchaseId: string, status: 'approved' | 'rejected' }) => 
+    mutationFn: ({ purchaseId, status }: { purchaseId: string, status: "approved" | "rejected" }) =>
       updatePurchaseStatus(purchaseId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases'] });
@@ -26,17 +50,9 @@ const PendingPurchases = () => {
     }
   });
 
-  const deleteMutation = useMutation({
-    mutationFn: deletePurchase,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchases'] });
-      toast.success("Purchase deleted successfully");
-    },
-    onError: (error) => {
-      console.error('Error deleting purchase:', error);
-      toast.error("Failed to delete purchase");
-    }
-  });
+  const pendingPurchases = purchases.filter(
+    (purchase) => purchase.status === "pending"
+  );
 
   const handleApprove = async (purchaseId: string) => {
     try {
@@ -54,37 +70,23 @@ const PendingPurchases = () => {
     }
   };
 
-  const handleDelete = async (purchaseId: string) => {
-    try {
-      await deleteMutation.mutateAsync(purchaseId);
-    } catch (error) {
-      console.error('Error deleting purchase:', error);
-    }
-  };
-
   if (isLoading) {
-    return <div>Loading...</div>;
+    return <div>Loading purchases...</div>;
   }
 
   return (
     <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Purchase Requests</CardTitle>
-        </CardHeader>
-        <CardContent>
-          {purchases.length === 0 ? (
-            <p className="text-muted-foreground">No purchase requests to review.</p>
-          ) : (
-            <PurchasesTable
-              purchases={purchases}
-              onApprove={handleApprove}
-              onReject={handleReject}
-              onDelete={handleDelete}
-            />
-          )}
-        </CardContent>
-      </Card>
+      <h2 className="text-2xl font-bold">Pending Purchases</h2>
+      {pendingPurchases.length === 0 ? (
+        <p className="text-muted-foreground">No pending purchases.</p>
+      ) : (
+        <PurchasesTable
+          purchases={pendingPurchases}
+          onApprove={handleApprove}
+          onReject={handleReject}
+          isUpdating={updateMutation.isPending}
+        />
+      )}
     </div>
   );
 };
