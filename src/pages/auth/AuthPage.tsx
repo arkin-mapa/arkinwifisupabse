@@ -28,7 +28,7 @@ const AuthPage = () => {
 
     try {
       if (isSignUp) {
-        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -36,59 +36,49 @@ const AuthPage = () => {
           },
         });
 
-        if (signUpError) {
-          console.error("SignUp error:", signUpError);
-          if (signUpError.message.includes("already registered")) {
-            toast.error("This email is already registered. Please sign in instead.");
-          } else {
-            toast.error(signUpError.message);
-          }
-          return;
-        }
+        if (error) throw error;
 
-        if (signUpData?.user) {
+        if (data?.user) {
           toast.success("Check your email to confirm your account!");
           setIsSignUp(false);
         }
       } else {
-        const { data: signInData, error: signInError } = await supabase.auth.signInWithPassword({
+        const { data, error } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (signInError) {
-          console.error("SignIn error:", signInError);
-          if (signInError.message.includes("Invalid login credentials")) {
-            toast.error("Invalid email or password. Please try again.");
-          } else if (signInError.message.includes("Email not confirmed")) {
-            toast.error("Please confirm your email before signing in.");
-          } else {
-            toast.error(signInError.message);
-          }
-          return;
-        }
+        if (error) throw error;
 
-        if (signInData?.user) {
+        if (data?.user) {
           const { data: profileData, error: profileError } = await supabase
             .from('profiles')
             .select('role')
-            .eq('id', signInData.user.id)
+            .eq('id', data.user.id)
             .single();
 
-          if (profileError) {
-            console.error("Profile fetch error:", profileError);
-            toast.error("Error fetching user profile");
-            return;
-          }
+          if (profileError) throw profileError;
 
           const redirectPath = profileData?.role === 'admin' ? '/admin' : '/client';
           toast.success("Successfully signed in!");
           navigate(redirectPath);
         }
       }
-    } catch (error) {
+    } catch (error: any) {
       console.error("Auth error:", error);
-      toast.error("An unexpected error occurred. Please try again.");
+      
+      // Handle specific error cases
+      if (error.message?.includes("Invalid login credentials")) {
+        toast.error("Invalid email or password. Please try again.");
+      } else if (error.message?.includes("Email not confirmed")) {
+        toast.error("Please confirm your email before signing in.");
+      } else if (error.message?.includes("already registered")) {
+        toast.error("This email is already registered. Please sign in instead.");
+      } else if (error.message?.includes("Password should be at least 6 characters")) {
+        toast.error("Password must be at least 6 characters long.");
+      } else {
+        toast.error(error.message || "An error occurred during authentication.");
+      }
     } finally {
       setIsLoading(false);
     }
