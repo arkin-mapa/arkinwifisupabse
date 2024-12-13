@@ -9,7 +9,8 @@ const PendingPurchases = () => {
 
   const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['purchases'],
-    queryFn: fetchPurchases
+    queryFn: fetchPurchases,
+    refetchInterval: 5000 // Refetch every 5 seconds
   });
 
   const updateMutation = useMutation({
@@ -17,6 +18,7 @@ const PendingPurchases = () => {
       updatePurchaseStatus(purchaseId, status),
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['purchases'] });
+      toast.success("Purchase status updated successfully");
     },
     onError: (error) => {
       console.error('Error updating purchase:', error);
@@ -39,7 +41,6 @@ const PendingPurchases = () => {
   const handleApprove = async (purchaseId: string) => {
     try {
       await updateMutation.mutateAsync({ purchaseId, status: "approved" });
-      toast.success("Purchase approved successfully");
     } catch (error) {
       console.error('Error approving purchase:', error);
     }
@@ -48,7 +49,6 @@ const PendingPurchases = () => {
   const handleReject = async (purchaseId: string) => {
     try {
       await updateMutation.mutateAsync({ purchaseId, status: "rejected" });
-      toast.success("Purchase rejected");
     } catch (error) {
       console.error('Error rejecting purchase:', error);
     }

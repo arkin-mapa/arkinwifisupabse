@@ -1,7 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
-import { transferVouchersToClient } from "@/utils/voucherTransfer";
 import type { Purchase } from "@/types/plans";
 
 interface PurchaseActionsProps {
@@ -24,12 +23,10 @@ const PurchaseActions = ({
         return;
       }
       
-      await transferVouchersToClient(purchase);
       onApprove(purchase.id);
-      toast.success("Vouchers successfully transferred to client wallet");
     } catch (error) {
-      console.error('Error during voucher transfer:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to transfer vouchers");
+      console.error('Error during approval:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to approve purchase");
     }
   };
 

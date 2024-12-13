@@ -2,6 +2,8 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Purchase } from "@/types/plans";
 import type { Database } from "@/types/database.types";
 
+type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
+
 export async function createPurchase(data: {
   customerName: string;
   planId: string;
@@ -85,21 +87,9 @@ export async function fetchPurchases(): Promise<Purchase[]> {
 
 export const fetchClientPurchases = fetchPurchases;
 
-export async function cancelPurchase(purchaseId: string): Promise<void> {
-  const { error } = await supabase
-    .from('purchases')
-    .update({ status: 'cancelled' })
-    .eq('id', purchaseId);
-
-  if (error) {
-    console.error('Error cancelling purchase:', error);
-    throw error;
-  }
-}
-
 export async function updatePurchaseStatus(
   purchaseId: string,
-  status: Database['public']['Tables']['purchases']['Row']['status']
+  status: PurchaseStatus
 ): Promise<void> {
   // First get the purchase details
   const { data: purchase, error: fetchError } = await supabase
@@ -124,7 +114,7 @@ export async function updatePurchaseStatus(
     throw updateError;
   }
 
-  // If approved, update the voucher_wallet table
+  // If approved, update the voucher_wallet table and mark voucher as used
   if (status === 'approved' && purchase?.voucher_id && purchase?.client_id) {
     const { error: walletError } = await supabase
       .from('voucher_wallet')
@@ -139,7 +129,6 @@ export async function updatePurchaseStatus(
       throw walletError;
     }
 
-    // Mark the voucher as used
     const { error: voucherError } = await supabase
       .from('vouchers')
       .update({ is_used: true })
@@ -149,6 +138,18 @@ export async function updatePurchaseStatus(
       console.error('Error updating voucher:', voucherError);
       throw voucherError;
     }
+  }
+}
+
+export async function cancelPurchase(purchaseId: string): Promise<void> {
+  const { error } = await supabase
+    .from('purchases')
+    .update({ status: 'cancelled' })
+    .eq('id', purchaseId);
+
+  if (error) {
+    console.error('Error cancelling purchase:', error);
+    throw error;
   }
 }
 
