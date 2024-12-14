@@ -10,7 +10,9 @@ export async function fetchVouchers(): Promise<Voucher[]> {
       plan_id,
       is_used,
       plans (
-        duration
+        id,
+        duration,
+        price
       )
     `);
 
@@ -23,7 +25,13 @@ export async function fetchVouchers(): Promise<Voucher[]> {
     id: v.id,
     code: v.code,
     planId: v.plan_id || '',
-    isUsed: v.is_used || false
+    isUsed: v.is_used || false,
+    plan: v.plans ? {
+      id: v.plans.id,
+      duration: v.plans.duration,
+      price: v.plans.price,
+      availableVouchers: 0
+    } : undefined
   }));
 }
 
@@ -57,6 +65,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
         plan_id,
         is_used,
         plans (
+          id,
           duration,
           price
         )
@@ -75,6 +84,11 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     code: wv.vouchers.code,
     planId: wv.vouchers.plan_id || '',
     isUsed: wv.vouchers.is_used || false,
-    plan: wv.vouchers.plans
+    plan: wv.vouchers.plans ? {
+      id: wv.vouchers.plans.id,
+      duration: wv.vouchers.plans.duration,
+      price: wv.vouchers.plans.price,
+      availableVouchers: 0
+    } : undefined
   }));
 }

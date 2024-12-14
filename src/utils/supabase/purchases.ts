@@ -1,8 +1,6 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Purchase } from "@/types/plans";
+import type { Purchase, PurchaseStatus } from "@/types/plans";
 import type { Database } from "@/types/database.types";
-
-type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 export async function createPurchase(data: {
   customerName: string;
@@ -141,7 +139,7 @@ export async function updatePurchaseStatus(
       const walletEntries = purchaseVouchers.map(pv => ({
         client_id: purchase.client_id,
         voucher_id: pv.voucher_id,
-        status: 'approved'
+        status: status as PurchaseStatus
       }));
 
       const { error: walletError } = await supabase
@@ -170,23 +168,11 @@ export async function updatePurchaseStatus(
 export async function cancelPurchase(purchaseId: string): Promise<void> {
   const { error } = await supabase
     .from('purchases')
-    .update({ status: 'cancelled' })
+    .update({ status: 'cancelled' as PurchaseStatus })
     .eq('id', purchaseId);
 
   if (error) {
     console.error('Error cancelling purchase:', error);
-    throw error;
-  }
-}
-
-export async function deletePurchase(purchaseId: string): Promise<void> {
-  const { error } = await supabase
-    .from('purchases')
-    .delete()
-    .eq('id', purchaseId);
-
-  if (error) {
-    console.error('Error deleting purchase:', error);
     throw error;
   }
 }

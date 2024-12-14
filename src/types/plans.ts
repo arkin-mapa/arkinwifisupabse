@@ -12,6 +12,7 @@ export interface Voucher {
   code: string;
   planId: string;
   isUsed: boolean;
+  plan?: Plan;
 }
 
 export interface Purchase {
@@ -26,3 +27,5 @@ export interface Purchase {
   paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
   status: Database['public']['Tables']['purchases']['Row']['status'];
 }
+
+export type PurchaseStatus = 'pending' | 'approved' | 'rejected' | 'cancelled';
