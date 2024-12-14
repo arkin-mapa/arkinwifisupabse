@@ -5,6 +5,7 @@ import VoucherPool from "./VoucherPool";
 import AddPlanDialog from "./AddPlanDialog";
 import { fetchPlans, createPlan, deletePlan, fetchVouchers } from "@/utils/supabaseData";
 import type { Plan, Voucher } from "@/types/plans";
+import { addVouchers } from "@/utils/supabase/vouchers";
 
 const PlansManager = () => {
   const [plans, setPlans] = useState<Plan[]>([]);

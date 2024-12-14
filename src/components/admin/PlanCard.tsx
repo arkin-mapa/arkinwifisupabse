@@ -8,12 +8,13 @@ import { Badge } from "@/components/ui/badge";
 interface PlanCardProps {
   plan: Plan;
   onDelete: (id: string) => void;
-  onVoucherExtracted: (planId: string, codes: string[]) => void;
+  onVoucherExtracted: (planId: string, quantity: number) => void;
 }
 
 const PlanCard = ({ plan, onDelete, onVoucherExtracted }: PlanCardProps) => {
   const handleVoucherExtracted = (codes: string[]) => {
-    onVoucherExtracted(plan.id, codes);
+    // Pass the number of codes as quantity
+    onVoucherExtracted(plan.id, codes.length);
   };
 
   return (
