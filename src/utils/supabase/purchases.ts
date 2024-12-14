@@ -176,3 +176,15 @@ export async function cancelPurchase(purchaseId: string): Promise<void> {
     throw error;
   }
 }
+
+export async function deletePurchase(purchaseId: string): Promise<void> {
+  const { error } = await supabase
+    .from('purchases')
+    .delete()
+    .eq('id', purchaseId);
+
+  if (error) {
+    console.error('Error deleting purchase:', error);
+    throw error;
+  }
+}
