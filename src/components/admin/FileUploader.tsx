@@ -14,33 +14,30 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
     try {
-      // Convert ArrayBuffer to Uint8Array which mammoth can handle
       const uint8Array = new Uint8Array(arrayBuffer);
-      
       const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array });
-
-      const parser = new DOMParser();
-      const doc = parser.parseFromString(html, 'text/html');
+      
+      // Create a temporary div to parse the HTML content
+      const tempDiv = document.createElement('div');
+      tempDiv.innerHTML = html;
+      
+      // Get all text content
+      const textContent = tempDiv.textContent || '';
+      
+      // Improved regex pattern to match voucher codes
+      // This will match any sequence of 6-14 digits that might be separated by spaces, dashes, or other characters
+      const voucherPattern = /\b\d[\d\s-]{4,12}\d\b/g;
+      
+      // Find all matches and clean them
+      const matches = textContent.match(voucherPattern) || [];
       const vouchers = new Set<string>();
-
-      // Function to extract voucher codes from text
-      const extractCodes = (text: string) => {
-        const matches = text.match(/\b\d{6,14}\b/g);
-        if (matches) {
-          matches.forEach(code => vouchers.add(code));
+      
+      matches.forEach(match => {
+        // Clean the voucher code by removing any non-digit characters
+        const cleanCode = match.replace(/[^\d]/g, '');
+        if (cleanCode.length >= 6 && cleanCode.length <= 14) {
+          vouchers.add(cleanCode);
         }
-      };
-
-      // Extract from table cells
-      doc.querySelectorAll('td').forEach(cell => {
-        const text = cell.textContent?.trim() || '';
-        extractCodes(text);
-      });
-
-      // Extract from paragraphs and spans
-      doc.querySelectorAll('p, span').forEach(element => {
-        const text = element.textContent?.trim() || '';
-        extractCodes(text);
       });
 
       const voucherArray = Array.from(vouchers).sort();
@@ -50,7 +47,6 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       }
 
       return voucherArray;
-
     } catch (error) {
       console.error('Error extracting vouchers:', error);
       if (error instanceof Error) {
