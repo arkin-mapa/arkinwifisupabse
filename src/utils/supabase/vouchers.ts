@@ -65,6 +65,17 @@ export async function deleteVoucher(voucherId: string): Promise<void> {
 }
 
 export async function fetchClientVouchers(): Promise<Voucher[]> {
+  const { data: { user }, error: userError } = await supabase.auth.getUser();
+  
+  if (userError) {
+    console.error('Error getting user:', userError);
+    throw userError;
+  }
+
+  if (!user) {
+    throw new Error('No user found');
+  }
+
   const { data: walletVouchers, error } = await supabase
     .from('voucher_wallet')
     .select(`
@@ -80,7 +91,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
         )
       )
     `)
-    .eq('client_id', supabase.auth.getUser());
+    .eq('client_id', user.id);
 
   if (error) {
     console.error('Error fetching client vouchers:', error);
