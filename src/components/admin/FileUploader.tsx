@@ -5,10 +5,11 @@ import mammoth from "mammoth";
 import { toast } from "sonner";
 
 interface FileUploaderProps {
-  onVouchersExtracted: (vouchers: string[]) => void;
+  onExtracted?: (vouchers: string[]) => void;
+  className?: string;
 }
 
-const FileUploader = ({ onVouchersExtracted }: FileUploaderProps) => {
+export const FileUploader = ({ onExtracted, className }: FileUploaderProps) => {
   const [extractedVouchers, setExtractedVouchers] = useState<string[]>([]);
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
@@ -65,7 +66,7 @@ const FileUploader = ({ onVouchersExtracted }: FileUploaderProps) => {
       const arrayBuffer = await file.arrayBuffer();
       const vouchers = await extractVouchersFromWord(arrayBuffer);
       setExtractedVouchers(vouchers);
-      onVouchersExtracted(vouchers);
+      onExtracted?.(vouchers);
     } catch (error) {
       console.error('Error processing file:', error);
       toast.error('Error processing file');
@@ -73,7 +74,7 @@ const FileUploader = ({ onVouchersExtracted }: FileUploaderProps) => {
   };
 
   return (
-    <div className="space-y-4">
+    <div className={`space-y-4 ${className}`}>
       <div className="flex items-center gap-4">
         <Button
           variant="outline"
