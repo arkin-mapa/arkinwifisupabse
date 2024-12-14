@@ -1,118 +1,133 @@
-import { useState } from "react";
-import { Button } from "@/components/ui/button";
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from "@/components/ui/table";
-import mammoth from "mammoth";
-import { toast } from "sonner";
+import React, { useRef, useState } from 'react';
+import { Upload, Loader2 } from 'lucide-react';
+import mammoth from 'mammoth';
+import { toast } from 'react-hot-toast';
 
-interface FileUploaderProps {
-  onExtracted?: (vouchers: string[]) => void;
+interface Props {
+  onExtracted: (vouchers: string[]) => void;
   className?: string;
 }
 
-export const FileUploader = ({ onExtracted, className }: FileUploaderProps) => {
-  const [extractedVouchers, setExtractedVouchers] = useState<string[]>([]);
+export function FileUploader({ onExtracted, className = '' }: Props) {
+  const [loading, setLoading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
     try {
+      // Convert ArrayBuffer to Uint8Array which mammoth can handle
       const uint8Array = new Uint8Array(arrayBuffer);
+      
       const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array });
-      
-      // Create a temporary div to parse the HTML content
-      const tempDiv = document.createElement('div');
-      tempDiv.innerHTML = html;
-      
-      // Get all text content
-      const textContent = tempDiv.textContent || '';
-      
-      // Improved regex pattern to match voucher codes
-      // This will match any sequence of 6-14 digits that might be separated by spaces, dashes, or other characters
-      const voucherPattern = /\b\d[\d\s-]{4,12}\d\b/g;
-      
-      // Find all matches and clean them
-      const matches = textContent.match(voucherPattern) || [];
+
+      const parser = new DOMParser();
+      const doc = parser.parseFromString(html, 'text/html');
       const vouchers = new Set<string>();
-      
-      matches.forEach(match => {
-        // Clean the voucher code by removing any non-digit characters
-        const cleanCode = match.replace(/[^\d]/g, '');
-        if (cleanCode.length >= 6 && cleanCode.length <= 14) {
-          vouchers.add(cleanCode);
+
+      // Function to extract voucher codes from text
+      const extractCodes = (text: string) => {
+        const matches = text.match(/\b\d{6,14}\b/g);
+        if (matches) {
+          matches.forEach(code => vouchers.add(code));
         }
+      };
+
+      // Extract from table cells
+      doc.querySelectorAll('td').forEach(cell => {
+        const text = cell.textContent?.trim() || '';
+        extractCodes(text);
+      });
+
+      // Extract from paragraphs and spans
+      doc.querySelectorAll('p, span').forEach(element => {
+        const text = element.textContent?.trim() || '';
+        extractCodes(text);
       });
 
       const voucherArray = Array.from(vouchers).sort();
-      
+
       if (voucherArray.length === 0) {
-        throw new Error('No valid voucher codes found in the document');
+        throw new Error('No valid voucher codes found in the document. Please ensure your document contains numeric codes between 6-14 digits.');
       }
 
       return voucherArray;
+
     } catch (error) {
       console.error('Error extracting vouchers:', error);
       if (error instanceof Error) {
-        toast.error(error.message);
-      } else {
-        toast.error('An error occurred while extracting vouchers');
+        throw new Error(error.message);
       }
-      return [];
+      throw new Error('Failed to process the document');
     }
   };
 
-  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
-    const file = event.target.files?.[0];
+  const handleFileChange = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
     if (!file) return;
 
+    if (!file.name.toLowerCase().endsWith('.docx')) {
+      toast.error('Please upload a Word document (.docx)');
+      return;
+    }
+
+    setLoading(true);
     try {
       const arrayBuffer = await file.arrayBuffer();
       const vouchers = await extractVouchersFromWord(arrayBuffer);
-      setExtractedVouchers(vouchers);
-      onExtracted?.(vouchers);
+      
+      const totalFound = vouchers.length;
+      const previewCodes = vouchers.slice(0, 3).join(', ');
+      
+      toast(
+        <div className="space-y-1">
+          <p className="font-medium">Found {totalFound} voucher codes:</p>
+          <p className="font-mono text-xs bg-gray-50 p-1 rounded">
+            {previewCodes}...
+          </p>
+          <p className="text-xs text-gray-500">
+            Range: {vouchers[0]} to {vouchers[vouchers.length - 1]}
+          </p>
+        </div>,
+        { duration: 5000 }
+      );
+
+      onExtracted(vouchers);
     } catch (error) {
-      console.error('Error processing file:', error);
-      toast.error('Error processing file');
+      console.error('Error reading document:', error);
+      toast.error(error instanceof Error ? error.message : 'Failed to extract voucher codes');
+    } finally {
+      setLoading(false);
+      if (fileInputRef.current) {
+        fileInputRef.current.value = '';
+      }
     }
   };
 
   return (
-    <div className={`space-y-4 ${className}`}>
-      <div className="flex items-center gap-4">
-        <Button
-          variant="outline"
-          onClick={() => document.getElementById('fileInput')?.click()}
-        >
-          Upload Word Document
-        </Button>
-        <input
-          id="fileInput"
-          type="file"
-          accept=".docx"
-          onChange={handleFileUpload}
-          className="hidden"
-        />
-      </div>
-
-      {extractedVouchers.length > 0 && (
-        <div className="border rounded-lg">
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="text-base font-bold">No.</TableHead>
-                <TableHead className="text-base font-bold">Voucher Code</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {extractedVouchers.map((voucher, index) => (
-                <TableRow key={voucher}>
-                  <TableCell className="text-lg font-bold">{index + 1}</TableCell>
-                  <TableCell className="text-lg font-bold font-mono">{voucher}</TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        </div>
-      )}
+    <div className={`relative ${className}`}>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".docx"
+        onChange={handleFileChange}
+        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+        disabled={loading}
+      />
+      <button
+        type="button"
+        className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border rounded ${
+          loading ? 'bg-gray-50 text-gray-400' : 'hover:bg-gray-50'
+        }`}
+        disabled={loading}
+      >
+        {loading ? (
+          <Loader2 size={14} className="animate-spin" />
+        ) : (
+          <>
+            <Upload size={14} />
+            Upload Vouchers
+          </>
+        )}
+      </button>
     </div>
   );
-};
-
-export default FileUploader;
+}

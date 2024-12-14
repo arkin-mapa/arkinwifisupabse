@@ -2,7 +2,7 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
 import { Plan } from "@/types/plans";
-import FileUploader from "./FileUploader";
+import { FileUploader } from "./FileUploader";
 import { Badge } from "@/components/ui/badge";
 
 interface PlanCardProps {
