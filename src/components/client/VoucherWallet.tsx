@@ -3,13 +3,15 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
-import { fetchClientVouchers } from "@/utils/supabaseData";
+import { fetchClientVouchers, deleteVoucher } from "@/utils/supabaseData";
+import { printVoucher } from "@/utils/printUtils";
 import type { Voucher } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
+  const [isDeleting, setIsDeleting] = useState(false);
   const session = useSession();
 
   useEffect(() => {
@@ -39,17 +41,24 @@ const VoucherWallet = () => {
   };
 
   const handlePrintVoucher = (voucher: Voucher) => {
-    // Implementation for printing voucher
-    console.log('Printing voucher:', voucher);
+    if (printVoucher(voucher, voucher.plan)) {
+      toast.success("Printing voucher...");
+    } else {
+      toast.error("Failed to print voucher");
+    }
   };
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
-      // Implementation for deleting voucher
-      await loadVouchers(); // Reload vouchers after deletion
+      setIsDeleting(true);
+      await deleteVoucher(voucherId);
+      toast.success("Voucher deleted successfully");
+      await loadVouchers();
     } catch (error) {
       console.error('Error deleting voucher:', error);
       toast.error("Failed to delete voucher");
+    } finally {
+      setIsDeleting(false);
     }
   };
 
@@ -91,12 +100,13 @@ const VoucherWallet = () => {
             <PlanGroup
               key={planDuration}
               planId={planDuration}
-              plan={undefined}
+              plan={planVouchers[0]?.plan}
               vouchers={planVouchers}
               isExpanded={expandedPlans[planDuration] || false}
               onToggle={() => togglePlanExpansion(planDuration)}
               onPrintVoucher={handlePrintVoucher}
               onDeleteVoucher={handleDeleteVoucher}
+              isDeleting={isDeleting}
             />
           ))}
         </ScrollArea>

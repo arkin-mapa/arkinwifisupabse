@@ -27,31 +27,14 @@ export async function fetchVouchers(): Promise<Voucher[]> {
   }));
 }
 
-export async function addVouchers(planId: string, codes: string[]): Promise<void> {
-  const vouchersToInsert = codes.map(code => ({
-    code,
-    plan_id: planId,
-    is_used: false
-  }));
-
-  const { error } = await supabase
-    .from('vouchers')
-    .insert(vouchersToInsert);
-
-  if (error) {
-    console.error('Error adding vouchers:', error);
-    throw error;
-  }
-}
-
 export async function deleteVoucher(voucherId: string): Promise<void> {
   const { error } = await supabase
-    .from('vouchers')
+    .from('voucher_wallet')
     .delete()
-    .eq('id', voucherId);
+    .eq('voucher_id', voucherId);
 
   if (error) {
-    console.error('Error deleting voucher:', error);
+    console.error('Error deleting voucher from wallet:', error);
     throw error;
   }
 }
@@ -72,7 +55,11 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
         id,
         code,
         plan_id,
-        is_used
+        is_used,
+        plans (
+          duration,
+          price
+        )
       )
     `)
     .eq('client_id', userId)
@@ -87,67 +74,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     id: wv.vouchers.id,
     code: wv.vouchers.code,
     planId: wv.vouchers.plan_id || '',
-    isUsed: wv.vouchers.is_used || false
+    isUsed: wv.vouchers.is_used || false,
+    plan: wv.vouchers.plans
   }));
-}
-
-export async function fetchClientPlans(): Promise<Plan[]> {
-  console.log('Fetching client plans...'); // Debug log
-
-  const { data: plans, error: plansError } = await supabase
-    .from('plans')
-    .select('id, duration, price');
-
-  if (plansError) {
-    console.error('Error fetching plans:', plansError);
-    throw plansError;
-  }
-
-  // Fetch all unused vouchers for all plans
-  const { data: vouchers, error: vouchersError } = await supabase
-    .from('vouchers')
-    .select('id, plan_id, is_used')
-    .eq('is_used', false);
-
-  if (vouchersError) {
-    console.error('Error fetching vouchers:', vouchersError);
-    throw vouchersError;
-  }
-
-  console.log('Raw plans data:', plans); // Debug log
-  console.log('Raw vouchers data:', vouchers); // Debug log
-
-  const formattedPlans = plans.map(plan => {
-    // Count unused vouchers for this plan
-    const availableVouchers = vouchers
-      ? vouchers.filter(v => v.plan_id === plan.id && !v.is_used).length
-      : 0;
-    
-    console.log(`Plan ${plan.duration}: Found ${availableVouchers} available vouchers`); // Debug log
-    
-    return {
-      id: plan.id,
-      duration: plan.duration,
-      price: Number(plan.price),
-      availableVouchers
-    };
-  });
-
-  console.log('Formatted plans:', formattedPlans); // Debug log
-  return formattedPlans;
-}
-
-export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
-  const { data: vouchers, error } = await supabase
-    .from('vouchers')
-    .select('id')
-    .eq('plan_id', planId)
-    .eq('is_used', false);
-
-  if (error) {
-    console.error('Error fetching available vouchers count:', error);
-    throw error;
-  }
-
-  return (vouchers || []).length;
 }

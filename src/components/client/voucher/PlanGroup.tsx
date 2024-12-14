@@ -14,6 +14,7 @@ interface PlanGroupProps {
   onToggle: () => void;
   onDeleteVoucher: (id: string) => void;
   onPrintVoucher: (voucher: Voucher) => void;
+  isDeleting: boolean;
 }
 
 const PlanGroup = ({
@@ -24,6 +25,7 @@ const PlanGroup = ({
   onToggle,
   onDeleteVoucher,
   onPrintVoucher,
+  isDeleting,
 }: PlanGroupProps) => {
   const handlePrintAllPlanVouchers = () => {
     if (plan && !printPlanVouchers(vouchers, plan)) {
@@ -35,7 +37,7 @@ const PlanGroup = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border bg-white p-6"
+      className="rounded-xl border bg-white p-6 mb-4"
     >
       <div className="flex justify-between items-center mb-4">
         <div 
@@ -69,6 +71,7 @@ const PlanGroup = ({
               voucher={voucher}
               onDelete={onDeleteVoucher}
               onPrint={onPrintVoucher}
+              isDeleting={isDeleting}
             />
           ))}
         </div>

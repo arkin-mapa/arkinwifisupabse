@@ -35,23 +35,39 @@ export async function createPurchase(data: {
     throw new Error('Not enough vouchers available');
   }
 
-  // Create the purchase with the first voucher
-  const { error: purchaseError } = await supabase
+  // Create the purchase
+  const { data: purchase, error: purchaseError } = await supabase
     .from('purchases')
     .insert([{
       customer_name: data.customerName,
       client_id: clientId,
       plan_id: data.planId,
-      voucher_id: availableVouchers[0].id,
       quantity: data.quantity,
       total_amount: data.totalAmount,
       payment_method: data.paymentMethod,
       status: 'pending'
-    }]);
+    }])
+    .select()
+    .single();
 
-  if (purchaseError) {
+  if (purchaseError || !purchase) {
     console.error('Error creating purchase:', purchaseError);
     throw purchaseError;
+  }
+
+  // Create purchase_vouchers entries for each voucher
+  const purchaseVouchers = availableVouchers.map(voucher => ({
+    purchase_id: purchase.id,
+    voucher_id: voucher.id
+  }));
+
+  const { error: pvError } = await supabase
+    .from('purchase_vouchers')
+    .insert(purchaseVouchers);
+
+  if (pvError) {
+    console.error('Error creating purchase vouchers:', pvError);
+    throw pvError;
   }
 }
 
@@ -91,16 +107,15 @@ export async function updatePurchaseStatus(
   purchaseId: string,
   status: PurchaseStatus
 ): Promise<void> {
-  // First get the purchase details
-  const { data: purchase, error: fetchError } = await supabase
-    .from('purchases')
-    .select('*')
-    .eq('id', purchaseId)
-    .single();
+  // First get the purchase details and its vouchers
+  const { data: purchaseVouchers, error: pvError } = await supabase
+    .from('purchase_vouchers')
+    .select('voucher_id')
+    .eq('purchase_id', purchaseId);
 
-  if (fetchError) {
-    console.error('Error fetching purchase:', fetchError);
-    throw fetchError;
+  if (pvError) {
+    console.error('Error fetching purchase vouchers:', pvError);
+    throw pvError;
   }
 
   // Update the purchase status
@@ -114,29 +129,40 @@ export async function updatePurchaseStatus(
     throw updateError;
   }
 
-  // If approved, update the voucher_wallet table and mark voucher as used
-  if (status === 'approved' && purchase?.voucher_id && purchase?.client_id) {
-    const { error: walletError } = await supabase
-      .from('voucher_wallet')
-      .insert([{
+  // If approved, update the voucher_wallet table and mark vouchers as used
+  if (status === 'approved' && purchaseVouchers) {
+    const { data: purchase } = await supabase
+      .from('purchases')
+      .select('client_id')
+      .eq('id', purchaseId)
+      .single();
+
+    if (purchase?.client_id) {
+      const walletEntries = purchaseVouchers.map(pv => ({
         client_id: purchase.client_id,
-        voucher_id: purchase.voucher_id,
+        voucher_id: pv.voucher_id,
         status: 'approved'
-      }]);
+      }));
 
-    if (walletError) {
-      console.error('Error updating voucher wallet:', walletError);
-      throw walletError;
-    }
+      const { error: walletError } = await supabase
+        .from('voucher_wallet')
+        .insert(walletEntries);
 
-    const { error: voucherError } = await supabase
-      .from('vouchers')
-      .update({ is_used: true })
-      .eq('id', purchase.voucher_id);
+      if (walletError) {
+        console.error('Error updating voucher wallet:', walletError);
+        throw walletError;
+      }
 
-    if (voucherError) {
-      console.error('Error updating voucher:', voucherError);
-      throw voucherError;
+      // Mark vouchers as used
+      const { error: voucherError } = await supabase
+        .from('vouchers')
+        .update({ is_used: true })
+        .in('id', purchaseVouchers.map(pv => pv.voucher_id));
+
+      if (voucherError) {
+        console.error('Error updating vouchers:', voucherError);
+        throw voucherError;
+      }
     }
   }
 }
@@ -149,6 +175,18 @@ export async function cancelPurchase(purchaseId: string): Promise<void> {
 
   if (error) {
     console.error('Error cancelling purchase:', error);
+    throw error;
+  }
+}
+
+export async function deletePurchase(purchaseId: string): Promise<void> {
+  const { error } = await supabase
+    .from('purchases')
+    .delete()
+    .eq('id', purchaseId);
+
+  if (error) {
+    console.error('Error deleting purchase:', error);
     throw error;
   }
 }
