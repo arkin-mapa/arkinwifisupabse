@@ -1,5 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
-import type { Voucher, Plan } from "@/types/plans";
+import type { Voucher } from "@/types/plans";
 
 export async function fetchVouchers(): Promise<Voucher[]> {
   const { data: vouchers, error } = await supabase
@@ -21,7 +21,7 @@ export async function fetchVouchers(): Promise<Voucher[]> {
     throw error;
   }
 
-  return (vouchers || []).map(v => ({
+  return vouchers.map(v => ({
     id: v.id,
     code: v.code,
     planId: v.plan_id || '',
@@ -35,30 +35,39 @@ export async function fetchVouchers(): Promise<Voucher[]> {
   }));
 }
 
-export async function deleteVoucher(voucherId: string): Promise<void> {
+export async function addVouchers(planId: string, quantity: number): Promise<void> {
+  const vouchers = Array.from({ length: quantity }, () => ({
+    code: Math.random().toString(36).substring(2, 8).toUpperCase(),
+    plan_id: planId,
+    is_used: false
+  }));
+
   const { error } = await supabase
-    .from('voucher_wallet')
-    .delete()
-    .eq('voucher_id', voucherId);
+    .from('vouchers')
+    .insert(vouchers);
 
   if (error) {
-    console.error('Error deleting voucher from wallet:', error);
+    console.error('Error adding vouchers:', error);
+    throw error;
+  }
+}
+
+export async function deleteVoucher(voucherId: string): Promise<void> {
+  const { error } = await supabase
+    .from('vouchers')
+    .delete()
+    .eq('id', voucherId);
+
+  if (error) {
+    console.error('Error deleting voucher:', error);
     throw error;
   }
 }
 
 export async function fetchClientVouchers(): Promise<Voucher[]> {
-  const { data: session } = await supabase.auth.getSession();
-  const userId = session?.session?.user?.id;
-
-  if (!userId) {
-    throw new Error('User must be logged in to fetch vouchers');
-  }
-
   const { data: walletVouchers, error } = await supabase
     .from('voucher_wallet')
     .select(`
-      voucher_id,
       vouchers (
         id,
         code,
@@ -71,15 +80,14 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
         )
       )
     `)
-    .eq('client_id', userId)
-    .eq('status', 'approved');
+    .eq('client_id', supabase.auth.getUser());
 
   if (error) {
     console.error('Error fetching client vouchers:', error);
     throw error;
   }
 
-  return (walletVouchers || []).map(wv => ({
+  return walletVouchers.map(wv => ({
     id: wv.vouchers.id,
     code: wv.vouchers.code,
     planId: wv.vouchers.plan_id || '',

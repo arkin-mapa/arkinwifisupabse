@@ -1,7 +1,8 @@
 export {
   fetchPlans,
   createPlan,
-  deletePlan
+  deletePlan,
+  fetchClientPlans
 } from './supabase/plans';
 
 export {
@@ -9,11 +10,13 @@ export {
   createPurchase,
   updatePurchaseStatus,
   fetchClientPurchases,
-  cancelPurchase
+  cancelPurchase,
+  deletePurchase
 } from './supabase/purchases';
 
 export {
   fetchVouchers,
   deleteVoucher,
-  fetchClientVouchers
+  fetchClientVouchers,
+  addVouchers
 } from './supabase/vouchers';
