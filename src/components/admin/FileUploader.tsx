@@ -14,34 +14,41 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
     try {
-      // Convert ArrayBuffer to Uint8Array which mammoth can handle
       const uint8Array = new Uint8Array(arrayBuffer);
-      
       const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array });
-
+      
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const vouchers = new Set<string>();
 
-      // Function to extract voucher codes from text
-      const extractCodes = (text: string) => {
-        const matches = text.match(/\b\d{6,14}\b/g);
-        if (matches) {
-          matches.forEach(code => vouchers.add(code));
+      // Function to clean and validate voucher codes
+      const cleanAndValidateCode = (text: string): string | null => {
+        // Remove any non-digit characters
+        const cleanCode = text.replace(/\D/g, '');
+        // Check if the cleaned code is between 6-14 digits
+        if (cleanCode.length >= 6 && cleanCode.length <= 14) {
+          return cleanCode;
         }
+        return null;
       };
 
-      // Extract from table cells
+      // Extract from table cells first (prioritize table data)
       doc.querySelectorAll('td').forEach(cell => {
         const text = cell.textContent?.trim() || '';
-        extractCodes(text);
+        const code = cleanAndValidateCode(text);
+        if (code) vouchers.add(code);
       });
 
-      // Extract from paragraphs and spans
-      doc.querySelectorAll('p, span').forEach(element => {
-        const text = element.textContent?.trim() || '';
-        extractCodes(text);
-      });
+      // If no codes found in tables, try paragraphs and spans
+      if (vouchers.size === 0) {
+        const textContent = doc.body.textContent || '';
+        // Split by common separators and process each potential code
+        const potentialCodes = textContent.split(/[\s,;\n]+/);
+        potentialCodes.forEach(text => {
+          const code = cleanAndValidateCode(text);
+          if (code) vouchers.add(code);
+        });
+      }
 
       const voucherArray = Array.from(vouchers).sort();
 
@@ -50,7 +57,6 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       }
 
       return voucherArray;
-
     } catch (error) {
       console.error('Error extracting vouchers:', error);
       if (error instanceof Error) {
@@ -80,10 +86,10 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       toast(
         <div className="space-y-1">
           <p className="font-medium">Found {totalFound} voucher codes:</p>
-          <p className="font-mono text-xs bg-gray-50 p-1 rounded">
+          <p className="font-mono text-base font-bold bg-gray-50 p-1.5 rounded">
             {previewCodes}...
           </p>
-          <p className="text-xs text-gray-500">
+          <p className="text-sm text-gray-500">
             Range: {vouchers[0]} to {vouchers[vouchers.length - 1]}
           </p>
         </div>,
@@ -131,3 +137,5 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
     </div>
   );
 }
+
+export default FileUploader;
