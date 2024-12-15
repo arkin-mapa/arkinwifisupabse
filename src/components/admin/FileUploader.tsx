@@ -23,21 +23,17 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
       // Function to clean and validate voucher codes
       const cleanAndValidateCode = (text: string): string | null => {
-        // First, try to find a sequence of 6-14 digits
-        const match = text.match(/\b\d{6,14}\b/);
-        if (match) {
-          return match[0];
-        }
+        // Remove all whitespace and non-digit characters
+        const cleanCode = text.replace(/\s+/g, '').replace(/\D/g, '');
         
-        // If no direct match, clean the text and check if it's valid
-        const cleanCode = text.replace(/\D/g, '');
+        // Validate the code length (must be between 6-14 digits)
         if (cleanCode.length >= 6 && cleanCode.length <= 14) {
           return cleanCode;
         }
         return null;
       };
 
-      // First try to extract from table cells
+      // Extract from table cells (primary source)
       doc.querySelectorAll('td').forEach(cell => {
         const text = cell.textContent?.trim() || '';
         const code = cleanAndValidateCode(text);
@@ -48,18 +44,16 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       if (vouchers.size === 0) {
         doc.querySelectorAll('p').forEach(p => {
           const text = p.textContent?.trim() || '';
-          // Split by whitespace and common separators
-          text.split(/[\s,;\n]+/).forEach(word => {
-            const code = cleanAndValidateCode(word);
-            if (code) vouchers.add(code);
-          });
+          const code = cleanAndValidateCode(text);
+          if (code) vouchers.add(code);
         });
       }
 
       // If still no codes found, try the entire document content
       if (vouchers.size === 0) {
         const textContent = doc.body.textContent || '';
-        textContent.split(/[\s,;\n]+/).forEach(word => {
+        const words = textContent.split(/[\s,;\n]+/);
+        words.forEach(word => {
           const code = cleanAndValidateCode(word);
           if (code) vouchers.add(code);
         });
