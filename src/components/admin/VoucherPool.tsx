@@ -25,7 +25,6 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
     try {
       await deleteVoucher(voucherId);
       
-      // Fetch updated vouchers and transform into the required format
       const updatedVouchersArray = await fetchVouchers();
       const updatedVouchersByPlan = updatedVouchersArray.reduce((acc: Record<string, Voucher[]>, voucher) => {
         const planDuration = Object.keys(localVouchers).find(duration => 
@@ -105,7 +104,7 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
                         <div key={voucher.id} className="relative group">
                           <Badge
                             variant={voucher.isUsed ? "secondary" : "default"}
-                            className="w-full justify-between py-2 px-3"
+                            className="w-full justify-between py-2 px-3 font-mono"
                           >
                             <span className="truncate">{voucher.code}</span>
                           </Badge>
