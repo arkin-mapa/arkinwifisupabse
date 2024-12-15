@@ -54,42 +54,6 @@ export type Database = {
         }
         Relationships: []
       }
-      purchase_vouchers: {
-        Row: {
-          created_at: string
-          id: string
-          purchase_id: string | null
-          voucher_id: string | null
-        }
-        Insert: {
-          created_at?: string
-          id?: string
-          purchase_id?: string | null
-          voucher_id?: string | null
-        }
-        Update: {
-          created_at?: string
-          id?: string
-          purchase_id?: string | null
-          voucher_id?: string | null
-        }
-        Relationships: [
-          {
-            foreignKeyName: "purchase_vouchers_purchase_id_fkey"
-            columns: ["purchase_id"]
-            isOneToOne: false
-            referencedRelation: "purchases"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchase_vouchers_voucher_id_fkey"
-            columns: ["voucher_id"]
-            isOneToOne: false
-            referencedRelation: "vouchers"
-            referencedColumns: ["id"]
-          },
-        ]
-      }
       purchases: {
         Row: {
           client_id: string | null

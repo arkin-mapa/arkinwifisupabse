@@ -3,9 +3,8 @@ import { useToast } from "@/hooks/use-toast";
 import PlanCard from "./PlanCard";
 import VoucherPool from "./VoucherPool";
 import AddPlanDialog from "./AddPlanDialog";
-import { fetchPlans, createPlan, deletePlan, fetchVouchers } from "@/utils/supabaseData";
+import { fetchPlans, createPlan, deletePlan, fetchVouchers, addVouchers } from "@/utils/supabaseData";
 import type { Plan, Voucher } from "@/types/plans";
-import { addVouchers } from "@/utils/supabase/vouchers";
 
 const PlansManager = () => {
   const [plans, setPlans] = useState<Plan[]>([]);
@@ -91,14 +90,14 @@ const PlansManager = () => {
     }
   };
 
-  const handleVoucherExtracted = async (planId: string, quantity: number) => {
+  const handleVoucherExtracted = async (planId: string, voucherCodes: string[]) => {
     try {
-      await addVouchers(planId, quantity);
+      await addVouchers(planId, voucherCodes);
       await loadData();
 
       toast({
         title: "Vouchers uploaded",
-        description: `${quantity} new vouchers added successfully`,
+        description: `${voucherCodes.length} new vouchers added successfully`,
       });
     } catch (error) {
       console.error('Error adding vouchers:', error);

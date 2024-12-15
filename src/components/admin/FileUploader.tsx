@@ -14,42 +14,43 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
   const extractVouchersFromWord = async (arrayBuffer: ArrayBuffer): Promise<string[]> => {
     try {
+      // Convert ArrayBuffer to Uint8Array which mammoth can handle
       const uint8Array = new Uint8Array(arrayBuffer);
-      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array });
       
+      const { value: html } = await mammoth.convertToHtml({ arrayBuffer: uint8Array });
+
       const parser = new DOMParser();
       const doc = parser.parseFromString(html, 'text/html');
       const vouchers = new Set<string>();
 
-      // Function to generate random alphanumeric code (matching pool format)
-      const generateVoucherCode = (): string => {
-        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        return Array.from({ length: 6 }, () => 
-          chars.charAt(Math.floor(Math.random() * chars.length))
-        ).join('');
+      // Function to extract voucher codes from text
+      const extractCodes = (text: string) => {
+        const matches = text.match(/\b\d{6,14}\b/g);
+        if (matches) {
+          matches.forEach(code => vouchers.add(code));
+        }
       };
 
-      // Extract from table cells (primary source)
+      // Extract from table cells
       doc.querySelectorAll('td').forEach(cell => {
-        const code = generateVoucherCode();
-        vouchers.add(code);
+        const text = cell.textContent?.trim() || '';
+        extractCodes(text);
       });
 
-      // If no codes found in tables, try extracting from paragraphs
-      if (vouchers.size === 0) {
-        doc.querySelectorAll('p').forEach(() => {
-          const code = generateVoucherCode();
-          vouchers.add(code);
-        });
-      }
+      // Extract from paragraphs and spans
+      doc.querySelectorAll('p, span').forEach(element => {
+        const text = element.textContent?.trim() || '';
+        extractCodes(text);
+      });
 
       const voucherArray = Array.from(vouchers).sort();
 
       if (voucherArray.length === 0) {
-        throw new Error('No content found in the document to generate voucher codes from.');
+        throw new Error('No valid voucher codes found in the document. Please ensure your document contains numeric codes between 6-14 digits.');
       }
 
       return voucherArray;
+
     } catch (error) {
       console.error('Error extracting vouchers:', error);
       if (error instanceof Error) {
@@ -78,11 +79,11 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       
       toast(
         <div className="space-y-1">
-          <p className="font-medium">Generated {totalFound} voucher codes:</p>
-          <p className="font-mono text-base font-bold bg-gray-50 p-1.5 rounded">
+          <p className="font-medium">Found {totalFound} voucher codes:</p>
+          <p className="font-mono text-xs bg-gray-50 p-1 rounded">
             {previewCodes}...
           </p>
-          <p className="text-sm text-gray-500">
+          <p className="text-xs text-gray-500">
             Range: {vouchers[0]} to {vouchers[vouchers.length - 1]}
           </p>
         </div>,
@@ -130,5 +131,3 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
     </div>
   );
 }
-
-export default FileUploader;

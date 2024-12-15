@@ -1,21 +1,23 @@
 export {
   fetchPlans,
   createPlan,
-  deletePlan,
-  fetchClientPlans
+  deletePlan
 } from './supabase/plans';
 
 export {
   fetchPurchases,
   createPurchase,
   updatePurchaseStatus,
+  deletePurchase,
   fetchClientPurchases,
-  cancelPurchase,
-  deletePurchase
+  cancelPurchase
 } from './supabase/purchases';
 
 export {
   fetchVouchers,
+  addVouchers,
   deleteVoucher,
-  fetchClientVouchers
+  fetchClientVouchers,
+  fetchAvailableVouchersCount,
+  fetchClientPlans
 } from './supabase/vouchers';

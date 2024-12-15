@@ -1,22 +1,21 @@
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
 import { toast } from "sonner";
+import { transferVouchersToClient } from "@/utils/voucherTransfer";
 import type { Purchase } from "@/types/plans";
 
 interface PurchaseActionsProps {
   purchase: Purchase;
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
-  onDelete?: (id: string) => void;
-  isUpdating?: boolean;
+  onDelete: (id: string) => void;
 }
 
 const PurchaseActions = ({ 
   purchase,
   onApprove, 
   onReject, 
-  onDelete,
-  isUpdating 
+  onDelete 
 }: PurchaseActionsProps) => {
   const handleApprove = async () => {
     try {
@@ -25,10 +24,12 @@ const PurchaseActions = ({
         return;
       }
       
+      await transferVouchersToClient(purchase);
       onApprove(purchase.id);
+      toast.success("Vouchers successfully transferred to client wallet");
     } catch (error) {
-      console.error('Error during approval:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to approve purchase");
+      console.error('Error during voucher transfer:', error);
+      toast.error(error instanceof Error ? error.message : "Failed to transfer vouchers");
     }
   };
 
@@ -40,7 +41,6 @@ const PurchaseActions = ({
           className="h-7 w-7 bg-green-500 hover:bg-green-600 transition-colors"
           onClick={handleApprove}
           title="Approve"
-          disabled={isUpdating}
         >
           <Check className="h-3 w-3" />
         </Button>
@@ -50,7 +50,6 @@ const PurchaseActions = ({
           className="h-7 w-7 transition-colors"
           onClick={() => onReject(purchase.id)}
           title="Reject"
-          disabled={isUpdating}
         >
           <X className="h-3 w-3" />
         </Button>
@@ -58,7 +57,7 @@ const PurchaseActions = ({
     );
   }
 
-  if (["approved", "rejected", "cancelled"].includes(purchase.status) && onDelete) {
+  if (["approved", "rejected", "cancelled"].includes(purchase.status)) {
     return (
       <Button
         size="icon"
@@ -66,7 +65,6 @@ const PurchaseActions = ({
         className="h-7 w-7 text-red-500 hover:text-red-600 hover:bg-red-50"
         onClick={() => onDelete(purchase.id)}
         title="Delete"
-        disabled={isUpdating}
       >
         <Trash2 className="h-3 w-3" />
       </Button>

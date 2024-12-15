@@ -1,92 +1,79 @@
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
-import { fetchPurchases, updatePurchaseStatus } from "@/utils/supabaseData";
-import PurchasesTable from "./PurchasesTable";
+import { useState, useEffect } from "react";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import PurchasesTable from "./PurchasesTable";
+import { fetchPurchases, updatePurchaseStatus, deletePurchase } from "@/utils/supabaseData";
+import type { Purchase } from "@/types/plans";
 
 const PendingPurchases = () => {
-  const queryClient = useQueryClient();
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
 
-  const { data: purchases = [], isLoading } = useQuery({
-    queryKey: ['purchases'],
-    queryFn: fetchPurchases,
-  });
-
-  // Set up real-time subscription
   useEffect(() => {
-    const channel = supabase
-      .channel('admin-purchase-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'purchases'
-        },
-        () => {
-          // Refetch purchases when any change occurs
-          queryClient.invalidateQueries({ queryKey: ['purchases'] });
-          toast.info("Purchase status updated");
-        }
-      )
-      .subscribe();
+    loadPurchases();
+  }, []);
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [queryClient]);
-
-  const updateMutation = useMutation({
-    mutationFn: ({ purchaseId, status }: { purchaseId: string, status: "approved" | "rejected" }) =>
-      updatePurchaseStatus(purchaseId, status),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['purchases'] });
-      toast.success("Purchase status updated successfully");
-    },
-    onError: (error) => {
-      console.error('Error updating purchase:', error);
-      toast.error("Failed to update purchase status");
+  const loadPurchases = async () => {
+    try {
+      const purchasesData = await fetchPurchases();
+      setPurchases(purchasesData);
+    } catch (error) {
+      console.error('Error loading purchases:', error);
+      toast.error("Failed to load purchases");
     }
-  });
-
-  const pendingPurchases = purchases.filter(
-    (purchase) => purchase.status === "pending"
-  );
+  };
 
   const handleApprove = async (purchaseId: string) => {
     try {
-      await updateMutation.mutateAsync({ purchaseId, status: "approved" });
+      await updatePurchaseStatus(purchaseId, "approved");
+      await loadPurchases();
+      toast.success("Purchase approved successfully");
     } catch (error) {
       console.error('Error approving purchase:', error);
+      toast.error("Failed to approve purchase");
     }
   };
 
   const handleReject = async (purchaseId: string) => {
     try {
-      await updateMutation.mutateAsync({ purchaseId, status: "rejected" });
+      await updatePurchaseStatus(purchaseId, "rejected");
+      await loadPurchases();
+      toast.success("Purchase rejected");
     } catch (error) {
       console.error('Error rejecting purchase:', error);
+      toast.error("Failed to reject purchase");
     }
   };
 
-  if (isLoading) {
-    return <div>Loading purchases...</div>;
-  }
+  const handleDelete = async (purchaseId: string) => {
+    try {
+      await deletePurchase(purchaseId);
+      await loadPurchases();
+      toast.success("Purchase deleted successfully");
+    } catch (error) {
+      console.error('Error deleting purchase:', error);
+      toast.error("Failed to delete purchase");
+    }
+  };
 
   return (
     <div className="space-y-4">
-      <h2 className="text-2xl font-bold">Pending Purchases</h2>
-      {pendingPurchases.length === 0 ? (
-        <p className="text-muted-foreground">No pending purchases.</p>
-      ) : (
-        <PurchasesTable
-          purchases={pendingPurchases}
-          onApprove={handleApprove}
-          onReject={handleReject}
-          isUpdating={updateMutation.isPending}
-        />
-      )}
+      <Card>
+        <CardHeader>
+          <CardTitle>Purchase Requests</CardTitle>
+        </CardHeader>
+        <CardContent>
+          {purchases.length === 0 ? (
+            <p className="text-muted-foreground">No purchase requests to review.</p>
+          ) : (
+            <PurchasesTable
+              purchases={purchases}
+              onApprove={handleApprove}
+              onReject={handleReject}
+              onDelete={handleDelete}
+            />
+          )}
+        </CardContent>
+      </Card>
     </div>
   );
 };

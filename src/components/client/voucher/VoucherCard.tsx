@@ -9,10 +9,9 @@ interface VoucherCardProps {
   voucher: Voucher;
   onDelete: (id: string) => void;
   onPrint: (voucher: Voucher) => void;
-  isDeleting: boolean;
 }
 
-const VoucherCard = ({ voucher, onDelete, onPrint, isDeleting }: VoucherCardProps) => {
+const VoucherCard = ({ voucher, onDelete, onPrint }: VoucherCardProps) => {
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
@@ -54,7 +53,6 @@ const VoucherCard = ({ voucher, onDelete, onPrint, isDeleting }: VoucherCardProp
               size="icon"
               variant="ghost"
               onClick={() => onDelete(voucher.id)}
-              disabled={isDeleting}
               className="text-red-500 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4" />

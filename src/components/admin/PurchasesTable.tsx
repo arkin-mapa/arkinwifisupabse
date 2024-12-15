@@ -7,11 +7,10 @@ interface PurchasesTableProps {
   purchases: Purchase[];
   onApprove: (id: string) => void;
   onReject: (id: string) => void;
-  onDelete?: (id: string) => void;
-  isUpdating?: boolean;
+  onDelete: (id: string) => void;
 }
 
-const PurchasesTable = ({ purchases, onApprove, onReject, onDelete, isUpdating }: PurchasesTableProps) => {
+const PurchasesTable = ({ purchases, onApprove, onReject, onDelete }: PurchasesTableProps) => {
   const getBadgeVariant = (status: Purchase['status']) => {
     switch (status) {
       case "approved":
@@ -61,7 +60,6 @@ const PurchasesTable = ({ purchases, onApprove, onReject, onDelete, isUpdating }
                 onApprove={onApprove}
                 onReject={onReject}
                 onDelete={onDelete}
-                isUpdating={isUpdating}
               />
             </TableCell>
           </TableRow>

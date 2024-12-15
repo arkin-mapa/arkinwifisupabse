@@ -28,7 +28,7 @@ const AuthPage = () => {
 
     try {
       if (isSignUp) {
-        const { data, error } = await supabase.auth.signUp({
+        const { error: signUpError } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -36,49 +36,42 @@ const AuthPage = () => {
           },
         });
 
-        if (error) throw error;
-
-        if (data?.user) {
-          toast.success("Check your email to confirm your account!");
-          setIsSignUp(false);
+        if (signUpError) {
+          console.error("SignUp error:", signUpError);
+          if (signUpError.message.includes("already registered")) {
+            toast.error("This email is already registered. Please sign in instead.");
+          } else {
+            toast.error(signUpError.message);
+          }
+          return;
         }
+
+        toast.success("Check your email to confirm your account!");
+        setIsSignUp(false); // Switch to sign in view
       } else {
-        const { data, error } = await supabase.auth.signInWithPassword({
+        const { error: signInError } = await supabase.auth.signInWithPassword({
           email,
           password,
         });
 
-        if (error) throw error;
-
-        if (data?.user) {
-          const { data: profileData, error: profileError } = await supabase
-            .from('profiles')
-            .select('role')
-            .eq('id', data.user.id)
-            .single();
-
-          if (profileError) throw profileError;
-
-          const redirectPath = profileData?.role === 'admin' ? '/admin' : '/client';
-          toast.success("Successfully signed in!");
-          navigate(redirectPath);
+        if (signInError) {
+          console.error("SignIn error:", signInError);
+          if (signInError.message.includes("Invalid login credentials")) {
+            toast.error("Invalid email or password. Please try again.");
+          } else if (signInError.message.includes("Email not confirmed")) {
+            toast.error("Please confirm your email before signing in.");
+          } else {
+            toast.error(signInError.message);
+          }
+          return;
         }
+
+        toast.success("Successfully signed in!");
+        navigate("/client");
       }
-    } catch (error: any) {
+    } catch (error) {
       console.error("Auth error:", error);
-      
-      // Handle specific error cases
-      if (error.message?.includes("Invalid login credentials")) {
-        toast.error("Invalid email or password. Please try again.");
-      } else if (error.message?.includes("Email not confirmed")) {
-        toast.error("Please confirm your email before signing in.");
-      } else if (error.message?.includes("already registered")) {
-        toast.error("This email is already registered. Please sign in instead.");
-      } else if (error.message?.includes("Password should be at least 6 characters")) {
-        toast.error("Password must be at least 6 characters long.");
-      } else {
-        toast.error(error.message || "An error occurred during authentication.");
-      }
+      toast.error("An unexpected error occurred. Please try again.");
     } finally {
       setIsLoading(false);
     }
@@ -119,7 +112,6 @@ const AuthPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                minLength={6}
               />
             </div>
             <Button
