@@ -21,14 +21,12 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       const doc = parser.parseFromString(html, 'text/html');
       const vouchers = new Set<string>();
 
-      // Function to clean and validate voucher codes
+      // Function to clean and validate voucher codes - only pure numbers allowed
       const cleanAndValidateCode = (text: string): string | null => {
-        // Remove all whitespace and non-digit characters
-        const cleanCode = text.replace(/\s+/g, '').replace(/\D/g, '');
-        
-        // Validate the code length (must be between 6-14 digits)
-        if (cleanCode.length >= 6 && cleanCode.length <= 14) {
-          return cleanCode;
+        // Extract only numbers
+        const match = text.match(/^\d{6}$/);
+        if (match) {
+          return match[0];
         }
         return null;
       };
@@ -44,8 +42,11 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       if (vouchers.size === 0) {
         doc.querySelectorAll('p').forEach(p => {
           const text = p.textContent?.trim() || '';
-          const code = cleanAndValidateCode(text);
-          if (code) vouchers.add(code);
+          const words = text.split(/[\s,;\n]+/);
+          words.forEach(word => {
+            const code = cleanAndValidateCode(word);
+            if (code) vouchers.add(code);
+          });
         });
       }
 
@@ -62,7 +63,7 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       const voucherArray = Array.from(vouchers).sort();
 
       if (voucherArray.length === 0) {
-        throw new Error('No valid voucher codes found in the document. Please ensure your document contains numeric codes between 6-14 digits.');
+        throw new Error('No valid voucher codes found in the document. Please ensure your document contains 6-digit numeric codes.');
       }
 
       return voucherArray;
