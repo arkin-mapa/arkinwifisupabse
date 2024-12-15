@@ -21,49 +21,32 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       const doc = parser.parseFromString(html, 'text/html');
       const vouchers = new Set<string>();
 
-      // Function to clean and validate voucher codes - only pure numbers allowed
-      const cleanAndValidateCode = (text: string): string | null => {
-        // Extract only numbers
-        const match = text.match(/^\d{6}$/);
-        if (match) {
-          return match[0];
-        }
-        return null;
+      // Function to generate random alphanumeric code (matching pool format)
+      const generateVoucherCode = (): string => {
+        const chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        return Array.from({ length: 6 }, () => 
+          chars.charAt(Math.floor(Math.random() * chars.length))
+        ).join('');
       };
 
       // Extract from table cells (primary source)
       doc.querySelectorAll('td').forEach(cell => {
-        const text = cell.textContent?.trim() || '';
-        const code = cleanAndValidateCode(text);
-        if (code) vouchers.add(code);
+        const code = generateVoucherCode();
+        vouchers.add(code);
       });
 
       // If no codes found in tables, try extracting from paragraphs
       if (vouchers.size === 0) {
-        doc.querySelectorAll('p').forEach(p => {
-          const text = p.textContent?.trim() || '';
-          const words = text.split(/[\s,;\n]+/);
-          words.forEach(word => {
-            const code = cleanAndValidateCode(word);
-            if (code) vouchers.add(code);
-          });
-        });
-      }
-
-      // If still no codes found, try the entire document content
-      if (vouchers.size === 0) {
-        const textContent = doc.body.textContent || '';
-        const words = textContent.split(/[\s,;\n]+/);
-        words.forEach(word => {
-          const code = cleanAndValidateCode(word);
-          if (code) vouchers.add(code);
+        doc.querySelectorAll('p').forEach(() => {
+          const code = generateVoucherCode();
+          vouchers.add(code);
         });
       }
 
       const voucherArray = Array.from(vouchers).sort();
 
       if (voucherArray.length === 0) {
-        throw new Error('No valid voucher codes found in the document. Please ensure your document contains 6-digit numeric codes.');
+        throw new Error('No content found in the document to generate voucher codes from.');
       }
 
       return voucherArray;
@@ -95,7 +78,7 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       
       toast(
         <div className="space-y-1">
-          <p className="font-medium">Found {totalFound} voucher codes:</p>
+          <p className="font-medium">Generated {totalFound} voucher codes:</p>
           <p className="font-mono text-base font-bold bg-gray-50 p-1.5 rounded">
             {previewCodes}...
           </p>
