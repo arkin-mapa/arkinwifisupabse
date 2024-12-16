@@ -21,6 +21,12 @@ const VoucherCard = ({ voucher, onDelete, onPrint }: VoucherCardProps) => {
     }
   };
 
+  const handleDelete = () => {
+    if (window.confirm('Are you sure you want to delete this voucher?')) {
+      onDelete(voucher.id);
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0, x: -20 }}
@@ -52,7 +58,7 @@ const VoucherCard = ({ voucher, onDelete, onPrint }: VoucherCardProps) => {
             <Button
               size="icon"
               variant="ghost"
-              onClick={() => onDelete(voucher.id)}
+              onClick={handleDelete}
               className="text-red-500 hover:bg-red-50"
             >
               <Trash2 className="h-4 w-4" />

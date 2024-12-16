@@ -15,7 +15,7 @@ const generateVoucherHTML = (voucher: Voucher, plan: Plan | undefined) => `
   <div class="voucher">
     <div class="plan">${plan?.duration || 'Unknown Plan'}</div>
     <div class="code">${voucher.code}</div>
-    <div class="price">Price: ₱${plan?.price.toFixed(2) || '0.00'}</div>
+    <div class="price">Price: ₱${plan?.price?.toFixed(2) || '0.00'}</div>
   </div>
 `;
 

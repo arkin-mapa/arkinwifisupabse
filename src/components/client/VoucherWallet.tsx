@@ -4,6 +4,8 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
 import { fetchClientVouchers } from "@/utils/supabaseData";
+import { printVoucher } from "@/utils/printUtils";
+import { supabase } from "@/integrations/supabase/client";
 import type { Voucher } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
 
@@ -39,13 +41,36 @@ const VoucherWallet = () => {
   };
 
   const handlePrintVoucher = (voucher: Voucher) => {
-    // Implementation for printing voucher
-    console.log('Printing voucher:', voucher);
+    if (!printVoucher(voucher, undefined)) {
+      toast.error("Unable to open print window. Please check your popup settings.");
+    } else {
+      toast.success("Print window opened successfully");
+    }
   };
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
-      // Implementation for deleting voucher
+      // First delete from voucher_wallet
+      const { error: walletError } = await supabase
+        .from('voucher_wallet')
+        .delete()
+        .eq('voucher_id', voucherId);
+
+      if (walletError) {
+        throw walletError;
+      }
+
+      // Then delete the voucher itself
+      const { error: voucherError } = await supabase
+        .from('vouchers')
+        .delete()
+        .eq('id', voucherId);
+
+      if (voucherError) {
+        throw voucherError;
+      }
+
+      toast.success("Voucher deleted successfully");
       await loadVouchers(); // Reload vouchers after deletion
     } catch (error) {
       console.error('Error deleting voucher:', error);
