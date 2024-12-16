@@ -16,10 +16,13 @@ import { motion } from "framer-motion";
 import { fetchClientPlans, createPurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import type { Database } from "@/types/database.types";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
 const PlansList = () => {
+  const navigate = useNavigate();
   const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
   const [purchaseDetails, setPurchaseDetails] = useState({
     customerName: "",
@@ -29,22 +32,27 @@ const PlansList = () => {
 
   const queryClient = useQueryClient();
 
-  const { data: plans = [], isLoading } = useQuery<Plan[]>({
+  const { data: plans = [], isLoading } = useQuery({
     queryKey: ['clientPlans'],
     queryFn: fetchClientPlans,
-    refetchInterval: 5000 // Refetch every 5 seconds
+    refetchInterval: 5000
   });
 
-  console.log('Fetched plans:', plans); // Debug log
-
   const purchaseMutation = useMutation({
-    mutationFn: (plan: Plan) => createPurchase({
-      customerName: purchaseDetails.customerName,
-      planId: plan.id,
-      quantity: purchaseDetails.quantity,
-      totalAmount: plan.price * purchaseDetails.quantity,
-      paymentMethod: purchaseDetails.paymentMethod
-    }),
+    mutationFn: async (plan: Plan) => {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        throw new Error("Please log in to make a purchase");
+      }
+      
+      return createPurchase({
+        customerName: purchaseDetails.customerName,
+        planId: plan.id,
+        quantity: purchaseDetails.quantity,
+        totalAmount: plan.price * purchaseDetails.quantity,
+        paymentMethod: purchaseDetails.paymentMethod
+      });
+    },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
       toast.success("Purchase request submitted successfully!");
@@ -57,7 +65,12 @@ const PlansList = () => {
     },
     onError: (error) => {
       console.error('Purchase error:', error);
-      toast.error("Failed to submit purchase request. Please try again.");
+      if (error instanceof Error && error.message === "Please log in to make a purchase") {
+        toast.error("Please log in to make a purchase");
+        navigate("/auth");
+      } else {
+        toast.error("Failed to submit purchase request. Please try again.");
+      }
     }
   });
 

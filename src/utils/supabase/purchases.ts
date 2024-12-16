@@ -22,7 +22,7 @@ export async function createPurchase(data: {
     .insert([{
       customer_name: data.customerName,
       plan_id: data.planId,
-      client_id: clientId, // Add the client_id here
+      client_id: clientId,
       quantity: data.quantity,
       total_amount: data.totalAmount,
       payment_method: data.paymentMethod,
