@@ -26,8 +26,10 @@ const PlanGroup = ({
   onPrintVoucher,
 }: PlanGroupProps) => {
   const handlePrintAllPlanVouchers = () => {
-    if (plan && !printPlanVouchers(vouchers, plan)) {
+    if (!printPlanVouchers(vouchers, plan!)) {
       toast.error("Unable to open print window. Please check your popup settings.");
+    } else {
+      toast.success("Print window opened successfully");
     }
   };
 
@@ -35,9 +37,9 @@ const PlanGroup = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border bg-white p-6"
+      className="rounded-xl border bg-white p-4 md:p-6"
     >
-      <div className="flex justify-between items-center mb-4">
+      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4">
         <div 
           className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg flex-1"
           onClick={onToggle}
@@ -50,15 +52,17 @@ const PlanGroup = ({
             {vouchers.length} voucher{vouchers.length !== 1 ? 's' : ''}
           </span>
         </div>
-        <Button
-          onClick={handlePrintAllPlanVouchers}
-          variant="outline"
-          size="sm"
-          className="ml-2"
-        >
-          <PrinterIcon className="mr-2 h-4 w-4" />
-          Print All
-        </Button>
+        {vouchers.length > 0 && (
+          <Button
+            onClick={handlePrintAllPlanVouchers}
+            variant="outline"
+            size="sm"
+            className="w-full sm:w-auto"
+          >
+            <PrinterIcon className="mr-2 h-4 w-4" />
+            Print All
+          </Button>
+        )}
       </div>
       
       {isExpanded && (

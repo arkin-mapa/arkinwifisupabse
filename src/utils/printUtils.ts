@@ -24,47 +24,63 @@ const getStyles = () => `
     size: 58mm auto;
     margin: 0;
   }
+  @media screen {
+    body {
+      max-width: 58mm;
+      margin: 0 auto;
+      background: #f0f0f0;
+    }
+  }
   body {
-    font-family: 'Courier New', monospace;
+    font-family: system-ui, -apple-system, sans-serif;
     width: 58mm;
-    margin: 0;
     padding: 0;
     box-sizing: border-box;
   }
   .voucher {
     text-align: center;
     border-bottom: 1px dashed #000;
-    padding: 2mm 0;
+    padding: 4mm 2mm;
     margin: 0;
-    height: 15mm;
+    height: auto;
+    min-height: 15mm;
     page-break-inside: avoid;
     display: flex;
     flex-direction: column;
     justify-content: center;
-    gap: 0.25mm;
+    gap: 1mm;
+    background: white;
   }
   .plan {
-    font-size: 12px;
+    font-size: 14px;
     margin: 0;
+    font-weight: bold;
   }
   .code {
-    font-size: 20px;
+    font-size: 18px;
     font-weight: bold;
-    margin: 0;
-    padding: 0.5mm;
+    margin: 2mm 0;
+    padding: 1mm;
     background: #f0f0f0;
-    border-radius: 1px;
-    line-height: 1;
+    border-radius: 2px;
+    line-height: 1.2;
+    word-break: break-all;
   }
   .price {
-    font-size: 12px;
+    font-size: 14px;
     margin: 0;
-    line-height: 1;
+    line-height: 1.2;
+  }
+  @media print {
+    .voucher {
+      background: white !important;
+      -webkit-print-color-adjust: exact;
+    }
   }
 `;
 
 const createPrintWindow = () => {
-  const printWindow = window.open('', '', 'width=600,height=600');
+  const printWindow = window.open('', '_blank', 'width=300,height=600');
   if (!printWindow) return null;
   return printWindow;
 };
@@ -74,21 +90,27 @@ export const printVoucher = (voucher: Voucher, plan: Plan | undefined) => {
   if (!printWindow) return false;
 
   printWindow.document.write(`
+    <!DOCTYPE html>
     <html>
       <head>
         <title>WiFi Voucher</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>${getStyles()}</style>
       </head>
       <body>
         ${generateVoucherHTML(voucher, plan)}
+        <script>
+          window.onload = () => {
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          };
+        </script>
       </body>
     </html>
   `);
 
   printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
-  printWindow.close();
   return true;
 };
 
@@ -97,20 +119,26 @@ export const printPlanVouchers = (vouchers: Voucher[], plan: Plan) => {
   if (!printWindow) return false;
 
   printWindow.document.write(`
+    <!DOCTYPE html>
     <html>
       <head>
         <title>${plan.duration} Vouchers</title>
+        <meta name="viewport" content="width=device-width, initial-scale=1.0">
         <style>${getStyles()}</style>
       </head>
       <body>
         ${vouchers.map(voucher => generateVoucherHTML(voucher, plan)).join('')}
+        <script>
+          window.onload = () => {
+            setTimeout(() => {
+              window.print();
+            }, 500);
+          };
+        </script>
       </body>
     </html>
   `);
 
   printWindow.document.close();
-  printWindow.focus();
-  printWindow.print();
-  printWindow.close();
   return true;
 };
