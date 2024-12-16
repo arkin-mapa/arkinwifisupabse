@@ -26,7 +26,12 @@ const PlanGroup = ({
   onPrintVoucher,
 }: PlanGroupProps) => {
   const handlePrintAllPlanVouchers = () => {
-    if (!printPlanVouchers(vouchers, plan!)) {
+    if (!plan) {
+      toast.error("Plan information not available");
+      return;
+    }
+    
+    if (!printPlanVouchers(vouchers, plan)) {
       toast.error("Unable to open print window. Please check your popup settings.");
     } else {
       toast.success("Print window opened successfully");
@@ -71,6 +76,7 @@ const PlanGroup = ({
             <VoucherCard
               key={voucher.id}
               voucher={voucher}
+              plan={plan}
               onDelete={onDeleteVoucher}
               onPrint={onPrintVoucher}
             />

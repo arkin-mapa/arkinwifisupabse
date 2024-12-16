@@ -3,45 +3,58 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
-import { fetchClientVouchers } from "@/utils/supabaseData";
+import { fetchClientVouchers, fetchClientPlans } from "@/utils/supabaseData";
 import { printVoucher } from "@/utils/printUtils";
 import { supabase } from "@/integrations/supabase/client";
-import type { Voucher } from "@/types/plans";
+import type { Voucher, Plan } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
+  const [plans, setPlans] = useState<Record<string, Plan>>({});
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
   const session = useSession();
 
   useEffect(() => {
     if (session?.user?.id) {
-      loadVouchers();
+      loadData();
     }
   }, [session?.user?.id]);
 
-  const loadVouchers = async () => {
+  const loadData = async () => {
     try {
-      const vouchersData = await fetchClientVouchers();
-      // Group vouchers by plan duration
+      const [vouchersData, plansData] = await Promise.all([
+        fetchClientVouchers(),
+        fetchClientPlans()
+      ]);
+
+      // Create plans lookup object
+      const plansLookup = plansData.reduce((acc, plan) => {
+        acc[plan.id] = plan;
+        return acc;
+      }, {} as Record<string, Plan>);
+      
+      // Group vouchers by plan ID
       const groupedVouchers = vouchersData.reduce((acc, voucher) => {
-        const planDuration = voucher.planId || 'unknown';
-        if (!acc[planDuration]) {
-          acc[planDuration] = [];
+        const planId = voucher.planId || 'unknown';
+        if (!acc[planId]) {
+          acc[planId] = [];
         }
-        acc[planDuration].push(voucher);
+        acc[planId].push(voucher);
         return acc;
       }, {} as Record<string, Voucher[]>);
       
       setVouchers(groupedVouchers);
+      setPlans(plansLookup);
     } catch (error) {
-      console.error('Error loading vouchers:', error);
+      console.error('Error loading data:', error);
       toast.error("Failed to load vouchers");
     }
   };
 
   const handlePrintVoucher = (voucher: Voucher) => {
-    if (!printVoucher(voucher, undefined)) {
+    const plan = plans[voucher.planId];
+    if (!printVoucher(voucher, plan)) {
       toast.error("Unable to open print window. Please check your popup settings.");
     } else {
       toast.success("Print window opened successfully");
@@ -71,7 +84,7 @@ const VoucherWallet = () => {
       }
 
       toast.success("Voucher deleted successfully");
-      await loadVouchers(); // Reload vouchers after deletion
+      await loadData(); // Reload vouchers after deletion
     } catch (error) {
       console.error('Error deleting voucher:', error);
       toast.error("Failed to delete voucher");
@@ -112,14 +125,14 @@ const VoucherWallet = () => {
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[400px] pr-4">
-          {Object.entries(vouchers).map(([planDuration, planVouchers]) => (
+          {Object.entries(vouchers).map(([planId, planVouchers]) => (
             <PlanGroup
-              key={planDuration}
-              planId={planDuration}
-              plan={undefined}
+              key={planId}
+              planId={planId}
+              plan={plans[planId]}
               vouchers={planVouchers}
-              isExpanded={expandedPlans[planDuration] || false}
-              onToggle={() => togglePlanExpansion(planDuration)}
+              isExpanded={expandedPlans[planId] || false}
+              onToggle={() => togglePlanExpansion(planId)}
               onPrintVoucher={handlePrintVoucher}
               onDeleteVoucher={handleDeleteVoucher}
             />

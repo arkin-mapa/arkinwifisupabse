@@ -3,15 +3,16 @@ import { Card } from "@/components/ui/card";
 import { Copy, Trash2, Printer } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
-import type { Voucher } from "@/types/plans";
+import type { Voucher, Plan } from "@/types/plans";
 
 interface VoucherCardProps {
   voucher: Voucher;
+  plan: Plan | undefined;
   onDelete: (id: string) => void;
   onPrint: (voucher: Voucher) => void;
 }
 
-const VoucherCard = ({ voucher, onDelete, onPrint }: VoucherCardProps) => {
+const VoucherCard = ({ voucher, plan, onDelete, onPrint }: VoucherCardProps) => {
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
@@ -64,6 +65,11 @@ const VoucherCard = ({ voucher, onDelete, onPrint }: VoucherCardProps) => {
               <Trash2 className="h-4 w-4" />
             </Button>
           </div>
+          {plan && (
+            <div className="text-sm text-gray-600">
+              Price: ₱{plan.price.toFixed(2)}
+            </div>
+          )}
         </div>
       </Card>
     </motion.div>
