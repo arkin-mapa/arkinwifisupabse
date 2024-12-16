@@ -102,7 +102,6 @@ export type Database = {
           status: Database["public"]["Enums"]["purchase_status"] | null
           total_amount: number
           updated_at: string
-          voucher_id: string | null
         }
         Insert: {
           client_id: string
@@ -115,7 +114,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchase_status"] | null
           total_amount: number
           updated_at?: string
-          voucher_id?: string | null
         }
         Update: {
           client_id?: string
@@ -128,7 +126,6 @@ export type Database = {
           status?: Database["public"]["Enums"]["purchase_status"] | null
           total_amount?: number
           updated_at?: string
-          voucher_id?: string | null
         }
         Relationships: [
           {
@@ -136,13 +133,6 @@ export type Database = {
             columns: ["plan_id"]
             isOneToOne: false
             referencedRelation: "plans"
-            referencedColumns: ["id"]
-          },
-          {
-            foreignKeyName: "purchases_voucher_id_fkey"
-            columns: ["voucher_id"]
-            isOneToOne: false
-            referencedRelation: "vouchers"
             referencedColumns: ["id"]
           },
         ]
