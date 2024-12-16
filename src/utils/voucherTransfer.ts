@@ -1,5 +1,8 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Purchase } from "@/types/plans";
+import type { Database } from "@/types/database.types";
+
+type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 export async function transferVouchersToClient(purchase: Purchase) {
   if (!purchase.client_id) {
@@ -38,11 +41,11 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error('Failed to assign vouchers to purchase');
   }
 
-  // Add vouchers to client's wallet
+  // Add vouchers to client's wallet with proper typing
   const walletEntries = availableVouchers.map(voucher => ({
     client_id: purchase.client_id,
     voucher_id: voucher.id,
-    status: 'approved'
+    status: 'approved' as PurchaseStatus // Explicitly type the status
   }));
 
   const { error: walletError } = await supabase

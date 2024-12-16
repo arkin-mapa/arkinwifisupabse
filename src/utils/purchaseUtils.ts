@@ -33,14 +33,13 @@ export async function createPurchase(data: {
     throw new Error('Not enough vouchers available');
   }
 
-  // Create the purchase with the first voucher
+  // Create the purchase
   const { error: purchaseError } = await supabase
     .from('purchases')
     .insert([{
       customer_name: data.customerName,
       client_id: clientId,
       plan_id: data.planId,
-      voucher_id: availableVouchers[0].id,
       quantity: data.quantity,
       total_amount: data.totalAmount,
       payment_method: data.paymentMethod,
@@ -101,40 +100,14 @@ export async function updatePurchaseStatus(
   purchaseId: string,
   status: Database['public']['Tables']['purchases']['Row']['status']
 ): Promise<void> {
-  // First get the purchase details
-  const { data: purchase, error: fetchError } = await supabase
-    .from('purchases')
-    .select('voucher_id')
-    .eq('id', purchaseId)
-    .single();
-
-  if (fetchError) {
-    console.error('Error fetching purchase:', fetchError);
-    throw fetchError;
-  }
-
-  // Update the purchase status
-  const { error: updateError } = await supabase
+  const { error } = await supabase
     .from('purchases')
     .update({ status })
     .eq('id', purchaseId);
 
-  if (updateError) {
-    console.error('Error updating purchase status:', updateError);
-    throw updateError;
-  }
-
-  // If approved, mark the voucher as used
-  if (status === 'approved' && purchase?.voucher_id) {
-    const { error: voucherError } = await supabase
-      .from('vouchers')
-      .update({ is_used: true })
-      .eq('id', purchase.voucher_id);
-
-    if (voucherError) {
-      console.error('Error updating voucher:', voucherError);
-      throw voucherError;
-    }
+  if (error) {
+    console.error('Error updating purchase status:', error);
+    throw error;
   }
 }
 
