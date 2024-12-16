@@ -58,20 +58,20 @@ export type Database = {
         Row: {
           created_at: string
           id: string
-          purchase_id: string | null
-          voucher_id: string | null
+          purchase_id: string
+          voucher_id: string
         }
         Insert: {
           created_at?: string
           id?: string
-          purchase_id?: string | null
-          voucher_id?: string | null
+          purchase_id: string
+          voucher_id: string
         }
         Update: {
           created_at?: string
           id?: string
-          purchase_id?: string | null
-          voucher_id?: string | null
+          purchase_id?: string
+          voucher_id?: string
         }
         Relationships: [
           {
@@ -92,7 +92,7 @@ export type Database = {
       }
       purchases: {
         Row: {
-          client_id: string | null
+          client_id: string
           created_at: string
           customer_name: string
           id: string
@@ -105,7 +105,7 @@ export type Database = {
           voucher_id: string | null
         }
         Insert: {
-          client_id?: string | null
+          client_id: string
           created_at?: string
           customer_name: string
           id?: string
@@ -118,7 +118,7 @@ export type Database = {
           voucher_id?: string | null
         }
         Update: {
-          client_id?: string | null
+          client_id?: string
           created_at?: string
           customer_name?: string
           id?: string
@@ -149,28 +149,28 @@ export type Database = {
       }
       voucher_wallet: {
         Row: {
-          client_id: string | null
+          client_id: string
           created_at: string
           id: string
           status: Database["public"]["Enums"]["purchase_status"] | null
           updated_at: string
-          voucher_id: string | null
+          voucher_id: string
         }
         Insert: {
-          client_id?: string | null
+          client_id: string
           created_at?: string
           id?: string
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
-          voucher_id?: string | null
+          voucher_id: string
         }
         Update: {
-          client_id?: string | null
+          client_id?: string
           created_at?: string
           id?: string
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
-          voucher_id?: string | null
+          voucher_id?: string
         }
         Relationships: [
           {

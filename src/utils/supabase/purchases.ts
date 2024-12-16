@@ -9,11 +9,20 @@ export async function createPurchase(data: {
   totalAmount: number;
   paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
 }): Promise<void> {
+  // Get the current user's ID
+  const { data: session } = await supabase.auth.getSession();
+  const clientId = session?.session?.user?.id;
+
+  if (!clientId) {
+    throw new Error('User must be logged in to make a purchase');
+  }
+
   const { error } = await supabase
     .from('purchases')
     .insert([{
       customer_name: data.customerName,
       plan_id: data.planId,
+      client_id: clientId, // Add the client_id here
       quantity: data.quantity,
       total_amount: data.totalAmount,
       payment_method: data.paymentMethod,
