@@ -1,4 +1,4 @@
-import type { PaymentMethod, PurchaseStatus } from './database/enums';
+import type { Database } from "@/types/database.types";
 
 export interface Plan {
   id: string;
@@ -23,6 +23,6 @@ export interface Purchase {
   plan: string;
   quantity: number;
   total: number;
-  paymentMethod: PaymentMethod;
-  status: PurchaseStatus;
+  paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
+  status: Database['public']['Tables']['purchases']['Row']['status'];
 }
