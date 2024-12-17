@@ -77,7 +77,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
 
   if (!purchases || purchases.length === 0) {
     return (
-      <Card className="mx-auto max-w-md">
+      <Card className="mx-auto w-full max-w-md">
         <CardContent className="pt-6">
           <p className="text-center text-muted-foreground">No purchase requests to review.</p>
         </CardContent>
@@ -86,16 +86,16 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
   }
 
   return (
-    <Card className="mx-auto max-w-md">
-      <CardHeader className="pb-3">
+    <Card className="mx-auto w-full max-w-md">
+      <CardHeader className="pb-2">
         <CardTitle className="text-xl">Purchase Requests</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="space-y-3 px-3 pb-3">
+          <div className="space-y-2">
             {purchases.map((purchase) => (
-              <div key={purchase.id} className="bg-background p-3 rounded-lg">
-                <div className="flex flex-col gap-2">
+              <div key={purchase.id} className="bg-background rounded-lg">
+                <div className="flex flex-col gap-2 p-3">
                   <div className="flex items-start justify-between">
                     <div>
                       <h4 className="font-medium text-sm">{purchase.customerName}</h4>
@@ -117,7 +117,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     <p className="font-medium">Total: ₱{purchase.total.toFixed(2)}</p>
                   </div>
                   {purchase.status === 'pending' && (
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex gap-2 mt-1">
                       <Button
                         size="sm"
                         className="h-7 text-xs flex-1 bg-green-500 hover:bg-green-600"
@@ -141,7 +141,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full h-7 text-xs mt-2"
+                      className="w-full h-7 text-xs mt-1"
                       onClick={() => handleDelete(purchase.id)}
                     >
                       <Trash2 className="w-3 h-3 mr-1" />
