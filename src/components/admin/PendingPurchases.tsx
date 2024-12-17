@@ -94,7 +94,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
         <ScrollArea className="h-[calc(100vh-12rem)]">
           <div className="space-y-3 px-3 pb-3">
             {purchases.map((purchase) => (
-              <Card key={purchase.id} className="p-3">
+              <div key={purchase.id} className="bg-background p-3 rounded-lg">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-start justify-between">
                     <div>
@@ -149,7 +149,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     </Button>
                   )}
                 </div>
-              </Card>
+              </div>
             ))}
           </div>
         </ScrollArea>
