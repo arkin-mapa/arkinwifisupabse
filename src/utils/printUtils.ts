@@ -1,4 +1,5 @@
 import type { Voucher, Plan } from "@/types/plans";
+import { BluetoothPrinter } from "./bluetoothPrint";
 
 interface PrintDimensions {
   width: number;  // in mm
@@ -10,6 +11,12 @@ const PAPER_SIZES = {
   MEDIUM: { width: 58, height: 297 },
   LARGE: { width: 58, height: 3276 }
 };
+
+const generateVoucherText = (voucher: Voucher, plan: Plan | undefined) => 
+  `${plan?.duration || 'Unknown Plan'}\n` +
+  `${voucher.code}\n` +
+  `Price: ₱${plan?.price?.toFixed(2) || '0.00'}\n` +
+  `--------------------------------\n`;
 
 const generateVoucherHTML = (voucher: Voucher, plan: Plan | undefined) => `
   <div class="voucher">
@@ -85,7 +92,20 @@ const createPrintWindow = () => {
   return printWindow;
 };
 
-export const printVoucher = (voucher: Voucher, plan: Plan | undefined) => {
+export const printVoucher = async (voucher: Voucher, plan: Plan | undefined, useBluetooth = false) => {
+  if (useBluetooth) {
+    try {
+      const printer = new BluetoothPrinter();
+      await printer.connect();
+      await printer.print(generateVoucherText(voucher, plan));
+      printer.disconnect();
+      return true;
+    } catch (error) {
+      console.error('Bluetooth printing error:', error);
+      return false;
+    }
+  }
+
   const printWindow = createPrintWindow();
   if (!printWindow) return false;
 
@@ -114,7 +134,21 @@ export const printVoucher = (voucher: Voucher, plan: Plan | undefined) => {
   return true;
 };
 
-export const printPlanVouchers = (vouchers: Voucher[], plan: Plan) => {
+export const printPlanVouchers = async (vouchers: Voucher[], plan: Plan, useBluetooth = false) => {
+  if (useBluetooth) {
+    try {
+      const printer = new BluetoothPrinter();
+      await printer.connect();
+      const text = vouchers.map(voucher => generateVoucherText(voucher, plan)).join('\n');
+      await printer.print(text);
+      printer.disconnect();
+      return true;
+    } catch (error) {
+      console.error('Bluetooth printing error:', error);
+      return false;
+    }
+  }
+
   const printWindow = createPrintWindow();
   if (!printWindow) return false;
 

@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Copy, Trash2, Printer } from "lucide-react";
+import { Copy, Trash2, Printer, Bluetooth } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Voucher, Plan } from "@/types/plans";
@@ -9,7 +9,7 @@ interface VoucherCardProps {
   voucher: Voucher;
   plan: Plan | undefined;
   onDelete: (id: string) => void;
-  onPrint: (voucher: Voucher) => void;
+  onPrint: (voucher: Voucher, useBluetooth?: boolean) => void;
 }
 
 const VoucherCard = ({ voucher, plan, onDelete, onPrint }: VoucherCardProps) => {
@@ -59,6 +59,14 @@ const VoucherCard = ({ voucher, plan, onDelete, onPrint }: VoucherCardProps) => 
                 className="h-7 w-7 p-0"
               >
                 <Printer className="h-3.5 w-3.5" />
+              </Button>
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => onPrint(voucher, true)}
+                className="h-7 w-7 p-0"
+              >
+                <Bluetooth className="h-3.5 w-3.5" />
               </Button>
               <Button
                 size="sm"

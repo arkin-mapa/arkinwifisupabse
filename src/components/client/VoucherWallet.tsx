@@ -4,7 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
 import { fetchClientVouchers, fetchClientPlans } from "@/utils/supabaseData";
-import { printVoucher } from "@/utils/printUtils";
+import { printVoucher, printPlanVouchers } from "@/utils/printUtils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher, Plan } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
@@ -50,12 +50,12 @@ const VoucherWallet = () => {
     }
   };
 
-  const handlePrintVoucher = (voucher: Voucher) => {
+  const handlePrintVoucher = async (voucher: Voucher, useBluetooth = false) => {
     const plan = plans[voucher.planId];
-    if (!printVoucher(voucher, plan)) {
-      toast.error("Unable to open print window. Please check your popup settings.");
+    if (!printVoucher(voucher, plan, useBluetooth)) {
+      toast.error(useBluetooth ? "Failed to connect to Bluetooth printer" : "Unable to open print window");
     } else {
-      toast.success("Print window opened successfully");
+      toast.success(useBluetooth ? "Sent to Bluetooth printer" : "Print window opened successfully");
     }
   };
 
