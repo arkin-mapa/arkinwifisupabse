@@ -8,9 +8,14 @@ import { useState, useEffect } from "react";
 import type { Purchase } from "@/types/plans";
 import { fetchPurchases } from "@/utils/supabaseData";
 import { toast } from "sonner";
+import { Button } from "@/components/ui/button";
+import { LogOut } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const AdminDashboard = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
+  const navigate = useNavigate();
 
   useEffect(() => {
     loadPurchases();
@@ -26,8 +31,22 @@ const AdminDashboard = () => {
     }
   };
 
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
+      <div className="sticky top-0 z-50 bg-white border-b">
+        <div className="flex justify-between items-center px-4 py-2">
+          <h1 className="text-lg font-semibold">Admin Dashboard</h1>
+          <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
+      </div>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
