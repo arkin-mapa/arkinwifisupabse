@@ -5,6 +5,8 @@ import type { Database } from "@/types/database.types";
 type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 export async function transferVouchersToClient(purchase: Purchase) {
+  console.log('Starting voucher transfer for purchase:', purchase);
+
   if (!purchase.client_id) {
     throw new Error('Client ID is required for voucher transfer');
   }
@@ -22,23 +24,10 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error('Failed to fetch available vouchers');
   }
 
+  console.log('Available vouchers:', availableVouchers);
+
   if (!availableVouchers || availableVouchers.length < purchase.quantity) {
     throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers?.length || 0}`);
-  }
-
-  // Insert vouchers into purchase_vouchers table first
-  const purchaseVouchers = availableVouchers.map(voucher => ({
-    purchase_id: purchase.id,
-    voucher_id: voucher.id
-  }));
-
-  const { error: purchaseVoucherError } = await supabase
-    .from('purchase_vouchers')
-    .insert(purchaseVouchers);
-
-  if (purchaseVoucherError) {
-    console.error('Error creating purchase vouchers:', purchaseVoucherError);
-    throw new Error('Failed to create purchase vouchers');
   }
 
   // Add vouchers to client's wallet
@@ -47,6 +36,8 @@ export async function transferVouchersToClient(purchase: Purchase) {
     voucher_id: voucher.id,
     status: 'approved' as PurchaseStatus
   }));
+
+  console.log('Inserting wallet entries:', walletEntries);
 
   const { error: walletError } = await supabase
     .from('voucher_wallet')
@@ -60,5 +51,6 @@ export async function transferVouchersToClient(purchase: Purchase) {
   // The trigger we created will automatically delete the vouchers from the vouchers table
   // after they are inserted into the voucher_wallet table
 
+  console.log('Voucher transfer completed successfully');
   return availableVouchers.map(v => v.id);
 }
