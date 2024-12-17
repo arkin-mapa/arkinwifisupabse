@@ -1,11 +1,12 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { toast } from "sonner";
-import { Button } from "@/components/ui/button";
-import { Check, Trash2, X } from "lucide-react";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
+import { toast } from "sonner";
 import { fetchPurchases, updatePurchaseStatus, deletePurchase } from "@/utils/supabaseData";
 import type { Purchase } from "@/types/plans";
+import { Button } from "@/components/ui/button";
+import { Check, X, Trash2 } from "lucide-react";
 
 interface PendingPurchasesProps {
   onPurchaseUpdate?: () => void;
@@ -64,89 +65,97 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
     }
   };
 
-  const getBadgeVariant = (status: Purchase['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "success";
-      case "pending":
-        return "warning";
-      case "rejected":
-        return "destructive";
-      case "cancelled":
-        return "secondary";
-      default:
-        return "secondary";
+      case 'approved': return 'bg-green-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'rejected': return 'bg-red-500';
+      case 'cancelled': return 'bg-gray-500';
+      default: return 'bg-gray-500';
     }
   };
 
+  if (!purchases || purchases.length === 0) {
+    return (
+      <div className="w-full max-w-md mx-auto">
+        <Card>
+          <CardContent className="pt-6">
+            <p className="text-center text-muted-foreground">No purchase requests to review.</p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
-    <div className="space-y-4">
-      <Card>
-        <CardHeader>
-          <CardTitle>Purchase Requests</CardTitle>
-        </CardHeader>
-        <CardContent className="space-y-4">
-          {purchases.length === 0 ? (
-            <p className="text-muted-foreground">No purchase requests to review.</p>
-          ) : (
-            <div className="space-y-4">
-              {purchases.map((purchase) => (
-                <Card key={purchase.id} className="relative">
-                  <CardContent className="pt-6">
-                    <div className="absolute top-4 right-4">
-                      <Badge variant={getBadgeVariant(purchase.status)}>
-                        {purchase.status}
-                      </Badge>
+    <div className="w-full max-w-md mx-auto">
+      <CardHeader className="px-0 pb-4">
+        <CardTitle className="text-xl">Purchase Requests</CardTitle>
+      </CardHeader>
+      <ScrollArea className="h-[calc(100vh-12rem)]">
+        <div className="space-y-4">
+          {purchases.map((purchase) => (
+            <Card key={purchase.id} className="bg-card">
+              <CardContent className="p-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium text-sm">{purchase.customerName}</h4>
+                      <p className="text-xs text-muted-foreground">
+                        {purchase.date}
+                      </p>
                     </div>
-                    <div className="space-y-2">
-                      <div className="flex justify-between items-start">
-                        <div>
-                          <h3 className="font-medium">{purchase.customerName}</h3>
-                          <p className="text-sm text-muted-foreground">{purchase.date}</p>
-                        </div>
-                      </div>
-                      <div className="space-y-1">
-                        <p className="text-sm">Plan: {purchase.plan}</p>
-                        <p className="text-sm">Quantity: {purchase.quantity}</p>
-                        <p className="text-sm">Payment: {purchase.paymentMethod}</p>
-                        <p className="text-sm font-medium">Total: ₱{purchase.total.toFixed(2)}</p>
-                      </div>
-                      {purchase.status === 'pending' ? (
-                        <div className="flex gap-2 mt-4">
-                          <Button
-                            className="flex-1"
-                            onClick={() => handleApprove(purchase.id)}
-                          >
-                            <Check className="w-4 h-4 mr-2" />
-                            Approve
-                          </Button>
-                          <Button
-                            variant="destructive"
-                            className="flex-1"
-                            onClick={() => handleReject(purchase.id)}
-                          >
-                            <X className="w-4 h-4 mr-2" />
-                            Reject
-                          </Button>
-                        </div>
-                      ) : (
-                        <Button
-                          variant="outline"
-                          className="w-full"
-                          onClick={() => handleDelete(purchase.id)}
-                        >
-                          <Trash2 className="w-4 h-4 mr-2" />
-                          Delete
-                        </Button>
-                      )}
+                    <Badge 
+                      variant="secondary"
+                      className={`${getStatusColor(purchase.status)} text-white text-xs`}
+                    >
+                      {purchase.status}
+                    </Badge>
+                  </div>
+                  <div className="flex flex-col gap-1 text-xs">
+                    <p>Plan: {purchase.plan}</p>
+                    <p>Quantity: {purchase.quantity}</p>
+                    <p>Payment: {purchase.paymentMethod}</p>
+                    <p className="font-medium">Total: ₱{purchase.total.toFixed(2)}</p>
+                  </div>
+                  {purchase.status === 'pending' && (
+                    <div className="flex gap-2 mt-2">
+                      <Button
+                        size="sm"
+                        className="h-7 text-xs flex-1 bg-green-500 hover:bg-green-600"
+                        onClick={() => handleApprove(purchase.id)}
+                      >
+                        <Check className="w-3 h-3 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="h-7 text-xs flex-1"
+                        onClick={() => handleReject(purchase.id)}
+                      >
+                        <X className="w-3 h-3 mr-1" />
+                        Reject
+                      </Button>
                     </div>
-                  </CardContent>
-                </Card>
-              ))}
-            </div>
-          )}
-        </CardContent>
-      </Card>
+                  )}
+                  {purchase.status !== 'pending' && (
+                    <Button
+                      size="sm"
+                      variant="outline"
+                      className="w-full h-7 text-xs mt-2"
+                      onClick={() => handleDelete(purchase.id)}
+                    >
+                      <Trash2 className="w-3 h-3 mr-1" />
+                      Delete
+                    </Button>
+                  )}
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+      </ScrollArea>
     </div>
   );
 };
