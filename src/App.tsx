@@ -8,22 +8,6 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AuthPage from "./pages/auth/AuthPage";
 import { SessionContextProvider, useSession, useUser } from '@supabase/auth-helpers-react';
 import { supabase } from "./integrations/supabase/client";
-import { useEffect, useState } from "reactI understand that the session persistence is still not working despite adding `initialSession={null}` to the SessionContextProvider. Let me check the implementation and fix this issue.
-
-<lov-code>
-Let's update the App.tsx file to properly handle session persistence:
-
-<lov-write file_path="src/App.tsx">
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
-import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
-import ClientDashboard from "./pages/client/ClientDashboard";
-import AdminDashboard from "./pages/admin/AdminDashboard";
-import AuthPage from "./pages/auth/AuthPage";
-import { SessionContextProvider, useSession, useUser } from '@supabase/auth-helpers-react';
-import { supabase } from "./integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -92,7 +76,7 @@ const ProtectedRoute = ({
 };
 
 const App = () => {
-  const [initialSession, setInitialSession] = useState(null);
+  const [initialSession, setInitialSession] = useState<any>(null);
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
