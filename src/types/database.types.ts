@@ -1,3 +1,6 @@
+import type { Plan, Purchase, Voucher } from './database/tables';
+import type { PaymentMethod, PurchaseStatus, UserRole, CreditTransactionType } from './database/enums';
+
 export type Json =
   | string
   | number
@@ -10,89 +13,26 @@ export interface Database {
   public: {
     Tables: {
       plans: {
-        Row: {
-          id: string
-          duration: string
-          price: number
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          duration: string
-          price: number
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          duration?: string
-          price?: number
-          created_at?: string
-          updated_at?: string
-        }
-      }
-      vouchers: {
-        Row: {
-          id: string
-          code: string
-          plan_id: string
-          is_used: boolean
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          code: string
-          plan_id: string
-          is_used?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          code?: string
-          plan_id?: string
-          is_used?: boolean
-          created_at?: string
-          updated_at?: string
-        }
-      }
+        Row: Plan;
+        Insert: Omit<Plan, 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Plan, 'created_at' | 'updated_at'>>;
+      };
       purchases: {
-        Row: {
-          id: string
-          customer_name: string
-          plan_id: string
-          quantity: number
-          total_amount: number
-          payment_method: 'cash' | 'gcash' | 'paymaya'
-          status: 'pending' | 'approved' | 'rejected' | 'cancelled'
-          created_at: string
-          updated_at: string
-        }
-        Insert: {
-          id?: string
-          customer_name: string
-          plan_id: string
-          quantity: number
-          total_amount: number
-          payment_method: 'cash' | 'gcash' | 'paymaya'
-          status?: 'pending' | 'approved' | 'rejected' | 'cancelled'
-          created_at?: string
-          updated_at?: string
-        }
-        Update: {
-          id?: string
-          customer_name?: string
-          plan_id?: string
-          quantity?: number
-          total_amount?: number
-          payment_method?: 'cash' | 'gcash' | 'paymaya'
-          status?: 'pending' | 'approved' | 'rejected' | 'cancelled'
-          created_at?: string
-          updated_at?: string
-        }
-      }
-    }
-  }
+        Row: Purchase;
+        Insert: Omit<Purchase, 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Purchase, 'created_at' | 'updated_at'>>;
+      };
+      vouchers: {
+        Row: Voucher;
+        Insert: Omit<Voucher, 'created_at' | 'updated_at'>;
+        Update: Partial<Omit<Voucher, 'created_at' | 'updated_at'>>;
+      };
+    };
+    Enums: {
+      payment_method: PaymentMethod;
+      purchase_status: PurchaseStatus;
+      user_role: UserRole;
+      credit_transaction_type: CreditTransactionType;
+    };
+  };
 }
