@@ -8,6 +8,22 @@ import AdminDashboard from "./pages/admin/AdminDashboard";
 import AuthPage from "./pages/auth/AuthPage";
 import { SessionContextProvider, useSession, useUser } from '@supabase/auth-helpers-react';
 import { supabase } from "./integrations/supabase/client";
+import { useEffect, useState } from "reactI understand that the session persistence is still not working despite adding `initialSession={null}` to the SessionContextProvider. Let me check the implementation and fix this issue.
+
+<lov-code>
+Let's update the App.tsx file to properly handle session persistence:
+
+<lov-write file_path="src/App.tsx">
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
+import ClientDashboard from "./pages/client/ClientDashboard";
+import AdminDashboard from "./pages/admin/AdminDashboard";
+import AuthPage from "./pages/auth/AuthPage";
+import { SessionContextProvider, useSession, useUser } from '@supabase/auth-helpers-react';
+import { supabase } from "./integrations/supabase/client";
 import { useEffect, useState } from "react";
 import { Loader2 } from "lucide-react";
 
@@ -75,40 +91,56 @@ const ProtectedRoute = ({
   return <>{children}</>;
 };
 
-const App = () => (
-  <SessionContextProvider 
-    supabaseClient={supabase}
-    initialSession={null} // This helps with hydration
-  >
-    <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <Toaster />
-        <Sonner />
-        <BrowserRouter>
-          <Routes>
-            <Route path="/" element={<Navigate to="/auth" replace />} />
-            <Route path="/auth" element={<AuthPage />} />
-            <Route
-              path="/client/*"
-              element={
-                <ProtectedRoute allowedRole="client">
-                  <ClientDashboard />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/admin/*"
-              element={
-                <ProtectedRoute allowedRole="admin">
-                  <AdminDashboard />
-                </ProtectedRoute>
-              }
-            />
-          </Routes>
-        </BrowserRouter>
-      </TooltipProvider>
-    </QueryClientProvider>
-  </SessionContextProvider>
-);
+const App = () => {
+  const [initialSession, setInitialSession] = useState(null);
+
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setInitialSession(session);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setInitialSession(session);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
+
+  return (
+    <SessionContextProvider 
+      supabaseClient={supabase}
+      initialSession={initialSession}
+    >
+      <QueryClientProvider client={queryClient}>
+        <TooltipProvider>
+          <Toaster />
+          <Sonner />
+          <BrowserRouter>
+            <Routes>
+              <Route path="/" element={<Navigate to="/auth" replace />} />
+              <Route path="/auth" element={<AuthPage />} />
+              <Route
+                path="/client/*"
+                element={
+                  <ProtectedRoute allowedRole="client">
+                    <ClientDashboard />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/admin/*"
+                element={
+                  <ProtectedRoute allowedRole="admin">
+                    <AdminDashboard />
+                  </ProtectedRoute>
+                }
+              />
+            </Routes>
+          </BrowserRouter>
+        </TooltipProvider>
+      </QueryClientProvider>
+    </SessionContextProvider>
+  );
+};
 
 export default App;
