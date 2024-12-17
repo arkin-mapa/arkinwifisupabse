@@ -4,37 +4,25 @@ export class BluetoothPrinter {
 
   async connect() {
     try {
-      // Request Bluetooth device with printer service
+      // Request any Bluetooth device to show all available devices
       this.device = await navigator.bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'Gprinter' },  // For Goojprt
-          { namePrefix: 'XP' },        // For Xprinter
-          { namePrefix: 'Printer' },   // Generic printer
-          { namePrefix: 'POS' },       // Generic POS printer
-          { namePrefix: 'THERMAL' },   // Generic thermal printer
-          { namePrefix: 'BT' },        // Generic Bluetooth printer
-          { namePrefix: 'ZJ' },        // Zjiang printers
-          { namePrefix: 'MTP' },       // MTP-II and similar
-          { namePrefix: 'SP' },        // Star Micronics
-          { namePrefix: 'ESC' },       // Epson compatible
-        ],
+        filters: [],
         optionalServices: [
-          '000018f0-0000-1000-8000-00805f9b34fb', // Common printer service
-          '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Widely used printer service
-          '18f0',                                  // Short form printer service
-          'e7810a71-73ae-499d-8c15-faa9aef0c3f2', // Common printer service
+          '000018f0-0000-1000-8000-00805f9b34fb',
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+          'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
         ]
       });
 
       if (!this.device) {
-        throw new Error('No printer selected');
+        throw new Error('No device selected');
       }
 
-      console.log('Connecting to printer:', this.device.name);
+      console.log('Connecting to device:', this.device.name);
       
       const server = await this.device.gatt?.connect();
       if (!server) {
-        throw new Error('Could not connect to printer');
+        throw new Error('Could not connect to device');
       }
 
       console.log('Connected to GATT server, discovering services...');
@@ -43,7 +31,6 @@ export class BluetoothPrinter {
       const serviceUUIDs = [
         '000018f0-0000-1000-8000-00805f9b34fb',
         '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        '18f0',
         'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
       ];
 
@@ -67,7 +54,6 @@ export class BluetoothPrinter {
       const characteristicUUIDs = [
         '00002af1-0000-1000-8000-00805f9b34fb',
         '49535343-8841-43f4-a8d4-ecbe34729bb3',
-        '2af1',
         'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f'
       ];
 
