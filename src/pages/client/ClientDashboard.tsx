@@ -25,26 +25,6 @@ const ClientDashboard = () => {
             <LogOut className="h-5 w-5" />
           </Button>
         </div>
-        <TabsList className="w-full justify-between rounded-none border-b">
-          <TabsTrigger 
-            value="plans" 
-            className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Plans
-          </TabsTrigger>
-          <TabsTrigger 
-            value="history" 
-            className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            History
-          </TabsTrigger>
-          <TabsTrigger 
-            value="wallet" 
-            className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
-          >
-            Vouchers
-          </TabsTrigger>
-        </TabsList>
       </div>
 
       <motion.div 
@@ -53,6 +33,29 @@ const ClientDashboard = () => {
         className="pb-20"
       >
         <Tabs defaultValue="plans" className="w-full">
+          <div className="sticky top-[52px] z-40 bg-white border-b">
+            <TabsList className="w-full justify-between rounded-none">
+              <TabsTrigger 
+                value="plans" 
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                Plans
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                History
+              </TabsTrigger>
+              <TabsTrigger 
+                value="wallet" 
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                Vouchers
+              </TabsTrigger>
+            </TabsList>
+          </div>
+          
           <TabsContent value="plans" className="m-0">
             <PlansList />
           </TabsContent>
