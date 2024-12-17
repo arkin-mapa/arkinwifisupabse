@@ -4,29 +4,84 @@ export class BluetoothPrinter {
 
   async connect() {
     try {
-      // Request Bluetooth device with printer service
+      console.log('Requesting Bluetooth device...');
+      // Request any Bluetooth device without filters
       this.device = await navigator.bluetooth.requestDevice({
-        filters: [
-          { namePrefix: 'Gprinter' },  // For Goojprt
-          { namePrefix: 'XP' },        // For Xprinter
-        ],
-        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Common printer service UUID
+        // Accept all devices by not specifying any filters
+        acceptAllDevices: true,
+        // Include common printer service UUIDs as optional services
+        optionalServices: [
+          '000018f0-0000-1000-8000-00805f9b34fb', // Common printer service
+          '49535343-fe7d-4ae5-8fa9-9fafd205e455', // Generic printer service
+          '18f0',  // Shortened version sometimes used
+          '1814',  // HID Service
+        ]
       });
 
       if (!this.device) {
-        throw new Error('No printer selected');
+        throw new Error('No device selected');
       }
 
+      console.log('Connecting to device:', this.device.name);
       const server = await this.device.gatt?.connect();
       if (!server) {
-        throw new Error('Could not connect to printer');
+        throw new Error('Could not connect to device');
       }
 
-      // Get the printer service
-      const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
-      // Get the characteristic for writing data
-      this.characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
+      // Try different service UUIDs
+      const serviceUUIDs = [
+        '000018f0-0000-1000-8000-00805f9b34fb',
+        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
+        '18f0',
+        '1814'
+      ];
 
+      let service;
+      for (const uuid of serviceUUIDs) {
+        try {
+          console.log('Attempting to get service:', uuid);
+          service = await server.getPrimaryService(uuid);
+          if (service) {
+            console.log('Service found:', uuid);
+            break;
+          }
+        } catch (e) {
+          console.log('Service not found:', uuid);
+          continue;
+        }
+      }
+
+      if (!service) {
+        throw new Error('No compatible service found');
+      }
+
+      // Try different characteristic UUIDs
+      const characteristicUUIDs = [
+        '00002af1-0000-1000-8000-00805f9b34fb',
+        '49535343-8841-43f4-a8d4-ecbe34729bb3',
+        '2AF1',
+        '2A4D'
+      ];
+
+      for (const uuid of characteristicUUIDs) {
+        try {
+          console.log('Attempting to get characteristic:', uuid);
+          this.characteristic = await service.getCharacteristic(uuid);
+          if (this.characteristic) {
+            console.log('Characteristic found:', uuid);
+            break;
+          }
+        } catch (e) {
+          console.log('Characteristic not found:', uuid);
+          continue;
+        }
+      }
+
+      if (!this.characteristic) {
+        throw new Error('No compatible characteristic found');
+      }
+
+      console.log('Successfully connected to device');
       return true;
     } catch (error) {
       console.error('Bluetooth connection error:', error);
