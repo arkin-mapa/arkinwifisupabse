@@ -2,16 +2,6 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Plan } from "@/types/plans";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion } from "framer-motion";
 import { fetchClientPlans, createPurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -46,6 +36,21 @@ const PlansList = () => {
       if (!session?.session?.user) {
         throw new Error("Please log in to make a purchase");
       }
+
+      // Check credit balance if using credit payment
+      if (purchaseDetails.paymentMethod === 'credit') {
+        const { data: credits } = await supabase
+          .from('credits')
+          .select('amount')
+          .eq('client_id', session.session.user.id)
+          .single();
+
+        const totalAmount = plan.price * purchaseDetails.quantity;
+        
+        if (!credits || credits.amount < totalAmount) {
+          throw new Error("Insufficient credit balance");
+        }
+      }
       
       return createPurchase({
         customerName: purchaseDetails.customerName,
@@ -67,11 +72,15 @@ const PlansList = () => {
     },
     onError: (error) => {
       console.error('Purchase error:', error);
-      if (error instanceof Error && error.message === "Please log in to make a purchase") {
-        toast.error("Please log in to make a purchase");
-        navigate("/auth");
-      } else {
-        toast.error("Failed to submit purchase request. Please try again.");
+      if (error instanceof Error) {
+        if (error.message === "Please log in to make a purchase") {
+          toast.error("Please log in to make a purchase");
+          navigate("/auth");
+        } else if (error.message === "Insufficient credit balance") {
+          toast.error("Insufficient credit balance for this purchase");
+        } else {
+          toast.error("Failed to submit purchase request. Please try again.");
+        }
       }
     }
   });

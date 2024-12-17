@@ -96,6 +96,10 @@ export const PurchaseDialog = ({
                 <RadioGroupItem value="paymaya" id="paymaya" />
                 <Label htmlFor="paymaya">PayMaya</Label>
               </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="credit" id="credit" />
+                <Label htmlFor="credit">Credit</Label>
+              </div>
             </RadioGroup>
           </div>
 
