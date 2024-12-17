@@ -4,73 +4,28 @@ export class BluetoothPrinter {
 
   async connect() {
     try {
-      // Request any Bluetooth device to show all available devices
+      // Request Bluetooth device with printer service
       this.device = await navigator.bluetooth.requestDevice({
-        filters: [],
-        optionalServices: [
-          '000018f0-0000-1000-8000-00805f9b34fb',
-          '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-          'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
-        ]
+        filters: [
+          { namePrefix: 'Gprinter' },  // For Goojprt
+          { namePrefix: 'XP' },        // For Xprinter
+        ],
+        optionalServices: ['000018f0-0000-1000-8000-00805f9b34fb'] // Common printer service UUID
       });
 
       if (!this.device) {
-        throw new Error('No device selected');
+        throw new Error('No printer selected');
       }
 
-      console.log('Connecting to device:', this.device.name);
-      
       const server = await this.device.gatt?.connect();
       if (!server) {
-        throw new Error('Could not connect to device');
+        throw new Error('Could not connect to printer');
       }
 
-      console.log('Connected to GATT server, discovering services...');
-
-      // Try different service UUIDs
-      const serviceUUIDs = [
-        '000018f0-0000-1000-8000-00805f9b34fb',
-        '49535343-fe7d-4ae5-8fa9-9fafd205e455',
-        'e7810a71-73ae-499d-8c15-faa9aef0c3f2'
-      ];
-
-      let service;
-      for (const uuid of serviceUUIDs) {
-        try {
-          service = await server.getPrimaryService(uuid);
-          console.log('Found printer service:', uuid);
-          break;
-        } catch (e) {
-          console.log('Service not found:', uuid);
-          continue;
-        }
-      }
-
-      if (!service) {
-        throw new Error('Printer service not found');
-      }
-
-      // Try different characteristic UUIDs
-      const characteristicUUIDs = [
-        '00002af1-0000-1000-8000-00805f9b34fb',
-        '49535343-8841-43f4-a8d4-ecbe34729bb3',
-        'bef8d6c9-9c21-4c9e-b632-bd58c1009f9f'
-      ];
-
-      for (const uuid of characteristicUUIDs) {
-        try {
-          this.characteristic = await service.getCharacteristic(uuid);
-          console.log('Found printer characteristic:', uuid);
-          break;
-        } catch (e) {
-          console.log('Characteristic not found:', uuid);
-          continue;
-        }
-      }
-
-      if (!this.characteristic) {
-        throw new Error('Printer characteristic not found');
-      }
+      // Get the printer service
+      const service = await server.getPrimaryService('000018f0-0000-1000-8000-00805f9b34fb');
+      // Get the characteristic for writing data
+      this.characteristic = await service.getCharacteristic('00002af1-0000-1000-8000-00805f9b34fb');
 
       return true;
     } catch (error) {
