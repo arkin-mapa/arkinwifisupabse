@@ -42,16 +42,8 @@ const SalesSummary = ({ purchases }: SalesSummaryProps) => {
     return purchase.status === "approved" ? sum + purchase.total : sum;
   }, 0);
 
-  const pendingAmount = filteredPurchases.reduce((sum, purchase) => {
-    return purchase.status === "pending" ? sum + purchase.total : sum;
-  }, 0);
-
   const approvedCount = filteredPurchases.filter(
     (purchase) => purchase.status === "approved"
-  ).length;
-
-  const pendingCount = filteredPurchases.filter(
-    (purchase) => purchase.status === "pending"
   ).length;
 
   return (
@@ -70,7 +62,7 @@ const SalesSummary = ({ purchases }: SalesSummaryProps) => {
         </Select>
       </div>
 
-      <div className="grid gap-4 md:grid-cols-2 lg:grid-cols-4">
+      <div className="grid gap-4 md:grid-cols-1">
         <Card>
           <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
             <CardTitle className="text-sm font-medium">Total Sales</CardTitle>
@@ -80,50 +72,6 @@ const SalesSummary = ({ purchases }: SalesSummaryProps) => {
             <p className="text-xs text-muted-foreground">
               From {approvedCount} approved purchases
             </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Pending Amount</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">₱{pendingAmount.toLocaleString()}</div>
-            <p className="text-xs text-muted-foreground">
-              From {pendingCount} pending requests
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Conversion Rate</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              {filteredPurchases.length > 0
-                ? Math.round((approvedCount / filteredPurchases.length) * 100)
-                : 0}
-              %
-            </div>
-            <p className="text-xs text-muted-foreground">
-              Of total {filteredPurchases.length} purchases
-            </p>
-          </CardContent>
-        </Card>
-
-        <Card>
-          <CardHeader className="flex flex-row items-center justify-between space-y-0 pb-2">
-            <CardTitle className="text-sm font-medium">Average Order Value</CardTitle>
-          </CardHeader>
-          <CardContent>
-            <div className="text-2xl font-bold">
-              ₱
-              {approvedCount > 0
-                ? Math.round(totalSales / approvedCount).toLocaleString()
-                : 0}
-            </div>
-            <p className="text-xs text-muted-foreground">Per approved purchase</p>
           </CardContent>
         </Card>
       </div>
