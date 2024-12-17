@@ -77,7 +77,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
 
   if (!purchases || purchases.length === 0) {
     return (
-      <Card className="mx-0">
+      <Card className="mx-4">
         <CardContent className="pt-6">
           <p className="text-center text-muted-foreground">No purchase requests to review.</p>
         </CardContent>
@@ -86,65 +86,57 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
   }
 
   return (
-    <Card className="mx-0">
+    <Card className="mx-4">
       <CardHeader className="px-4 py-3">
         <CardTitle className="text-lg">Purchase Requests</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="space-y-2 px-4 pb-4">
+          <div className="space-y-3 px-4 pb-4">
             {purchases.map((purchase) => (
-              <Card key={purchase.id} className="p-3">
-                <div className="flex flex-col gap-1.5">
+              <Card key={purchase.id} className="p-4">
+                <div className="flex flex-col gap-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-medium text-sm">{purchase.customerName}</h4>
-                      <p className="text-xs text-muted-foreground">
+                      <h4 className="font-medium text-base">{purchase.customerName}</h4>
+                      <p className="text-sm text-muted-foreground">
                         {purchase.date}
                       </p>
                     </div>
                     <Badge 
                       variant="secondary"
-                      className={`${getStatusColor(purchase.status)} text-white text-xs`}
+                      className={`${getStatusColor(purchase.status)} text-white`}
                     >
                       {purchase.status}
                     </Badge>
                   </div>
-                  <div className="flex flex-col gap-0.5 text-xs">
-                    <div className="flex justify-between">
-                      <span>Plan:</span>
-                      <span>{purchase.plan}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Quantity:</span>
-                      <span>{purchase.quantity}</span>
-                    </div>
-                    <div className="flex justify-between">
-                      <span>Payment:</span>
-                      <span>{purchase.paymentMethod}</span>
-                    </div>
-                    <div className="flex justify-between font-medium">
-                      <span>Total:</span>
-                      <span>₱{purchase.total.toFixed(2)}</span>
-                    </div>
+                  <div className="grid grid-cols-2 gap-1 text-sm">
+                    <span>Plan:</span>
+                    <span className="text-right">{purchase.plan}</span>
+                    <span>Quantity:</span>
+                    <span className="text-right">{purchase.quantity}</span>
+                    <span>Payment:</span>
+                    <span className="text-right">{purchase.paymentMethod}</span>
+                    <span className="font-medium">Total:</span>
+                    <span className="text-right font-medium">₱{purchase.total.toFixed(2)}</span>
                   </div>
                   {purchase.status === 'pending' && (
-                    <div className="flex gap-2 mt-2">
+                    <div className="flex gap-2 mt-3">
                       <Button
                         size="sm"
-                        className="flex-1 h-8 text-xs"
+                        className="flex-1 h-9 text-sm px-2"
                         onClick={() => handleApprove(purchase.id)}
                       >
-                        <Check className="w-3 h-3 mr-1" />
+                        <Check className="w-4 h-4 mr-1" />
                         Approve
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="flex-1 h-8 text-xs"
+                        className="flex-1 h-9 text-sm px-2"
                         onClick={() => handleReject(purchase.id)}
                       >
-                        <X className="w-3 h-3 mr-1" />
+                        <X className="w-4 h-4 mr-1" />
                         Reject
                       </Button>
                     </div>
@@ -153,10 +145,10 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full mt-2 h-8 text-xs"
+                      className="w-full mt-3 h-9 text-sm"
                       onClick={() => handleDelete(purchase.id)}
                     >
-                      <Trash2 className="w-3 h-3 mr-1" />
+                      <Trash2 className="w-4 h-4 mr-1" />
                       Delete
                     </Button>
                   )}
