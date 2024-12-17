@@ -4,14 +4,25 @@ export class BluetoothPrinter {
 
   async connect() {
     try {
-      // Request any Bluetooth device without filters for maximum compatibility
+      // Request Bluetooth device with expanded printer filters
       this.device = await navigator.bluetooth.requestDevice({
-        acceptAllDevices: true,
+        filters: [
+          { namePrefix: 'Gprinter' },  // For Goojprt
+          { namePrefix: 'XP' },        // For Xprinter
+          { namePrefix: 'Printer' },   // Generic printers
+          { namePrefix: 'POS' },       // Point of Sale printers
+          { namePrefix: 'BT' },        // Bluetooth printers
+          { namePrefix: 'THERMAL' },   // Generic thermal printers
+          { namePrefix: 'GP' },        // Alternative Goojprt prefix
+          { namePrefix: 'ZJ' },        // Zjiang printers
+          { namePrefix: 'MTP' },       // Mobile thermal printers
+          { namePrefix: 'SP' },        // Serial printers
+          { namePrefix: 'ESC' },       // ESC/POS printers
+        ],
         optionalServices: [
           '000018f0-0000-1000-8000-00805f9b34fb',  // Common printer service
           '49535343-fe7d-4ae5-8fa9-9fafd205e455',  // Generic serial port service
-          '000018f0-0000-1000-8000-00805f9b34fb',  // Full UUID format
-          '18f0',                                   // Short UUID format
+          '18f0',                                   // Shortened printer service
           'e7810a71-73ae-499d-8c15-faa9aef0c3f2',  // Common printer characteristic
         ]
       });
@@ -20,7 +31,7 @@ export class BluetoothPrinter {
         throw new Error('No printer selected');
       }
 
-      console.log('Attempting to connect to device:', this.device.name);
+      console.log('Connecting to printer:', this.device.name);
       const server = await this.device.gatt?.connect();
       if (!server) {
         throw new Error('Could not connect to printer');
