@@ -77,7 +77,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
 
   if (!purchases || purchases.length === 0) {
     return (
-      <Card className="mx-4">
+      <Card className="mx-3">
         <CardContent className="pt-6">
           <p className="text-center text-muted-foreground">No purchase requests to review.</p>
         </CardContent>
@@ -86,31 +86,31 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
   }
 
   return (
-    <Card className="mx-4">
-      <CardHeader className="px-4 py-3">
+    <Card className="mx-3">
+      <CardHeader className="px-3 py-2">
         <CardTitle className="text-lg">Purchase Requests</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="space-y-3 px-4 pb-4">
+          <div className="space-y-2 px-3 pb-3">
             {purchases.map((purchase) => (
-              <Card key={purchase.id} className="p-4">
+              <Card key={purchase.id} className="p-3">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="font-medium text-base">{purchase.customerName}</h4>
-                      <p className="text-sm text-muted-foreground">
+                      <h4 className="font-medium text-sm">{purchase.customerName}</h4>
+                      <p className="text-xs text-muted-foreground">
                         {purchase.date}
                       </p>
                     </div>
                     <Badge 
                       variant="secondary"
-                      className={`${getStatusColor(purchase.status)} text-white`}
+                      className={`${getStatusColor(purchase.status)} text-white text-xs`}
                     >
                       {purchase.status}
                     </Badge>
                   </div>
-                  <div className="grid grid-cols-2 gap-1 text-sm">
+                  <div className="grid grid-cols-2 gap-1 text-xs">
                     <span>Plan:</span>
                     <span className="text-right">{purchase.plan}</span>
                     <span>Quantity:</span>
@@ -121,22 +121,22 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     <span className="text-right font-medium">₱{purchase.total.toFixed(2)}</span>
                   </div>
                   {purchase.status === 'pending' && (
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex gap-2 mt-2">
                       <Button
                         size="sm"
-                        className="flex-1 h-9 text-sm px-2"
+                        className="flex-1 h-7 text-xs px-2"
                         onClick={() => handleApprove(purchase.id)}
                       >
-                        <Check className="w-4 h-4 mr-1" />
+                        <Check className="w-3 h-3 mr-1" />
                         Approve
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="flex-1 h-9 text-sm px-2"
+                        className="flex-1 h-7 text-xs px-2"
                         onClick={() => handleReject(purchase.id)}
                       >
-                        <X className="w-4 h-4 mr-1" />
+                        <X className="w-3 h-3 mr-1" />
                         Reject
                       </Button>
                     </div>
@@ -145,10 +145,10 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full mt-3 h-9 text-sm"
+                      className="w-full mt-2 h-7 text-xs"
                       onClick={() => handleDelete(purchase.id)}
                     >
-                      <Trash2 className="w-4 h-4 mr-1" />
+                      <Trash2 className="w-3 h-3 mr-1" />
                       Delete
                     </Button>
                   )}
