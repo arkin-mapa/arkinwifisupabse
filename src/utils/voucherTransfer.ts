@@ -26,11 +26,26 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers?.length || 0}`);
   }
 
-  // Add vouchers to client's wallet with proper typing
+  // Insert vouchers into purchase_vouchers table first
+  const purchaseVouchers = availableVouchers.map(voucher => ({
+    purchase_id: purchase.id,
+    voucher_id: voucher.id
+  }));
+
+  const { error: purchaseVoucherError } = await supabase
+    .from('purchase_vouchers')
+    .insert(purchaseVouchers);
+
+  if (purchaseVoucherError) {
+    console.error('Error creating purchase vouchers:', purchaseVoucherError);
+    throw new Error('Failed to create purchase vouchers');
+  }
+
+  // Add vouchers to client's wallet
   const walletEntries = availableVouchers.map(voucher => ({
     client_id: purchase.client_id,
     voucher_id: voucher.id,
-    status: 'approved' as PurchaseStatus // Explicitly type the status
+    status: 'approved' as PurchaseStatus
   }));
 
   const { error: walletError } = await supabase
