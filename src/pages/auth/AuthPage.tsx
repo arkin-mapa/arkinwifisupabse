@@ -32,7 +32,7 @@ const AuthPage = () => {
           email,
           password,
           options: {
-            emailRedirectTo: `${window.location.origin}/auth/callback`,
+            emailRedirectTo: `${window.location.origin}/client`,
           },
         });
 
@@ -112,7 +112,6 @@ const AuthPage = () => {
                 onChange={(e) => setPassword(e.target.value)}
                 required
                 disabled={isLoading}
-                minLength={6}
               />
             </div>
             <Button
