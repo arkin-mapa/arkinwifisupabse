@@ -46,7 +46,50 @@ const PlansList = () => {
       if (!session?.session?.user) {
         throw new Error("Please log in to make a purchase");
       }
-      
+
+      if (purchaseDetails.paymentMethod === 'credit') {
+        // For credit payments, directly create voucher wallet entries
+        const { data: availableVouchers, error: voucherError } = await supabase
+          .from('vouchers')
+          .select('id')
+          .eq('plan_id', plan.id)
+          .eq('is_used', false)
+          .limit(purchaseDetails.quantity);
+
+        if (voucherError) throw voucherError;
+
+        if (!availableVouchers || availableVouchers.length < purchaseDetails.quantity) {
+          throw new Error('Not enough vouchers available');
+        }
+
+        // Create credit transaction
+        const { error: creditError } = await supabase
+          .from('credits')
+          .insert({
+            client_id: session.session.user.id,
+            amount: plan.price * purchaseDetails.quantity,
+            transaction_type: 'purchase'
+          });
+
+        if (creditError) throw creditError;
+
+        // Add vouchers to wallet
+        const walletEntries = availableVouchers.map(voucher => ({
+          client_id: session.session.user.id,
+          voucher_id: voucher.id,
+          status: 'approved'
+        }));
+
+        const { error: walletError } = await supabase
+          .from('voucher_wallet')
+          .insert(walletEntries);
+
+        if (walletError) throw walletError;
+
+        return null;
+      }
+
+      // For non-credit payments, create a regular purchase
       return createPurchase({
         customerName: purchaseDetails.customerName,
         planId: plan.id,
@@ -57,7 +100,11 @@ const PlansList = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
-      toast.success("Purchase request submitted successfully!");
+      toast.success(
+        purchaseDetails.paymentMethod === 'credit' 
+          ? "Vouchers added to your wallet!" 
+          : "Purchase request submitted successfully!"
+      );
       setSelectedPlan(null);
       setPurchaseDetails({
         customerName: "",
@@ -71,7 +118,7 @@ const PlansList = () => {
         toast.error("Please log in to make a purchase");
         navigate("/auth");
       } else {
-        toast.error("Failed to submit purchase request. Please try again.");
+        toast.error("Failed to process purchase. Please try again.");
       }
     }
   });
