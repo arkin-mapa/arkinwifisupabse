@@ -1,60 +1,68 @@
-import { Card } from "@/components/ui/card";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlansList from "@/components/client/PlansList";
 import PurchaseHistory from "@/components/client/PurchaseHistory";
 import VoucherWallet from "@/components/client/VoucherWallet";
-import { Navbar } from "@/components/ui/navbar";
 import { motion } from "framer-motion";
+import { LogOut } from "lucide-react";
+import { Button } from "@/components/ui/button";
+import { supabase } from "@/integrations/supabase/client";
+import { useNavigate } from "react-router-dom";
 
 const ClientDashboard = () => {
+  const navigate = useNavigate();
+
+  const handleLogout = async () => {
+    await supabase.auth.signOut();
+    navigate("/auth");
+  };
+
   return (
     <div className="min-h-screen bg-gray-50">
-      <Navbar />
+      <div className="sticky top-0 z-50 bg-white border-b">
+        <div className="flex justify-between items-center px-4 py-2">
+          <h1 className="text-lg font-semibold">Internet Plans</h1>
+          <Button variant="ghost" size="icon" onClick={handleLogout}>
+            <LogOut className="h-5 w-5" />
+          </Button>
+        </div>
+        <TabsList className="w-full justify-between rounded-none border-b">
+          <TabsTrigger 
+            value="plans" 
+            className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            Plans
+          </TabsTrigger>
+          <TabsTrigger 
+            value="history" 
+            className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            History
+          </TabsTrigger>
+          <TabsTrigger 
+            value="wallet" 
+            className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+          >
+            Vouchers
+          </TabsTrigger>
+        </TabsList>
+      </div>
+
       <motion.div 
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
-        className="container mx-auto px-4 py-6 space-y-6 mb-20"
+        className="pb-20"
       >
-        <Tabs defaultValue="plans" className="space-y-4">
-          <div className="sticky top-[4.5rem] z-10 bg-white/80 backdrop-blur-lg rounded-lg p-1.5 border shadow-sm">
-            <TabsList className="w-full grid grid-cols-3 gap-1">
-              <TabsTrigger 
-                value="plans" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-              >
-                Plans
-              </TabsTrigger>
-              <TabsTrigger 
-                value="history" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-              >
-                History
-              </TabsTrigger>
-              <TabsTrigger 
-                value="wallet" 
-                className="data-[state=active]:bg-primary data-[state=active]:text-primary-foreground text-sm"
-              >
-                Vouchers
-              </TabsTrigger>
-            </TabsList>
-          </div>
-          
-          <TabsContent value="plans" className="mt-6">
-            <Card className="bg-white border shadow-sm p-4 rounded-lg">
-              <PlansList />
-            </Card>
+        <Tabs defaultValue="plans" className="w-full">
+          <TabsContent value="plans" className="m-0">
+            <PlansList />
           </TabsContent>
           
-          <TabsContent value="history" className="mt-6">
-            <Card className="bg-white border shadow-sm p-4 rounded-lg">
-              <PurchaseHistory />
-            </Card>
+          <TabsContent value="history" className="m-0 p-4">
+            <PurchaseHistory />
           </TabsContent>
           
-          <TabsContent value="wallet" className="mt-6">
-            <Card className="bg-white border shadow-sm p-4 rounded-lg">
-              <VoucherWallet />
-            </Card>
+          <TabsContent value="wallet" className="m-0 p-4">
+            <VoucherWallet />
           </TabsContent>
         </Tabs>
       </motion.div>
