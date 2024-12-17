@@ -9,36 +9,6 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
-      credits: {
-        Row: {
-          amount: number
-          client_id: string
-          created_at: string
-          id: string
-          reference_id: string | null
-          transaction_type: Database["public"]["Enums"]["credit_transaction_type"]
-          updated_at: string
-        }
-        Insert: {
-          amount: number
-          client_id: string
-          created_at?: string
-          id?: string
-          reference_id?: string | null
-          transaction_type: Database["public"]["Enums"]["credit_transaction_type"]
-          updated_at?: string
-        }
-        Update: {
-          amount?: number
-          client_id?: string
-          created_at?: string
-          id?: string
-          reference_id?: string | null
-          transaction_type?: Database["public"]["Enums"]["credit_transaction_type"]
-          updated_at?: string
-        }
-        Relationships: []
-      }
       plans: {
         Row: {
           created_at: string
@@ -245,8 +215,7 @@ export type Database = {
       [_ in never]: never
     }
     Enums: {
-      credit_transaction_type: "deposit" | "purchase"
-      payment_method: "cash" | "gcash" | "paymaya" | "credit"
+      payment_method: "cash" | "gcash" | "paymaya"
       purchase_status: "pending" | "approved" | "rejected" | "cancelled"
       user_role: "admin" | "client"
     }
