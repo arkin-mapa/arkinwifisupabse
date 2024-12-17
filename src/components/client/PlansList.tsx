@@ -12,6 +12,7 @@ import { PlanCard } from "./plans/PlanCard";
 import { PurchaseDialog } from "./plans/PurchaseDialog";
 
 type PaymentMethod = Database['public']['Enums']['payment_method'];
+type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 const PlansList = () => {
   const navigate = useNavigate();
@@ -63,11 +64,11 @@ const PlansList = () => {
 
         if (creditError) throw creditError;
 
-        // Add vouchers to wallet
+        // Add vouchers to wallet with proper typing
         const walletEntries = availableVouchers.map(voucher => ({
           client_id: session.session.user.id,
           voucher_id: voucher.id,
-          status: 'approved'
+          status: 'approved' as PurchaseStatus // Explicitly type the status
         }));
 
         const { error: walletError } = await supabase
