@@ -34,44 +34,42 @@ const VoucherCard = ({ voucher, plan, onDelete, onPrint }: VoucherCardProps) => 
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="p-2 bg-background hover:bg-accent/5 transition-colors">
+      <Card className="p-3 bg-background hover:bg-accent/5 transition-colors">
         <div className="flex flex-col gap-2">
-          <div className="flex items-center gap-2">
-            <code className="bg-muted px-2 py-1 rounded text-xs flex-1 text-center font-mono">
-              {voucher.code}
-            </code>
-            <div className="flex gap-1">
+          <code className="bg-muted px-3 py-2 rounded text-sm font-mono text-center break-all">
+            {voucher.code}
+          </code>
+          <div className="flex items-center justify-between gap-2 mt-1">
+            <div className="text-xs text-muted-foreground">
+              ₱{plan?.price.toFixed(2)}
+            </div>
+            <div className="flex gap-2">
               <Button
-                size="icon"
+                size="sm"
                 variant="ghost"
                 onClick={() => copyToClipboard(voucher.code)}
-                className="h-7 w-7"
+                className="h-7 w-7 p-0"
               >
-                <Copy className="h-3 w-3" />
+                <Copy className="h-3.5 w-3.5" />
               </Button>
               <Button
-                size="icon"
+                size="sm"
                 variant="ghost"
                 onClick={() => onPrint(voucher)}
-                className="h-7 w-7"
+                className="h-7 w-7 p-0"
               >
-                <Printer className="h-3 w-3" />
+                <Printer className="h-3.5 w-3.5" />
               </Button>
               <Button
-                size="icon"
+                size="sm"
                 variant="ghost"
                 onClick={handleDelete}
-                className="h-7 w-7 text-destructive hover:text-destructive"
+                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
               >
-                <Trash2 className="h-3 w-3" />
+                <Trash2 className="h-3.5 w-3.5" />
               </Button>
             </div>
           </div>
-          {plan && (
-            <div className="text-xs text-muted-foreground text-right">
-              Price: ₱{plan.price.toFixed(2)}
-            </div>
-          )}
         </div>
       </Card>
     </motion.div>

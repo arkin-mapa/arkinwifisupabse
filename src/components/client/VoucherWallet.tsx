@@ -115,13 +115,13 @@ const VoucherWallet = () => {
   }
 
   return (
-    <Card className="mx-4">
+    <Card className="mx-0">
       <CardHeader className="pb-3">
         <CardTitle className="text-lg">Your Vouchers</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="space-y-3 p-4">
+          <div className="space-y-3 px-4 pb-4">
             {Object.entries(vouchers).map(([planId, planVouchers]) => (
               <PlanGroup
                 key={planId}

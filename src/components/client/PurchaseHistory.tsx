@@ -1,145 +1,101 @@
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import {
-  Table,
-  TableBody,
-  TableCell,
-  TableHead,
-  TableHeader,
-  TableRow,
-} from "@/components/ui/table";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
-import type { Purchase } from "@/types/plans";
 import { fetchClientPurchases, cancelPurchase } from "@/utils/supabaseData";
-import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import type { Purchase } from "@/types/plans";
 
 const PurchaseHistory = () => {
-  const queryClient = useQueryClient();
+  const [purchases, setPurchases] = useState<Purchase[]>([]);
 
-  const { data: purchases = [], isLoading } = useQuery({
-    queryKey: ['clientPurchases'],
-    queryFn: fetchClientPurchases
-  });
+  useEffect(() => {
+    loadPurchases();
+  }, []);
 
-  const cancelMutation = useMutation({
-    mutationFn: cancelPurchase,
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['clientPurchases'] });
+  const loadPurchases = async () => {
+    try {
+      const purchasesData = await fetchClientPurchases();
+      setPurchases(purchasesData);
+    } catch (error) {
+      console.error('Error loading purchases:', error);
+      toast.error("Failed to load purchase history");
+    }
+  };
+
+  const handleCancel = async (purchaseId: string) => {
+    try {
+      await cancelPurchase(purchaseId);
+      await loadPurchases();
       toast.success("Purchase cancelled successfully");
-    },
-    onError: (error) => {
-      console.error('Cancel error:', error);
-      toast.error("Failed to cancel purchase. Please try again.");
+    } catch (error) {
+      console.error('Error cancelling purchase:', error);
+      toast.error("Failed to cancel purchase");
     }
-  });
-
-  const handleCancel = (purchaseId: string) => {
-    cancelMutation.mutate(purchaseId);
   };
 
-  const getBadgeVariant = (status: Purchase['status']) => {
+  const getStatusColor = (status: string) => {
     switch (status) {
-      case "approved":
-        return "default";
-      case "pending":
-        return "secondary";
-      case "rejected":
-        return "destructive";
-      case "cancelled":
-        return "outline";
-      default:
-        return "secondary";
+      case 'approved': return 'bg-green-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'rejected': return 'bg-red-500';
+      case 'cancelled': return 'bg-gray-500';
+      default: return 'bg-gray-500';
     }
   };
 
-  if (isLoading) {
-    return <div className="text-center">Loading purchase history...</div>;
+  if (!purchases || purchases.length === 0) {
+    return (
+      <Card className="mx-0">
+        <CardContent className="pt-6">
+          <p className="text-center text-muted-foreground">No purchase history available.</p>
+        </CardContent>
+      </Card>
+    );
   }
 
   return (
-    <Card>
+    <Card className="mx-0">
       <CardHeader>
         <CardTitle>Purchase History</CardTitle>
       </CardHeader>
-      <CardContent>
-        {purchases.length === 0 ? (
-          <p className="text-muted-foreground">No purchase history available.</p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>Date</TableHead>
-                <TableHead>Plan</TableHead>
-                <TableHead>Quantity</TableHead>
-                <TableHead>Total</TableHead>
-                <TableHead>Payment</TableHead>
-                <TableHead>Status</TableHead>
-                <TableHead>Actions</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {purchases.map((purchase) => (
-                <TableRow key={purchase.id}>
-                  <TableCell>{purchase.date}</TableCell>
-                  <TableCell>{purchase.plan}</TableCell>
-                  <TableCell>{purchase.quantity}</TableCell>
-                  <TableCell>₱{purchase.total}</TableCell>
-                  <TableCell className="capitalize">
-                    {purchase.paymentMethod}
-                  </TableCell>
-                  <TableCell>
-                    <Badge variant={getBadgeVariant(purchase.status)}>
+      <CardContent className="p-0">
+        <ScrollArea className="h-[calc(100vh-12rem)]">
+          <div className="space-y-3 px-4 pb-4">
+            {purchases.map((purchase) => (
+              <Card key={purchase.id} className="p-4">
+                <div className="flex flex-col gap-2">
+                  <div className="flex items-start justify-between">
+                    <div>
+                      <h4 className="font-medium">{purchase.plan}</h4>
+                      <p className="text-sm text-muted-foreground">
+                        {purchase.date}
+                      </p>
+                    </div>
+                    <Badge 
+                      variant="secondary"
+                      className={`${getStatusColor(purchase.status)} text-white`}
+                    >
                       {purchase.status}
                     </Badge>
-                  </TableCell>
-                  <TableCell>
-                    {purchase.status === "pending" && (
-                      <AlertDialog>
-                        <AlertDialogTrigger asChild>
-                          <Button variant="destructive" size="sm">
-                            Cancel
-                          </Button>
-                        </AlertDialogTrigger>
-                        <AlertDialogContent>
-                          <AlertDialogHeader>
-                            <AlertDialogTitle>
-                              Cancel Purchase Request
-                            </AlertDialogTitle>
-                            <AlertDialogDescription>
-                              Are you sure you want to cancel this purchase request?
-                              This action cannot be undone.
-                            </AlertDialogDescription>
-                          </AlertDialogHeader>
-                          <AlertDialogFooter>
-                            <AlertDialogCancel>No, keep it</AlertDialogCancel>
-                            <AlertDialogAction
-                              onClick={() => handleCancel(purchase.id)}
-                              disabled={cancelMutation.isPending}
-                            >
-                              Yes, cancel it
-                            </AlertDialogAction>
-                          </AlertDialogFooter>
-                        </AlertDialogContent>
-                      </AlertDialog>
-                    )}
-                  </TableCell>
-                </TableRow>
-              ))}
-            </TableBody>
-          </Table>
-        )}
+                  </div>
+                  <div className="flex justify-between items-center text-sm">
+                    <span>Quantity: {purchase.quantity}</span>
+                    <span className="font-medium">₱{purchase.total.toFixed(2)}</span>
+                  </div>
+                  {purchase.status === 'pending' && (
+                    <button
+                      onClick={() => handleCancel(purchase.id)}
+                      className="text-sm text-destructive hover:text-destructive/80 transition-colors mt-2"
+                    >
+                      Cancel Purchase
+                    </button>
+                  )}
+                </div>
+              </Card>
+            ))}
+          </div>
+        </ScrollArea>
       </CardContent>
     </Card>
   );
