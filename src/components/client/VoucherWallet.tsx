@@ -28,13 +28,11 @@ const VoucherWallet = () => {
         fetchClientPlans()
       ]);
 
-      // Create plans lookup object
       const plansLookup = plansData.reduce((acc, plan) => {
         acc[plan.id] = plan;
         return acc;
       }, {} as Record<string, Plan>);
       
-      // Group vouchers by plan ID
       const groupedVouchers = vouchersData.reduce((acc, voucher) => {
         const planId = voucher.planId || 'unknown';
         if (!acc[planId]) {
@@ -63,7 +61,6 @@ const VoucherWallet = () => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
-      // First delete from voucher_wallet
       const { error: walletError } = await supabase
         .from('voucher_wallet')
         .delete()
@@ -73,7 +70,6 @@ const VoucherWallet = () => {
         throw walletError;
       }
 
-      // Then delete the voucher itself
       const { error: voucherError } = await supabase
         .from('vouchers')
         .delete()
@@ -84,7 +80,7 @@ const VoucherWallet = () => {
       }
 
       toast.success("Voucher deleted successfully");
-      await loadData(); // Reload vouchers after deletion
+      await loadData();
     } catch (error) {
       console.error('Error deleting voucher:', error);
       toast.error("Failed to delete voucher");
@@ -100,7 +96,7 @@ const VoucherWallet = () => {
 
   if (!session) {
     return (
-      <Card className="mt-6">
+      <Card className="mx-4">
         <CardContent className="pt-6">
           <p className="text-center text-muted-foreground">Please log in to view your vouchers.</p>
         </CardContent>
@@ -110,7 +106,7 @@ const VoucherWallet = () => {
 
   if (!vouchers || Object.keys(vouchers).length === 0) {
     return (
-      <Card className="mt-6">
+      <Card className="mx-4">
         <CardContent className="pt-6">
           <p className="text-center text-muted-foreground">No vouchers available in your wallet.</p>
         </CardContent>
@@ -119,24 +115,26 @@ const VoucherWallet = () => {
   }
 
   return (
-    <Card className="mt-6">
-      <CardHeader>
-        <CardTitle>Your Vouchers</CardTitle>
+    <Card className="mx-4">
+      <CardHeader className="pb-3">
+        <CardTitle className="text-lg">Your Vouchers</CardTitle>
       </CardHeader>
-      <CardContent>
-        <ScrollArea className="h-[400px] pr-4">
-          {Object.entries(vouchers).map(([planId, planVouchers]) => (
-            <PlanGroup
-              key={planId}
-              planId={planId}
-              plan={plans[planId]}
-              vouchers={planVouchers}
-              isExpanded={expandedPlans[planId] || false}
-              onToggle={() => togglePlanExpansion(planId)}
-              onPrintVoucher={handlePrintVoucher}
-              onDeleteVoucher={handleDeleteVoucher}
-            />
-          ))}
+      <CardContent className="p-0">
+        <ScrollArea className="h-[calc(100vh-12rem)]">
+          <div className="space-y-3 p-4">
+            {Object.entries(vouchers).map(([planId, planVouchers]) => (
+              <PlanGroup
+                key={planId}
+                planId={planId}
+                plan={plans[planId]}
+                vouchers={planVouchers}
+                isExpanded={expandedPlans[planId] || false}
+                onToggle={() => togglePlanExpansion(planId)}
+                onPrintVoucher={handlePrintVoucher}
+                onDeleteVoucher={handleDeleteVoucher}
+              />
+            ))}
+          </div>
         </ScrollArea>
       </CardContent>
     </Card>

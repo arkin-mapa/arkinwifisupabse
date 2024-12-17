@@ -42,45 +42,51 @@ const PlanGroup = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-xl border bg-white p-4 md:p-6"
+      className="rounded-lg border bg-card shadow-sm"
     >
-      <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-2 sm:gap-4 mb-4">
+      <div className="p-3">
         <div 
-          className="flex items-center gap-2 cursor-pointer hover:bg-gray-50 p-2 rounded-lg flex-1"
+          className="flex items-center justify-between gap-2 cursor-pointer"
           onClick={onToggle}
         >
-          {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
-          <h3 className="text-lg font-semibold text-gray-900">
-            {plan?.duration || 'Unknown Plan'}
-          </h3>
-          <span className="ml-2 px-3 py-1 rounded-full bg-gray-100 text-gray-600 text-sm">
-            {vouchers.length} voucher{vouchers.length !== 1 ? 's' : ''}
-          </span>
+          <div className="flex items-center gap-2 flex-1">
+            {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+            <h3 className="text-sm font-medium">
+              {plan?.duration || 'Unknown Plan'}
+            </h3>
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs">
+              {vouchers.length}
+            </span>
+          </div>
+          {vouchers.length > 0 && (
+            <Button
+              onClick={(e) => {
+                e.stopPropagation();
+                handlePrintAllPlanVouchers();
+              }}
+              variant="ghost"
+              size="sm"
+              className="h-8"
+            >
+              <PrinterIcon className="h-4 w-4" />
+            </Button>
+          )}
         </div>
-        {vouchers.length > 0 && (
-          <Button
-            onClick={handlePrintAllPlanVouchers}
-            variant="outline"
-            size="sm"
-            className="w-full sm:w-auto"
-          >
-            <PrinterIcon className="mr-2 h-4 w-4" />
-            Print All
-          </Button>
-        )}
       </div>
       
       {isExpanded && (
-        <div className="grid gap-4">
-          {vouchers.map((voucher) => (
-            <VoucherCard
-              key={voucher.id}
-              voucher={voucher}
-              plan={plan}
-              onDelete={onDeleteVoucher}
-              onPrint={onPrintVoucher}
-            />
-          ))}
+        <div className="px-3 pb-3">
+          <div className="space-y-2">
+            {vouchers.map((voucher) => (
+              <VoucherCard
+                key={voucher.id}
+                voucher={voucher}
+                plan={plan}
+                onDelete={onDeleteVoucher}
+                onPrint={onPrintVoucher}
+              />
+            ))}
+          </div>
         </div>
       )}
     </motion.div>

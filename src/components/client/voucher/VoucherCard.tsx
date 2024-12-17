@@ -34,39 +34,41 @@ const VoucherCard = ({ voucher, plan, onDelete, onPrint }: VoucherCardProps) => 
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="p-4 bg-white border hover:bg-gray-50 transition-all">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4">
-          <div className="flex items-center gap-2 w-full sm:w-auto">
-            <code className="bg-gray-100 px-3 py-1.5 rounded-lg text-gray-800 flex-1 sm:flex-none text-center">
+      <Card className="p-2 bg-background hover:bg-accent/5 transition-colors">
+        <div className="flex flex-col gap-2">
+          <div className="flex items-center gap-2">
+            <code className="bg-muted px-2 py-1 rounded text-xs flex-1 text-center font-mono">
               {voucher.code}
             </code>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => copyToClipboard(voucher.code)}
-              className="text-gray-600 hover:bg-gray-100"
-            >
-              <Copy className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={() => onPrint(voucher)}
-              className="text-gray-600 hover:bg-gray-100"
-            >
-              <Printer className="h-4 w-4" />
-            </Button>
-            <Button
-              size="icon"
-              variant="ghost"
-              onClick={handleDelete}
-              className="text-red-500 hover:bg-red-50"
-            >
-              <Trash2 className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-1">
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => copyToClipboard(voucher.code)}
+                className="h-7 w-7"
+              >
+                <Copy className="h-3 w-3" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={() => onPrint(voucher)}
+                className="h-7 w-7"
+              >
+                <Printer className="h-3 w-3" />
+              </Button>
+              <Button
+                size="icon"
+                variant="ghost"
+                onClick={handleDelete}
+                className="h-7 w-7 text-destructive hover:text-destructive"
+              >
+                <Trash2 className="h-3 w-3" />
+              </Button>
+            </div>
           </div>
           {plan && (
-            <div className="text-sm text-gray-600">
+            <div className="text-xs text-muted-foreground text-right">
               Price: ₱{plan.price.toFixed(2)}
             </div>
           )}
