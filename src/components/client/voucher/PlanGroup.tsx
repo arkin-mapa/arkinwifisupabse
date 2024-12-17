@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, PrinterIcon } from "lucide-react";
+import { ChevronDown, ChevronUp, PrinterIcon, Bluetooth } from "lucide-react";
 import type { Voucher, Plan } from "@/types/plans";
 import VoucherCard from "./VoucherCard";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,7 @@ interface PlanGroupProps {
   isExpanded: boolean;
   onToggle: () => void;
   onDeleteVoucher: (id: string) => void;
-  onPrintVoucher: (voucher: Voucher) => void;
+  onPrintVoucher: (voucher: Voucher, useBluetooth?: boolean) => void;
 }
 
 const PlanGroup = ({
@@ -25,16 +25,22 @@ const PlanGroup = ({
   onDeleteVoucher,
   onPrintVoucher,
 }: PlanGroupProps) => {
-  const handlePrintAllPlanVouchers = () => {
+  const handlePrintAllPlanVouchers = (useBluetooth = false) => {
     if (!plan) {
       toast.error("Plan information not available");
       return;
     }
     
-    if (!printPlanVouchers(vouchers, plan)) {
-      toast.error("Unable to open print window. Please check your popup settings.");
+    if (!printPlanVouchers(vouchers, plan, useBluetooth)) {
+      toast.error(useBluetooth ? 
+        "Failed to connect to Bluetooth printer" : 
+        "Unable to open print window. Please check your popup settings."
+      );
     } else {
-      toast.success("Print window opened successfully");
+      toast.success(useBluetooth ? 
+        "Sent to Bluetooth printer" : 
+        "Print window opened successfully"
+      );
     }
   };
 
@@ -59,17 +65,24 @@ const PlanGroup = ({
             </span>
           </div>
           {vouchers.length > 0 && (
-            <Button
-              onClick={(e) => {
-                e.stopPropagation();
-                handlePrintAllPlanVouchers();
-              }}
-              variant="ghost"
-              size="sm"
-              className="h-8"
-            >
-              <PrinterIcon className="h-4 w-4" />
-            </Button>
+            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
+              <Button
+                onClick={() => handlePrintAllPlanVouchers()}
+                variant="ghost"
+                size="sm"
+                className="h-8"
+              >
+                <PrinterIcon className="h-4 w-4" />
+              </Button>
+              <Button
+                onClick={() => handlePrintAllPlanVouchers(true)}
+                variant="ghost"
+                size="sm"
+                className="h-8"
+              >
+                <Bluetooth className="h-4 w-4" />
+              </Button>
+            </div>
           )}
         </div>
       </div>
