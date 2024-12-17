@@ -67,11 +67,11 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
 
   const getStatusColor = (status: string) => {
     switch (status) {
-      case 'approved': return 'bg-[#4CAF50] text-white';
-      case 'pending': return 'bg-[#FFC107] text-black';
-      case 'rejected': return 'bg-red-500 text-white';
-      case 'cancelled': return 'bg-gray-500 text-white';
-      default: return 'bg-gray-500 text-white';
+      case 'approved': return 'bg-green-500';
+      case 'pending': return 'bg-yellow-500';
+      case 'rejected': return 'bg-red-500';
+      case 'cancelled': return 'bg-gray-500';
+      default: return 'bg-gray-500';
     }
   };
 
@@ -86,53 +86,53 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
   }
 
   return (
-    <Card className="mx-auto max-w-md shadow-none border-none">
+    <Card className="mx-auto max-w-md">
       <CardHeader className="pb-3">
-        <CardTitle className="text-3xl font-bold">Purchase Requests</CardTitle>
+        <CardTitle className="text-xl">Purchase Requests</CardTitle>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-12rem)]">
-          <div className="space-y-4 px-4 pb-4">
+          <div className="space-y-3 px-3 pb-3">
             {purchases.map((purchase) => (
-              <div 
-                key={purchase.id} 
-                className="bg-white rounded-2xl shadow-sm p-4 border border-gray-100"
-              >
+              <div key={purchase.id} className="bg-background p-3 rounded-lg">
                 <div className="flex flex-col gap-2">
                   <div className="flex items-start justify-between">
                     <div>
-                      <h4 className="text-xl font-bold">{purchase.plan}</h4>
-                      <p className="text-gray-500 text-sm">
+                      <h4 className="font-medium text-sm">{purchase.customerName}</h4>
+                      <p className="text-xs text-muted-foreground">
                         {purchase.date}
                       </p>
                     </div>
                     <Badge 
-                      className={`${getStatusColor(purchase.status)} rounded-full px-4 py-1 text-sm font-medium border-none`}
+                      variant="secondary"
+                      className={`${getStatusColor(purchase.status)} text-white text-xs`}
                     >
                       {purchase.status}
                     </Badge>
                   </div>
-                  <div className="flex justify-between items-center mt-2">
-                    <span className="text-gray-600">Quantity: {purchase.quantity}</span>
-                    <span className="font-bold text-lg">₱{purchase.total.toFixed(2)}</span>
+                  <div className="flex flex-col gap-1 text-xs">
+                    <p>Plan: {purchase.plan}</p>
+                    <p>Quantity: {purchase.quantity}</p>
+                    <p>Payment: {purchase.paymentMethod}</p>
+                    <p className="font-medium">Total: ₱{purchase.total.toFixed(2)}</p>
                   </div>
                   {purchase.status === 'pending' && (
-                    <div className="flex gap-2 mt-3">
+                    <div className="flex gap-2 mt-2">
                       <Button
                         size="sm"
-                        className="h-9 text-sm flex-1 bg-[#4CAF50] hover:bg-[#45a049] border-none"
+                        className="h-7 text-xs flex-1 bg-green-500 hover:bg-green-600"
                         onClick={() => handleApprove(purchase.id)}
                       >
-                        <Check className="w-4 h-4 mr-1" />
+                        <Check className="w-3 h-3 mr-1" />
                         Approve
                       </Button>
                       <Button
                         size="sm"
                         variant="destructive"
-                        className="h-9 text-sm flex-1 border-none"
+                        className="h-7 text-xs flex-1"
                         onClick={() => handleReject(purchase.id)}
                       >
-                        <X className="w-4 h-4 mr-1" />
+                        <X className="w-3 h-3 mr-1" />
                         Reject
                       </Button>
                     </div>
@@ -141,10 +141,10 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     <Button
                       size="sm"
                       variant="outline"
-                      className="w-full h-9 text-sm mt-3 text-red-500 hover:text-red-600 hover:bg-red-50"
+                      className="w-full h-7 text-xs mt-2"
                       onClick={() => handleDelete(purchase.id)}
                     >
-                      <Trash2 className="w-4 h-4 mr-1" />
+                      <Trash2 className="w-3 h-3 mr-1" />
                       Delete
                     </Button>
                   )}
