@@ -4,6 +4,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { fetchPurchases, updatePurchaseStatus, deletePurchase } from "@/utils/supabaseData";
+import { transferVouchersToClient } from "@/utils/voucherTransfer";
 import type { Purchase } from "@/types/plans";
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
@@ -29,15 +30,20 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
     }
   };
 
-  const handleApprove = async (purchaseId: string) => {
+  const handleApprove = async (purchase: Purchase) => {
     try {
-      await updatePurchaseStatus(purchaseId, "approved");
+      // First transfer the vouchers
+      await transferVouchersToClient(purchase);
+      
+      // Then update the purchase status
+      await updatePurchaseStatus(purchase.id, "approved");
+      
       await loadPurchases();
       onPurchaseUpdate?.();
-      toast.success("Purchase approved successfully");
+      toast.success("Purchase approved and vouchers transferred successfully");
     } catch (error) {
       console.error('Error approving purchase:', error);
-      toast.error("Failed to approve purchase");
+      toast.error(error instanceof Error ? error.message : "Failed to approve purchase");
     }
   };
 
@@ -123,7 +129,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                       <Button
                         size="sm"
                         className="h-7 text-xs flex-1 bg-green-500 hover:bg-green-600"
-                        onClick={() => handleApprove(purchase.id)}
+                        onClick={() => handleApprove(purchase)}
                       >
                         <Check className="w-3 h-3 mr-1" />
                         Approve
