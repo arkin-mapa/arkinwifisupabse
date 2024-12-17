@@ -24,56 +24,54 @@ export function Navbar() {
   };
 
   return (
-    <nav className="sticky top-0 z-50 w-full border-b bg-white/75 backdrop-blur-lg">
-      <div className="container flex h-14 items-center">
-        <div className="flex flex-1 items-center justify-between">
+    <nav className="fixed top-0 left-0 right-0 z-50 border-b bg-white/75 backdrop-blur-lg">
+      <div className="container mx-auto px-4">
+        <div className="flex h-14 items-center justify-between">
           <Link 
             to="/" 
             className="flex items-center space-x-2"
           >
-            <span className="font-bold text-xl bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+            <span className="font-bold text-lg bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
               WiFi Portal
             </span>
           </Link>
           
-          <div className="flex items-center space-x-4">
-            {user && (
-              <>
-                <div className="flex items-center space-x-1">
-                  <Link
-                    to="/admin"
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      isAdmin 
-                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  >
-                    Admin
-                  </Link>
-                  <Link
-                    to="/client"
-                    className={`px-4 py-2 rounded-md text-sm font-medium transition-colors ${
-                      !isAdmin 
-                        ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
-                        : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                    }`}
-                  >
-                    Client
-                  </Link>
-                </div>
-                
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={handleLogout}
-                  className="gap-2"
+          {user && (
+            <div className="flex items-center gap-2">
+              <div className="flex items-center gap-1">
+                <Link
+                  to="/admin"
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    isAdmin 
+                      ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
                 >
-                  <LogOut className="h-4 w-4" />
-                  <span className="hidden sm:inline">Logout</span>
-                </Button>
-              </>
-            )}
-          </div>
+                  Admin
+                </Link>
+                <Link
+                  to="/client"
+                  className={`px-3 py-1.5 rounded-md text-sm font-medium transition-colors ${
+                    !isAdmin 
+                      ? "bg-primary text-primary-foreground shadow-sm hover:bg-primary/90"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  }`}
+                >
+                  Client
+                </Link>
+              </div>
+              
+              <Button
+                variant="ghost"
+                size="sm"
+                onClick={handleLogout}
+                className="gap-1"
+              >
+                <LogOut className="h-4 w-4" />
+                <span className="sr-only sm:not-sr-only">Logout</span>
+              </Button>
+            </div>
+          )}
         </div>
       </div>
     </nav>
