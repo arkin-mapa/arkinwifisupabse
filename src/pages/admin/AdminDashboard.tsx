@@ -7,17 +7,25 @@ import { Navbar } from "@/components/ui/navbar";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import type { Purchase } from "@/types/plans";
+import { fetchPurchases } from "@/utils/supabaseData";
+import { toast } from "sonner";
 
 const AdminDashboard = () => {
   const [purchases, setPurchases] = useState<Purchase[]>([]);
 
   useEffect(() => {
-    // Load purchases from localStorage
-    const storedPurchases = localStorage.getItem('purchases');
-    if (storedPurchases) {
-      setPurchases(JSON.parse(storedPurchases));
-    }
+    loadPurchases();
   }, []);
+
+  const loadPurchases = async () => {
+    try {
+      const purchasesData = await fetchPurchases();
+      setPurchases(purchasesData);
+    } catch (error) {
+      console.error('Error loading purchases:', error);
+      toast.error("Failed to load sales data");
+    }
+  };
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -52,7 +60,7 @@ const AdminDashboard = () => {
           
           <TabsContent value="requests">
             <Card className="bg-white border shadow-sm p-4 rounded-lg">
-              <PendingPurchases />
+              <PendingPurchases onPurchaseUpdate={loadPurchases} />
             </Card>
           </TabsContent>
         </Tabs>
