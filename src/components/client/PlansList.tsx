@@ -39,15 +39,20 @@ const PlansList = () => {
 
       // Check credit balance if using credit payment
       if (purchaseDetails.paymentMethod === 'credit') {
-        const { data: credits } = await supabase
+        const { data: credits, error } = await supabase
           .from('credits')
           .select('amount')
-          .eq('client_id', session.session.user.id)
-          .single();
+          .eq('client_id', session.session.user.id);
+
+        if (error) {
+          console.error('Error fetching credits:', error);
+          throw new Error("Failed to check credit balance");
+        }
 
         const totalAmount = plan.price * purchaseDetails.quantity;
+        const currentBalance = credits?.[0]?.amount || 0;
         
-        if (!credits || credits.amount < totalAmount) {
+        if (currentBalance < totalAmount) {
           throw new Error("Insufficient credit balance");
         }
       }
@@ -78,6 +83,8 @@ const PlansList = () => {
           navigate("/auth");
         } else if (error.message === "Insufficient credit balance") {
           toast.error("Insufficient credit balance for this purchase");
+        } else if (error.message === "Failed to check credit balance") {
+          toast.error("Unable to verify credit balance. Please try again.");
         } else {
           toast.error("Failed to submit purchase request. Please try again.");
         }
