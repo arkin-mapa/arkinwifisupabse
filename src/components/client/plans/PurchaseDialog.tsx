@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 import type { Database } from "@/types/database.types";
 
-type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
+type PaymentMethod = Database['public']['Enums']['payment_method'];
 
 interface PurchaseDialogProps {
   selectedPlan: Plan | null;
@@ -45,8 +45,7 @@ export const PurchaseDialog = ({
     try {
       const { data: credits, error } = await supabase
         .from('credits')
-        .select('amount, transaction_type')
-        .order('created_at', { ascending: true });
+        .select('amount, transaction_type');
 
       if (error) throw error;
 

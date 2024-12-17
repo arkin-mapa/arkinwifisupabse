@@ -21,8 +21,7 @@ export const CreditBalanceCard = () => {
     try {
       const { data: credits, error } = await supabase
         .from('credits')
-        .select('amount, transaction_type')
-        .order('created_at', { ascending: true });
+        .select('amount, transaction_type');
 
       if (error) throw error;
 

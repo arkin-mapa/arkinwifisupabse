@@ -2,16 +2,6 @@ import { Button } from "@/components/ui/button";
 import { useState } from "react";
 import { toast } from "sonner";
 import type { Plan } from "@/types/plans";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-} from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { motion } from "framer-motion";
 import { fetchClientPlans, createPurchase } from "@/utils/supabaseData";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -21,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { PlanCard } from "./plans/PlanCard";
 import { PurchaseDialog } from "./plans/PurchaseDialog";
 
-type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
+type PaymentMethod = Database['public']['Enums']['payment_method'];
 
 const PlansList = () => {
   const navigate = useNavigate();
