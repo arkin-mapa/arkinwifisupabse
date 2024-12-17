@@ -76,7 +76,10 @@ const ProtectedRoute = ({
 };
 
 const App = () => (
-  <SessionContextProvider supabaseClient={supabase}>
+  <SessionContextProvider 
+    supabaseClient={supabase}
+    initialSession={null} // This helps with hydration
+  >
     <QueryClientProvider client={queryClient}>
       <TooltipProvider>
         <Toaster />
