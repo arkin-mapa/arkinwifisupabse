@@ -80,18 +80,29 @@ const App = () => {
   const [isLoading, setIsLoading] = useState(true);
 
   useEffect(() => {
-    // Get initial session
+    // Get initial session from localStorage
     supabase.auth.getSession().then(({ data: { session } }) => {
       setInitialSession(session);
       setIsLoading(false);
     });
 
-    // Listen for auth changes
+    // Listen for auth changes and persist in localStorage
     const {
       data: { subscription },
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setInitialSession(session);
+      if (session) {
+        localStorage.setItem('wifi-portal-session', JSON.stringify(session));
+      } else {
+        localStorage.removeItem('wifi-portal-session');
+      }
     });
+
+    // Try to recover session from localStorage
+    const savedSession = localStorage.getItem('wifi-portal-session');
+    if (savedSession) {
+      setInitialSession(JSON.parse(savedSession));
+    }
 
     return () => subscription.unsubscribe();
   }, []);
