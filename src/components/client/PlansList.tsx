@@ -68,7 +68,7 @@ const PlansList = () => {
 
         if (purchaseError) throw purchaseError;
 
-        // Create credit transaction
+        // Create credit transaction (deduction)
         const { error: creditError } = await supabase
           .from('credits')
           .insert({
