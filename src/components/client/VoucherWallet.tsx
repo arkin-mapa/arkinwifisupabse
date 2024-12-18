@@ -131,6 +131,13 @@ const VoucherWallet = () => {
     }
   };
 
+  const handleTransferComplete = async (transferredVoucherIds: string[]) => {
+    // Remove transferred vouchers from the selected list
+    setSelectedVouchers(prev => prev.filter(v => !transferredVoucherIds.includes(v.id)));
+    // Reload data to reflect changes
+    await loadData();
+  };
+
   if (!session) {
     return (
       <Card className="mx-4">
@@ -149,13 +156,12 @@ const VoucherWallet = () => {
             <Wallet className="h-5 w-5 text-primary" />
             <CardTitle className="text-lg">Your Vouchers</CardTitle>
           </div>
-          <div className="flex gap-2">
+          <div className="hidden sm:flex gap-2">
             <Button
               variant="outline"
               size="sm"
               onClick={handlePrintSelected}
               disabled={selectedVouchers.length === 0}
-              className="hidden sm:flex"
             >
               <Printer className="h-4 w-4 mr-2" />
               Print Selected
@@ -165,20 +171,19 @@ const VoucherWallet = () => {
               size="sm"
               onClick={handlePrintAll}
               disabled={Object.keys(vouchers).length === 0}
-              className="hidden sm:flex"
             >
               <Printer className="h-4 w-4 mr-2" />
               Print All
             </Button>
           </div>
         </div>
-        <div className="flex flex-wrap gap-2">
+        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
           <Button
             variant="default"
             size="sm"
             onClick={() => setIsQRGeneratorOpen(true)}
             disabled={selectedVouchers.length === 0}
-            className="flex-1 sm:flex-none"
+            className="w-full sm:w-auto"
           >
             <QrCode className="h-4 w-4 mr-2" />
             Share ({selectedVouchers.length})
@@ -187,12 +192,12 @@ const VoucherWallet = () => {
             variant="outline"
             size="sm"
             onClick={() => setIsQRScannerOpen(true)}
-            className="flex-1 sm:flex-none"
+            className="w-full sm:w-auto"
           >
             <QrCode className="h-4 w-4 mr-2" />
             Scan QR
           </Button>
-          <div className="flex gap-2 w-full sm:hidden">
+          <div className="flex sm:hidden gap-2 w-full">
             <Button
               variant="outline"
               size="sm"
@@ -248,10 +253,7 @@ const VoucherWallet = () => {
           isOpen={isQRGeneratorOpen}
           onClose={() => setIsQRGeneratorOpen(false)}
           vouchers={selectedVouchers}
-          onTransferComplete={() => {
-            loadData();
-            setIsQRGeneratorOpen(false);
-          }}
+          onTransferComplete={handleTransferComplete}
         />
       )}
 

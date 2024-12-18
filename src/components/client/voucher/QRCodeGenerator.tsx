@@ -9,7 +9,7 @@ interface QRCodeGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
   vouchers: Voucher[];
-  onTransferComplete: () => void;
+  onTransferComplete: (transferredVoucherIds: string[]) => void;
 }
 
 export const QRCodeGenerator = ({ isOpen, onClose, vouchers, onTransferComplete }: QRCodeGeneratorProps) => {
@@ -22,8 +22,14 @@ export const QRCodeGenerator = ({ isOpen, onClose, vouchers, onTransferComplete 
     vouchers: vouchers.map(v => v.id)
   });
 
+  const handleClose = () => {
+    onClose();
+    // Call onTransferComplete with the transferred voucher IDs
+    onTransferComplete(vouchers.map(v => v.id));
+  };
+
   return (
-    <Dialog open={isOpen} onOpenChange={onClose}>
+    <Dialog open={isOpen} onOpenChange={handleClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Vouchers</DialogTitle>
