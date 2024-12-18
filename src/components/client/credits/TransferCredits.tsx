@@ -27,23 +27,28 @@ export const TransferCredits = () => {
         return;
       }
 
-      // First get the recipient's UUID from their email
-      const { data: userData, error: userError } = await supabase
+      // First get the recipient's profile using their email
+      const { data: recipientProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
         .eq('id', (
-          await supabase.auth.admin.getUserByEmail(recipientEmail)
-        )?.data?.user?.id)
+          await supabase.auth.signInWithOtp({
+            email: recipientEmail,
+            options: {
+              shouldCreateUser: false
+            }
+          })
+        ).data?.user?.id)
         .single();
 
-      if (userError || !userData) {
+      if (profileError || !recipientProfile) {
         toast.error("Recipient not found");
         return;
       }
 
       const { data, error } = await supabase.rpc('transfer_credits', {
         from_client_id: session.session.user.id,
-        to_client_id: userData.id,
+        to_client_id: recipientProfile.id,
         transfer_amount: transferAmount
       });
 
