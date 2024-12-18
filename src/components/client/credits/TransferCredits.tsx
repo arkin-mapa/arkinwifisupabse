@@ -28,17 +28,22 @@ export const TransferCredits = () => {
       }
 
       // First get the recipient's profile using their email
+      const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
+        email: recipientEmail,
+        options: {
+          shouldCreateUser: false
+        }
+      });
+
+      if (authError || !authData.user?.id) {
+        toast.error("Recipient not found");
+        return;
+      }
+
       const { data: recipientProfile, error: profileError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', (
-          await supabase.auth.signInWithOtp({
-            email: recipientEmail,
-            options: {
-              shouldCreateUser: false
-            }
-          })
-        ).data?.user?.id)
+        .eq('id', authData.user.id)
         .single();
 
       if (profileError || !recipientProfile) {
