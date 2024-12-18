@@ -17,7 +17,8 @@ export const CreditPurchaseHandler = ({
 }: CreditPurchaseHandlerProps) => {
   const handleCreditTransaction = async () => {
     try {
-      const { error } = await supabase
+      // Add credits to client's balance
+      const { error: creditError } = await supabase
         .from('credits')
         .insert([{
           client_id: purchase.client_id,
@@ -26,7 +27,7 @@ export const CreditPurchaseHandler = ({
           reference_id: purchase.id
         }]);
 
-      if (error) throw error;
+      if (creditError) throw creditError;
       
       // Update purchase status
       const { error: updateError } = await supabase
