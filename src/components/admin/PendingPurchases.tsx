@@ -4,11 +4,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { fetchPurchases, updatePurchaseStatus, deletePurchase } from "@/utils/supabaseData";
-import { transferVouchersToClient } from "@/utils/voucherTransfer";
 import type { Purchase } from "@/types/plans";
 import { Button } from "@/components/ui/button";
-import { Check, X, Trash2 } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { Trash2 } from "lucide-react";
+import { CreditPurchaseHandler } from "./credits/CreditPurchaseHandler";
+import { VoucherPurchaseHandler } from "./vouchers/VoucherPurchaseHandler";
 
 interface PendingPurchasesProps {
   onPurchaseUpdate?: () => void;
@@ -28,59 +28,6 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
     } catch (error) {
       console.error('Error loading purchases:', error);
       toast.error("Failed to load purchases");
-    }
-  };
-
-  const handleCreditTransaction = async (purchase: Purchase) => {
-    try {
-      const { error } = await supabase
-        .from('credits')
-        .insert([{
-          client_id: purchase.client_id,
-          amount: purchase.total,
-          transaction_type: 'deposit',
-          reference_id: purchase.id
-        }]);
-
-      if (error) throw error;
-      
-      toast.success("Credits added to client's balance");
-      return true;
-    } catch (error) {
-      console.error('Error processing credit transaction:', error);
-      toast.error("Failed to process credit transaction");
-      return false;
-    }
-  };
-
-  const handleApprove = async (purchase: Purchase) => {
-    try {
-      if (purchase.paymentMethod === 'credit') {
-        // For credit payments, add credits to client's balance
-        const success = await handleCreditTransaction(purchase);
-        if (!success) return;
-      } else {
-        // For non-credit payments, transfer vouchers
-        if (!purchase.plan_id) {
-          toast.error("Plan ID is required for voucher transfer");
-          return;
-        }
-        await transferVouchersToClient(purchase);
-      }
-      
-      // Update purchase status
-      await updatePurchaseStatus(purchase.id, "approved");
-      
-      await loadPurchases();
-      onPurchaseUpdate?.();
-      toast.success(
-        purchase.paymentMethod === 'credit' 
-          ? "Purchase approved and credits added" 
-          : "Purchase approved and vouchers transferred"
-      );
-    } catch (error) {
-      console.error('Error approving purchase:', error);
-      toast.error(error instanceof Error ? error.message : "Failed to approve purchase");
     }
   };
 
@@ -106,6 +53,11 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
       console.error('Error deleting purchase:', error);
       toast.error("Failed to delete purchase");
     }
+  };
+
+  const handleSuccess = async () => {
+    await loadPurchases();
+    onPurchaseUpdate?.();
   };
 
   const getStatusColor = (status: string) => {
@@ -156,31 +108,29 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                     </Badge>
                   </div>
                   <div className="flex flex-col gap-1 text-xs">
-                    <p>Plan: {purchase.plan}</p>
-                    <p>Quantity: {purchase.quantity}</p>
+                    {purchase.paymentMethod !== 'credit' && (
+                      <>
+                        <p>Plan: {purchase.plan}</p>
+                        <p>Quantity: {purchase.quantity}</p>
+                      </>
+                    )}
                     <p>Payment: {purchase.paymentMethod}</p>
                     <p className="font-medium">Total: ₱{purchase.total.toFixed(2)}</p>
                   </div>
                   {purchase.status === 'pending' && (
-                    <div className="flex gap-2 mt-2">
-                      <Button
-                        size="sm"
-                        className="h-7 text-xs flex-1 bg-green-500 hover:bg-green-600"
-                        onClick={() => handleApprove(purchase)}
-                      >
-                        <Check className="w-3 h-3 mr-1" />
-                        Approve
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        className="h-7 text-xs flex-1"
-                        onClick={() => handleReject(purchase.id)}
-                      >
-                        <X className="w-3 h-3 mr-1" />
-                        Reject
-                      </Button>
-                    </div>
+                    purchase.paymentMethod === 'credit' ? (
+                      <CreditPurchaseHandler
+                        purchase={purchase}
+                        onSuccess={handleSuccess}
+                        onReject={handleReject}
+                      />
+                    ) : (
+                      <VoucherPurchaseHandler
+                        purchase={purchase}
+                        onSuccess={handleSuccess}
+                        onReject={handleReject}
+                      />
+                    )
                   )}
                   {purchase.status !== 'pending' && (
                     <Button
