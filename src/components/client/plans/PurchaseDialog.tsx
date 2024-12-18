@@ -7,8 +7,9 @@ import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 import type { Database } from "@/types/database.types";
+import { useQuery } from "@tanstack/react-query";
 
-type PaymentMethod = Database['public']['Enums']['payment_method'];
+type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
 interface PurchaseDialogProps {
   selectedPlan: Plan | null;
@@ -37,6 +38,19 @@ export const PurchaseDialog = ({
 }: PurchaseDialogProps) => {
   const [creditBalance, setCreditBalance] = useState<number>(0);
 
+  const { data: enabledPaymentMethods = [] } = useQuery({
+    queryKey: ['paymentMethods'],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from('payment_method_settings')
+        .select('method')
+        .eq('is_enabled', true);
+
+      if (error) throw error;
+      return data.map(pm => pm.method);
+    }
+  });
+
   useEffect(() => {
     loadCreditBalance();
   }, []);
@@ -63,6 +77,16 @@ export const PurchaseDialog = ({
 
   const totalAmount = (selectedPlan?.price || 0) * purchaseDetails.quantity;
   const canUseCredit = creditBalance >= totalAmount;
+
+  // Reset payment method if current one is disabled
+  useEffect(() => {
+    if (!enabledPaymentMethods.includes(purchaseDetails.paymentMethod)) {
+      setPurchaseDetails({
+        ...purchaseDetails,
+        paymentMethod: enabledPaymentMethods[0] as PaymentMethod
+      });
+    }
+  }, [enabledPaymentMethods, purchaseDetails.paymentMethod]);
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
@@ -115,28 +139,36 @@ export const PurchaseDialog = ({
               })}
               className="mt-2 space-y-2"
             >
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="cash" id="cash" />
-                <Label htmlFor="cash">Cash</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="gcash" id="gcash" />
-                <Label htmlFor="gcash">GCash</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem value="paymaya" id="paymaya" />
-                <Label htmlFor="paymaya">PayMaya</Label>
-              </div>
-              <div className="flex items-center space-x-2">
-                <RadioGroupItem 
-                  value="credit" 
-                  id="credit" 
-                  disabled={!canUseCredit}
-                />
-                <Label htmlFor="credit" className={!canUseCredit ? "text-muted-foreground" : ""}>
-                  Credit Balance (₱{creditBalance.toFixed(2)})
-                </Label>
-              </div>
+              {enabledPaymentMethods.includes('cash') && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="cash" id="cash" />
+                  <Label htmlFor="cash">Cash</Label>
+                </div>
+              )}
+              {enabledPaymentMethods.includes('gcash') && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="gcash" id="gcash" />
+                  <Label htmlFor="gcash">GCash</Label>
+                </div>
+              )}
+              {enabledPaymentMethods.includes('paymaya') && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem value="paymaya" id="paymaya" />
+                  <Label htmlFor="paymaya">PayMaya</Label>
+                </div>
+              )}
+              {enabledPaymentMethods.includes('credit') && (
+                <div className="flex items-center space-x-2">
+                  <RadioGroupItem 
+                    value="credit" 
+                    id="credit" 
+                    disabled={!canUseCredit}
+                  />
+                  <Label htmlFor="credit" className={!canUseCredit ? "text-muted-foreground" : ""}>
+                    Credit Balance (₱{creditBalance.toFixed(2)})
+                  </Label>
+                </div>
+              )}
             </RadioGroup>
           </div>
 
@@ -149,7 +181,9 @@ export const PurchaseDialog = ({
           <Button
             className="w-full"
             onClick={onSubmit}
-            disabled={isPending || (purchaseDetails.paymentMethod === 'credit' && !canUseCredit)}
+            disabled={isPending || 
+              (purchaseDetails.paymentMethod === 'credit' && !canUseCredit) ||
+              !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
           >
             {isPending ? "Processing..." : "Confirm Purchase"}
           </Button>
