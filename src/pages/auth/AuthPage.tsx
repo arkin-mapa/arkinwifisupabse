@@ -48,7 +48,20 @@ const AuthPage = () => {
           password,
         });
 
-        if (signInError) throw signInError;
+        if (signInError) {
+          // Handle specific sign-in errors
+          if (signInError.message.includes("Invalid login credentials")) {
+            if (email.length === 0) {
+              toast.error("Please enter your email address");
+            } else if (password.length === 0) {
+              toast.error("Please enter your password");
+            } else {
+              toast.error("Invalid email or password. Please check your credentials and try again.");
+            }
+            throw signInError;
+          }
+          throw signInError;
+        }
 
         if (data?.user) {
           toast.success("Successfully signed in!");
@@ -60,11 +73,10 @@ const AuthPage = () => {
       
       if (error.message.includes("Email not confirmed")) {
         toast.error("Please confirm your email before signing in.");
-      } else if (error.message.includes("Invalid login credentials")) {
-        toast.error("Invalid email or password. Please try again.");
       } else if (error.message.includes("already registered")) {
         toast.error("This email is already registered. Please sign in instead.");
-      } else {
+      } else if (!error.message.includes("Invalid login credentials")) {
+        // Only show generic error if it's not already handled above
         toast.error(error.message || "An unexpected error occurred");
       }
     } finally {
