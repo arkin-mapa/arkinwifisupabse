@@ -53,6 +53,21 @@ const PlansList = () => {
           throw new Error('Not enough vouchers available');
         }
 
+        // Create purchase record for tracking
+        const { error: purchaseError } = await supabase
+          .from('purchases')
+          .insert({
+            customer_name: purchaseDetails.customerName,
+            client_id: session.session.user.id,
+            plan_id: plan.id,
+            quantity: purchaseDetails.quantity,
+            total_amount: plan.price * purchaseDetails.quantity,
+            payment_method: purchaseDetails.paymentMethod,
+            status: 'approved' as PurchaseStatus
+          });
+
+        if (purchaseError) throw purchaseError;
+
         // Create credit transaction
         const { error: creditError } = await supabase
           .from('credits')
@@ -64,11 +79,11 @@ const PlansList = () => {
 
         if (creditError) throw creditError;
 
-        // Add vouchers to wallet with proper typing
+        // Add vouchers to wallet
         const walletEntries = availableVouchers.map(voucher => ({
           client_id: session.session.user.id,
           voucher_id: voucher.id,
-          status: 'approved' as PurchaseStatus // Explicitly type the status
+          status: 'approved' as PurchaseStatus
         }));
 
         const { error: walletError } = await supabase
