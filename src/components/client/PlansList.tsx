@@ -65,7 +65,7 @@ const PlansList = () => {
             quantity: purchaseDetails.quantity,
             total_amount: plan.price * purchaseDetails.quantity,
             payment_method: purchaseDetails.paymentMethod,
-            status: 'approved'
+            status: 'approved' as PurchaseStatus
           })
           .select()
           .single();
@@ -88,7 +88,7 @@ const PlansList = () => {
         const walletEntries = availableVouchers.map(voucher => ({
           client_id: clientId,
           voucher_id: voucher.id,
-          status: 'approved'
+          status: 'approved' as PurchaseStatus
         }));
 
         const { error: walletError } = await supabase
