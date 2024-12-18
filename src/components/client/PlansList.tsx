@@ -11,8 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { PlanCard } from "./plans/PlanCard";
 import { PurchaseDialog } from "./plans/PurchaseDialog";
 
-type PaymentMethod = Database['public']['Enums']['payment_method'];
-type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
+type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
 const PlansList = () => {
   const navigate = useNavigate();
@@ -38,49 +37,26 @@ const PlansList = () => {
         throw new Error("Please log in to make a purchase");
       }
 
+      // Check credit balance if using credit payment
       if (purchaseDetails.paymentMethod === 'credit') {
-        // For credit payments, directly create voucher wallet entries
-        const { data: availableVouchers, error: voucherError } = await supabase
-          .from('vouchers')
-          .select('id')
-          .eq('plan_id', plan.id)
-          .eq('is_used', false)
-          .limit(purchaseDetails.quantity);
+        const { data: credits, error } = await supabase
+          .from('credits')
+          .select('amount')
+          .eq('client_id', session.session.user.id);
 
-        if (voucherError) throw voucherError;
-
-        if (!availableVouchers || availableVouchers.length < purchaseDetails.quantity) {
-          throw new Error('Not enough vouchers available');
+        if (error) {
+          console.error('Error fetching credits:', error);
+          throw new Error("Failed to check credit balance");
         }
 
-        // Create credit transaction
-        const { error: creditError } = await supabase
-          .from('credits')
-          .insert({
-            client_id: session.session.user.id,
-            amount: plan.price * purchaseDetails.quantity,
-            transaction_type: 'purchase'
-          });
-
-        if (creditError) throw creditError;
-
-        // Add vouchers to wallet with proper typing
-        const walletEntries = availableVouchers.map(voucher => ({
-          client_id: session.session.user.id,
-          voucher_id: voucher.id,
-          status: 'approved' as PurchaseStatus // Explicitly type the status
-        }));
-
-        const { error: walletError } = await supabase
-          .from('voucher_wallet')
-          .insert(walletEntries);
-
-        if (walletError) throw walletError;
-
-        return null;
+        const totalAmount = plan.price * purchaseDetails.quantity;
+        const currentBalance = credits?.[0]?.amount || 0;
+        
+        if (currentBalance < totalAmount) {
+          throw new Error("Insufficient credit balance");
+        }
       }
-
-      // For non-credit payments, create a regular purchase
+      
       return createPurchase({
         customerName: purchaseDetails.customerName,
         planId: plan.id,
@@ -91,11 +67,7 @@ const PlansList = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
-      toast.success(
-        purchaseDetails.paymentMethod === 'credit' 
-          ? "Vouchers added to your wallet!" 
-          : "Purchase request submitted successfully!"
-      );
+      toast.success("Purchase request submitted successfully!");
       setSelectedPlan(null);
       setPurchaseDetails({
         customerName: "",
@@ -105,11 +77,17 @@ const PlansList = () => {
     },
     onError: (error) => {
       console.error('Purchase error:', error);
-      if (error instanceof Error && error.message === "Please log in to make a purchase") {
-        toast.error("Please log in to make a purchase");
-        navigate("/auth");
-      } else {
-        toast.error("Failed to process purchase. Please try again.");
+      if (error instanceof Error) {
+        if (error.message === "Please log in to make a purchase") {
+          toast.error("Please log in to make a purchase");
+          navigate("/auth");
+        } else if (error.message === "Insufficient credit balance") {
+          toast.error("Insufficient credit balance for this purchase");
+        } else if (error.message === "Failed to check credit balance") {
+          toast.error("Unable to verify credit balance. Please try again.");
+        } else {
+          toast.error("Failed to submit purchase request. Please try again.");
+        }
       }
     }
   });
