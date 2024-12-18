@@ -23,7 +23,7 @@ const VoucherCard = ({ voucher, plan, onDelete, onPrint }: VoucherCardProps) => 
   };
 
   const handleDelete = () => {
-    if (window.confirm('Are you sure you want to delete this voucher?')) {
+    if (window.confirm(`Are you sure you want to delete this voucher?\n\nVoucher Code: ${voucher.code}\nPlan: ${plan?.duration || 'Unknown'}\nPrice: ₱${plan?.price.toFixed(2) || '0.00'}`)) {
       onDelete(voucher.id);
     }
   };
