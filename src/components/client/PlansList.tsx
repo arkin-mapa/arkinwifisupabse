@@ -38,6 +38,8 @@ const PlansList = () => {
         throw new Error("Please log in to make a purchase");
       }
 
+      const clientId = session.session.user.id;
+
       if (purchaseDetails.paymentMethod === 'credit') {
         // For credit payments, directly create voucher wallet entries
         const { data: availableVouchers, error: voucherError } = await supabase
@@ -58,7 +60,7 @@ const PlansList = () => {
           .from('purchases')
           .insert({
             customer_name: purchaseDetails.customerName,
-            client_id: session.session.user.id,
+            client_id: clientId,
             plan_id: plan.id,
             quantity: purchaseDetails.quantity,
             total_amount: plan.price * purchaseDetails.quantity,
@@ -72,7 +74,7 @@ const PlansList = () => {
         const { error: creditError } = await supabase
           .from('credits')
           .insert({
-            client_id: session.session.user.id,
+            client_id: clientId,
             amount: plan.price * purchaseDetails.quantity,
             transaction_type: 'purchase'
           });
@@ -81,7 +83,7 @@ const PlansList = () => {
 
         // Add vouchers to wallet
         const walletEntries = availableVouchers.map(voucher => ({
-          client_id: session.session.user.id,
+          client_id: clientId,
           voucher_id: voucher.id,
           status: 'approved' as PurchaseStatus
         }));
