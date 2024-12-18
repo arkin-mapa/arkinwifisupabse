@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const TransferCredits = () => {
   const [isTransferOpen, setIsTransferOpen] = useState(false);
-  const [recipientEmail, setRecipientEmail] = useState("");
+  const [recipientId, setRecipientId] = useState("");
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,33 +27,21 @@ export const TransferCredits = () => {
         return;
       }
 
-      // First get the recipient's profile using their email
-      const { data: authData, error: authError } = await supabase.auth.signInWithOtp({
-        email: recipientEmail,
-        options: {
-          shouldCreateUser: false
-        }
-      });
-
-      if (authError || !authData.user?.id) {
-        toast.error("Recipient not found");
-        return;
-      }
-
-      const { data: recipientProfile, error: profileError } = await supabase
+      // Verify recipient exists
+      const { data: recipientData, error: recipientError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', authData.user.id)
+        .eq('id', recipientId)
         .single();
 
-      if (profileError || !recipientProfile) {
+      if (recipientError || !recipientData) {
         toast.error("Recipient not found");
         return;
       }
 
       const { data, error } = await supabase.rpc('transfer_credits', {
         from_client_id: session.session.user.id,
-        to_client_id: recipientProfile.id,
+        to_client_id: recipientId,
         transfer_amount: transferAmount
       });
 
@@ -61,7 +49,7 @@ export const TransferCredits = () => {
 
       setIsTransferOpen(false);
       setAmount("");
-      setRecipientEmail("");
+      setRecipientId("");
       toast.success("Credits transferred successfully");
     } catch (error: any) {
       console.error('Error transferring credits:', error);
@@ -84,13 +72,12 @@ export const TransferCredits = () => {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="recipientEmail">Recipient Email</Label>
+              <Label htmlFor="recipientId">Recipient ID</Label>
               <Input
-                id="recipientEmail"
-                type="email"
-                value={recipientEmail}
-                onChange={(e) => setRecipientEmail(e.target.value)}
-                placeholder="Enter recipient's email"
+                id="recipientId"
+                value={recipientId}
+                onChange={(e) => setRecipientId(e.target.value)}
+                placeholder="Enter recipient's ID"
               />
             </div>
             <div className="space-y-2">
