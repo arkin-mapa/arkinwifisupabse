@@ -11,6 +11,10 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error('Client ID is required for voucher transfer');
   }
 
+  if (!purchase.plan_id) {
+    throw new Error('Plan ID is required for voucher transfer');
+  }
+
   // Get available vouchers for this plan
   const { data: availableVouchers, error: voucherError } = await supabase
     .from('vouchers')
