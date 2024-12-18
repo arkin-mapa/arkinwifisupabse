@@ -4,6 +4,7 @@ import PendingPurchases from "@/components/admin/PendingPurchases";
 import PlansManager from "@/components/admin/PlansManager";
 import SalesSummary from "@/components/admin/SalesSummary";
 import { CreditRequests } from "@/components/admin/credits/CreditRequests";
+import { PaymentMethodSettings } from "@/components/admin/PaymentMethodSettings";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import type { Purchase } from "@/types/plans";
@@ -59,10 +60,11 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="plans" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-3">
+          <TabsList className="w-full grid grid-cols-4">
             <TabsTrigger value="plans">Plans</TabsTrigger>
             <TabsTrigger value="requests">Requests</TabsTrigger>
             <TabsTrigger value="credits">Credits</TabsTrigger>
+            <TabsTrigger value="settings">Settings</TabsTrigger>
           </TabsList>
           
           <TabsContent value="plans">
@@ -79,6 +81,12 @@ const AdminDashboard = () => {
 
           <TabsContent value="credits">
             <CreditRequests />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <Card className="p-4">
+              <PaymentMethodSettings />
+            </Card>
           </TabsContent>
         </Tabs>
       </motion.div>

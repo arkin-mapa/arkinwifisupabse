@@ -66,6 +66,30 @@ export type Database = {
         }
         Relationships: []
       }
+      payment_method_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean | null
+          method: Database["public"]["Enums"]["payment_method"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          method: Database["public"]["Enums"]["payment_method"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          method?: Database["public"]["Enums"]["payment_method"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
