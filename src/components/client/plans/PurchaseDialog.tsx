@@ -1,19 +1,15 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 import type { Database } from "@/types/database.types";
+import { PaymentMethodSelector } from "./PaymentMethodSelector";
+import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 
 type PaymentMethod = Database['public']['Enums']['payment_method'];
-
-interface PaymentMethodSetting {
-  method: PaymentMethod;
-  is_enabled: boolean;
-}
 
 interface PurchaseDialogProps {
   selectedPlan: Plan | null;
@@ -41,46 +37,11 @@ export const PurchaseDialog = ({
   isPending
 }: PurchaseDialogProps) => {
   const [creditBalance, setCreditBalance] = useState<number>(0);
-  const [enabledPaymentMethods, setEnabledPaymentMethods] = useState<PaymentMethodSetting[]>([]);
+  const { enabledPaymentMethods, getMethodLabel } = usePaymentMethods();
 
   useEffect(() => {
     loadCreditBalance();
-    loadPaymentMethods();
   }, []);
-
-  useEffect(() => {
-    // Set credit as default payment method if it's enabled and user has sufficient balance
-    const creditMethod = enabledPaymentMethods.find(m => m.method === 'credit');
-    if (creditMethod?.is_enabled && canUseCredit) {
-      setPurchaseDetails({
-        ...purchaseDetails,
-        paymentMethod: 'credit'
-      });
-    } else {
-      // Otherwise, set the first enabled payment method as default
-      const firstEnabled = enabledPaymentMethods.find(m => m.is_enabled);
-      if (firstEnabled) {
-        setPurchaseDetails({
-          ...purchaseDetails,
-          paymentMethod: firstEnabled.method
-        });
-      }
-    }
-  }, [enabledPaymentMethods]);
-
-  const loadPaymentMethods = async () => {
-    try {
-      const { data, error } = await supabase
-        .from('payment_method_settings')
-        .select('method, is_enabled')
-        .order('method');
-
-      if (error) throw error;
-      setEnabledPaymentMethods(data || []);
-    } catch (error) {
-      console.error('Error loading payment methods:', error);
-    }
-  };
 
   const loadCreditBalance = async () => {
     try {
@@ -105,20 +66,10 @@ export const PurchaseDialog = ({
   const totalAmount = (selectedPlan?.price || 0) * purchaseDetails.quantity;
   const canUseCredit = creditBalance >= totalAmount;
 
-  const getMethodLabel = (method: PaymentMethod) => {
-    switch (method) {
-      case 'cash':
-        return 'Cash';
-      case 'gcash':
-        return 'GCash';
-      case 'paymaya':
-        return 'PayMaya';
-      case 'credit':
-        return 'Credit Balance';
-      default:
-        return method;
-    }
-  };
+  // Filter payment methods based on credit balance
+  const availablePaymentMethods = enabledPaymentMethods.filter(method => 
+    method.method !== 'credit' || (method.method === 'credit' && canUseCredit)
+  );
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
@@ -161,29 +112,18 @@ export const PurchaseDialog = ({
             />
           </div>
 
-          <div>
-            <Label>Payment Method</Label>
-            <RadioGroup
-              value={purchaseDetails.paymentMethod}
-              onValueChange={(value: PaymentMethod) => setPurchaseDetails({
+          {availablePaymentMethods.length > 0 && (
+            <PaymentMethodSelector
+              paymentMethods={availablePaymentMethods}
+              currentMethod={purchaseDetails.paymentMethod}
+              creditBalance={creditBalance}
+              onMethodChange={(method) => setPurchaseDetails({
                 ...purchaseDetails,
-                paymentMethod: value
+                paymentMethod: method
               })}
-              className="mt-2 space-y-2"
-            >
-              {enabledPaymentMethods
-                .filter(method => method.is_enabled && (method.method !== 'credit' || canUseCredit))
-                .map(method => (
-                  <div key={method.method} className="flex items-center space-x-2">
-                    <RadioGroupItem value={method.method} id={method.method} />
-                    <Label htmlFor={method.method}>
-                      {getMethodLabel(method.method)}
-                      {method.method === 'credit' && ` (₱${creditBalance.toFixed(2)})`}
-                    </Label>
-                  </div>
-                ))}
-            </RadioGroup>
-          </div>
+              getMethodLabel={getMethodLabel}
+            />
+          )}
 
           <div className="pt-2">
             <p className="text-sm text-muted-foreground">
@@ -194,7 +134,7 @@ export const PurchaseDialog = ({
           <Button
             className="w-full"
             onClick={onSubmit}
-            disabled={isPending}
+            disabled={isPending || availablePaymentMethods.length === 0}
           >
             {isPending ? "Processing..." : "Confirm Purchase"}
           </Button>

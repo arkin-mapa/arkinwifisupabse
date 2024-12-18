@@ -21,20 +21,23 @@ export const PaymentMethodSelector: React.FC<PaymentMethodSelectorProps> = ({
   getMethodLabel
 }) => {
   return (
-    <RadioGroup
-      value={currentMethod}
-      onValueChange={(value: PaymentMethod) => onMethodChange(value)}
-      className="mt-2 space-y-2"
-    >
-      {paymentMethods.map(method => (
-        <div key={method.method} className="flex items-center space-x-2">
-          <RadioGroupItem value={method.method} id={method.method} />
-          <Label htmlFor={method.method}>
-            {getMethodLabel(method.method)}
-            {method.method === 'credit' && ` (₱${creditBalance.toFixed(2)})`}
-          </Label>
-        </div>
-      ))}
-    </RadioGroup>
+    <div>
+      <Label>Payment Method</Label>
+      <RadioGroup
+        value={currentMethod}
+        onValueChange={(value: PaymentMethod) => onMethodChange(value)}
+        className="mt-2 space-y-2"
+      >
+        {paymentMethods.map(method => (
+          <div key={method.method} className="flex items-center space-x-2">
+            <RadioGroupItem value={method.method} id={method.method} />
+            <Label htmlFor={method.method}>
+              {getMethodLabel(method.method)}
+              {method.method === 'credit' && ` (₱${creditBalance.toFixed(2)})`}
+            </Label>
+          </div>
+        ))}
+      </RadioGroup>
+    </div>
   );
 };
