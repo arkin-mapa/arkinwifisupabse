@@ -13,7 +13,13 @@ export const QRCodeScanner = () => {
   const [recipientData, setRecipientData] = useState<{ userId: string; email: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleScan = (result: any) => {
+  const handleScan = (result: any, error: any) => {
+    if (error) {
+      console.error(error);
+      toast.error("Error scanning QR code");
+      return;
+    }
+
     if (result) {
       try {
         const data = JSON.parse(result?.text);
@@ -28,11 +34,6 @@ export const QRCodeScanner = () => {
         toast.error("Invalid QR Code");
       }
     }
-  };
-
-  const handleError = (error: any) => {
-    console.error(error);
-    toast.error("Error scanning QR code");
   };
 
   const handleTransfer = async () => {
@@ -90,7 +91,6 @@ export const QRCodeScanner = () => {
             {!recipientData ? (
               <QrReader
                 onResult={handleScan}
-                onError={handleError}
                 constraints={{ facingMode: 'environment' }}
                 className="w-full"
               />
