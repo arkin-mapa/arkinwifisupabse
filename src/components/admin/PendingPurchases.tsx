@@ -8,6 +8,7 @@ import { transferVouchersToClient } from "@/utils/voucherTransfer";
 import type { Purchase } from "@/types/plans";
 import { Button } from "@/components/ui/button";
 import { Check, X, Trash2 } from "lucide-react";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PendingPurchasesProps {
   onPurchaseUpdate?: () => void;
@@ -30,17 +31,53 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
     }
   };
 
+  const handleCreditTransaction = async (purchase: Purchase) => {
+    try {
+      const { error } = await supabase
+        .from('credits')
+        .insert([{
+          client_id: purchase.client_id,
+          amount: purchase.total,
+          transaction_type: 'deposit',
+          reference_id: purchase.id
+        }]);
+
+      if (error) throw error;
+      
+      toast.success("Credits added to client's balance");
+      return true;
+    } catch (error) {
+      console.error('Error processing credit transaction:', error);
+      toast.error("Failed to process credit transaction");
+      return false;
+    }
+  };
+
   const handleApprove = async (purchase: Purchase) => {
     try {
-      // First transfer the vouchers
-      await transferVouchersToClient(purchase);
+      if (purchase.paymentMethod === 'credit') {
+        // For credit payments, add credits to client's balance
+        const success = await handleCreditTransaction(purchase);
+        if (!success) return;
+      } else {
+        // For non-credit payments, transfer vouchers
+        if (!purchase.plan_id) {
+          toast.error("Plan ID is required for voucher transfer");
+          return;
+        }
+        await transferVouchersToClient(purchase);
+      }
       
-      // Then update the purchase status
+      // Update purchase status
       await updatePurchaseStatus(purchase.id, "approved");
       
       await loadPurchases();
       onPurchaseUpdate?.();
-      toast.success("Purchase approved and vouchers transferred successfully");
+      toast.success(
+        purchase.paymentMethod === 'credit' 
+          ? "Purchase approved and credits added" 
+          : "Purchase approved and vouchers transferred"
+      );
     } catch (error) {
       console.error('Error approving purchase:', error);
       toast.error(error instanceof Error ? error.message : "Failed to approve purchase");
