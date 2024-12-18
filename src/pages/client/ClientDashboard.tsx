@@ -2,7 +2,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PlansList from "@/components/client/PlansList";
 import PurchaseHistory from "@/components/client/PurchaseHistory";
 import VoucherWallet from "@/components/client/VoucherWallet";
-import { CreditBalanceCard } from "@/components/client/credits/CreditBalance";
 import { motion } from "framer-motion";
 import { LogOut } from "lucide-react";
 import { Button } from "@/components/ui/button";
@@ -33,16 +32,27 @@ const ClientDashboard = () => {
         animate={{ opacity: 1, y: 0 }}
         className="pb-20"
       >
-        <div className="p-4">
-          <CreditBalanceCard />
-        </div>
-
         <Tabs defaultValue="plans" className="w-full">
           <div className="sticky top-[52px] z-40 bg-white border-b">
             <TabsList className="w-full justify-between rounded-none">
-              <TabsTrigger value="plans" className="flex-1">Plans</TabsTrigger>
-              <TabsTrigger value="history" className="flex-1">History</TabsTrigger>
-              <TabsTrigger value="wallet" className="flex-1">Vouchers</TabsTrigger>
+              <TabsTrigger 
+                value="plans" 
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                Plans
+              </TabsTrigger>
+              <TabsTrigger 
+                value="history" 
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                History
+              </TabsTrigger>
+              <TabsTrigger 
+                value="wallet" 
+                className="flex-1 data-[state=active]:bg-primary data-[state=active]:text-primary-foreground"
+              >
+                Vouchers
+              </TabsTrigger>
             </TabsList>
           </div>
           
