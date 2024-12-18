@@ -23,9 +23,17 @@ const VoucherCard = ({ voucher, plan, onDelete, onPrint }: VoucherCardProps) => 
   };
 
   const handleDelete = () => {
-    if (window.confirm(`Are you sure you want to delete this voucher?\n\nVoucher Code: ${voucher.code}\nPlan: ${plan?.duration || 'Unknown'}\nPrice: ₱${plan?.price.toFixed(2) || '0.00'}`)) {
-      onDelete(voucher.id);
-    }
+    toast.promise(
+      () => new Promise<void>((resolve) => {
+        onDelete(voucher.id);
+        resolve();
+      }),
+      {
+        loading: 'Deleting voucher...',
+        success: 'Voucher deleted successfully',
+        error: 'Failed to delete voucher'
+      }
+    );
   };
 
   return (
