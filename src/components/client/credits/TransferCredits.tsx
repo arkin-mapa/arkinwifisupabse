@@ -39,16 +39,17 @@ export const TransferCredits = () => {
       }
 
       // Get recipient's profile to check role
-      const { data: recipientProfile, error: recipientProfileError } = await supabase
+      const { data: recipientProfiles, error: recipientProfileError } = await supabase
         .from('profiles')
         .select('role')
-        .eq('id', recipientId)
-        .single();
+        .eq('id', recipientId);
 
-      if (recipientProfileError || !recipientProfile) {
+      if (recipientProfileError || !recipientProfiles || recipientProfiles.length === 0) {
         toast.error("Recipient profile not found. Please try again.");
         return;
       }
+
+      const recipientProfile = recipientProfiles[0];
 
       // Don't allow transfers to admin accounts
       if (recipientProfile.role === 'admin') {
