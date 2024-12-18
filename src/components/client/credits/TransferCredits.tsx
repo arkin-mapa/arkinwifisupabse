@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 
 export const TransferCredits = () => {
   const [isTransferOpen, setIsTransferOpen] = useState(false);
-  const [recipientId, setRecipientId] = useState("");
+  const [recipientEmail, setRecipientEmail] = useState("");
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
@@ -27,21 +27,27 @@ export const TransferCredits = () => {
         return;
       }
 
-      // Verify recipient exists
-      const { data: recipientData, error: recipientError } = await supabase
+      // First get the recipient's UUID from their email
+      const { data: userData, error: userError } = await supabase
         .from('profiles')
         .select('id')
-        .eq('id', recipientId)
+        .eq('id', (
+          await supabase
+            .from('auth.users')
+            .select('id')
+            .eq('email', recipientEmail)
+            .single()
+        ).data?.id)
         .single();
 
-      if (recipientError || !recipientData) {
+      if (userError || !userData) {
         toast.error("Recipient not found");
         return;
       }
 
       const { data, error } = await supabase.rpc('transfer_credits', {
         from_client_id: session.session.user.id,
-        to_client_id: recipientId,
+        to_client_id: userData.id,
         transfer_amount: transferAmount
       });
 
@@ -49,7 +55,7 @@ export const TransferCredits = () => {
 
       setIsTransferOpen(false);
       setAmount("");
-      setRecipientId("");
+      setRecipientEmail("");
       toast.success("Credits transferred successfully");
     } catch (error: any) {
       console.error('Error transferring credits:', error);
@@ -72,12 +78,13 @@ export const TransferCredits = () => {
           </DialogHeader>
           <div className="space-y-4 pt-4">
             <div className="space-y-2">
-              <Label htmlFor="recipientId">Recipient ID</Label>
+              <Label htmlFor="recipientEmail">Recipient Email</Label>
               <Input
-                id="recipientId"
-                value={recipientId}
-                onChange={(e) => setRecipientId(e.target.value)}
-                placeholder="Enter recipient's ID"
+                id="recipientEmail"
+                type="email"
+                value={recipientEmail}
+                onChange={(e) => setRecipientEmail(e.target.value)}
+                placeholder="Enter recipient's email"
               />
             </div>
             <div className="space-y-2">
