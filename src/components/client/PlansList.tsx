@@ -31,6 +31,34 @@ const PlansList = () => {
     refetchInterval: 5000
   });
 
+  const deleteMutation = useMutation({
+    mutationFn: async (voucherId: string) => {
+      // First delete from voucher_wallet
+      const { error: walletError } = await supabase
+        .from('voucher_wallet')
+        .delete()
+        .eq('voucher_id', voucherId);
+
+      if (walletError) throw walletError;
+
+      // Then delete the voucher itself
+      const { error: voucherError } = await supabase
+        .from('vouchers')
+        .delete()
+        .eq('id', voucherId);
+
+      if (voucherError) throw voucherError;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
+      toast.success("Voucher deleted successfully");
+    },
+    onError: (error) => {
+      console.error('Delete error:', error);
+      toast.error("Failed to delete voucher");
+    }
+  });
+
   const purchaseMutation = useMutation({
     mutationFn: async (plan: Plan) => {
       const { data: session } = await supabase.auth.getSession();
@@ -159,6 +187,7 @@ const PlansList = () => {
             index={index}
             onPurchase={() => setSelectedPlan(plan)}
             isPending={purchaseMutation.isPending}
+            onDelete={deleteMutation.mutate}
           />
         ))}
       </div>
