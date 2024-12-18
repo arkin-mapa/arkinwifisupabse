@@ -269,7 +269,14 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      transfer_credits: {
+        Args: {
+          from_client_id: string
+          to_client_id: string
+          transfer_amount: number
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       credit_purchase_status: "pending" | "approved" | "rejected"

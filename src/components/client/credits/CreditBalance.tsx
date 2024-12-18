@@ -7,6 +7,7 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/u
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 import { CreditRequestStatus } from "./CreditRequestStatus";
+import { TransferCredits } from "./TransferCredits";
 
 export const CreditBalanceCard = () => {
   const [balance, setBalance] = useState<number>(0);
@@ -103,6 +104,8 @@ export const CreditBalanceCard = () => {
             <p className="text-2xl font-bold">₱{balance.toFixed(2)}</p>
             <Button onClick={() => setIsTopUpOpen(true)}>Top Up</Button>
           </div>
+
+          <TransferCredits />
 
           <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
             <DialogContent>
