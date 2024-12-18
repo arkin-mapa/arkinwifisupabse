@@ -1,4 +1,4 @@
-import { QRCode } from "qrcode.react";
+import QRCode from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { useSession } from "@supabase/auth-helpers-react";
 import type { Voucher } from "@/types/plans";

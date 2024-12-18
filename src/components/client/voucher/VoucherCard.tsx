@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Copy, Trash2, Printer } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Voucher, Plan } from "@/types/plans";
@@ -10,12 +10,11 @@ interface VoucherCardProps {
   voucher: Voucher;
   plan: Plan | undefined;
   onDelete: (id: string) => void;
-  onPrint: (voucher: Voucher) => void;
   isSelected: boolean;
   onSelect: () => void;
 }
 
-const VoucherCard = ({ voucher, plan, onDelete, onPrint, isSelected, onSelect }: VoucherCardProps) => {
+const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherCardProps) => {
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
@@ -68,14 +67,6 @@ const VoucherCard = ({ voucher, plan, onDelete, onPrint, isSelected, onSelect }:
                   className="h-7 w-7 p-0"
                 >
                   <Copy className="h-3.5 w-3.5" />
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  onClick={() => onPrint(voucher)}
-                  className="h-7 w-7 p-0"
-                >
-                  <Printer className="h-3.5 w-3.5" />
                 </Button>
                 <Button
                   size="sm"

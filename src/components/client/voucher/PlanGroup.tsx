@@ -1,10 +1,8 @@
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, PrinterIcon } from "lucide-react";
+import { ChevronDown, ChevronUp } from "lucide-react";
 import type { Voucher, Plan } from "@/types/plans";
 import VoucherCard from "./VoucherCard";
 import { Button } from "@/components/ui/button";
-import { printPlanVouchers } from "@/utils/printUtils";
-import { toast } from "sonner";
 
 interface PlanGroupProps {
   planId: string;
@@ -13,7 +11,6 @@ interface PlanGroupProps {
   isExpanded: boolean;
   onToggle: () => void;
   onDeleteVoucher: (id: string) => void;
-  onPrintVoucher: (voucher: Voucher) => void;
   selectedVouchers: Voucher[];
   onVoucherSelect: (voucher: Voucher) => void;
 }
@@ -25,23 +22,9 @@ const PlanGroup = ({
   isExpanded,
   onToggle,
   onDeleteVoucher,
-  onPrintVoucher,
   selectedVouchers,
   onVoucherSelect,
 }: PlanGroupProps) => {
-  const handlePrintAllPlanVouchers = () => {
-    if (!plan) {
-      toast.error("Plan information not available");
-      return;
-    }
-    
-    if (!printPlanVouchers(vouchers, plan)) {
-      toast.error("Unable to open print window. Please check your popup settings.");
-    } else {
-      toast.success("Print window opened successfully");
-    }
-  };
-
   return (
     <motion.div
       initial={{ opacity: 0, y: 20 }}
@@ -62,18 +45,6 @@ const PlanGroup = ({
               {vouchers.length}
             </span>
           </div>
-          {vouchers.length > 0 && (
-            <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
-              <Button
-                onClick={handlePrintAllPlanVouchers}
-                variant="ghost"
-                size="sm"
-                className="h-8"
-              >
-                <PrinterIcon className="h-4 w-4" />
-              </Button>
-            </div>
-          )}
         </div>
       </div>
       
@@ -86,7 +57,6 @@ const PlanGroup = ({
                 voucher={voucher}
                 plan={plan}
                 onDelete={onDeleteVoucher}
-                onPrint={onPrintVoucher}
                 isSelected={selectedVouchers.some(v => v.id === voucher.id)}
                 onSelect={() => onVoucherSelect(voucher)}
               />

@@ -307,6 +307,14 @@ export type Database = {
         }
         Returns: boolean
       }
+      transfer_vouchers: {
+        Args: {
+          from_client_id: string
+          to_client_id: string
+          voucher_ids: string[]
+        }
+        Returns: boolean
+      }
     }
     Enums: {
       credit_purchase_status: "pending" | "approved" | "rejected"

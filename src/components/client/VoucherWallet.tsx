@@ -4,13 +4,11 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
 import { fetchClientVouchers, fetchClientPlans } from "@/utils/supabaseData";
-import { printVoucher } from "@/utils/printUtils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher, Plan } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
 import { QrCode } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { QRCodeScanner } from "./voucher/QRCodeScanner";
 import { QRCodeGenerator } from "./voucher/QRCodeGenerator";
 
@@ -162,7 +160,6 @@ const VoucherWallet = () => {
                 isExpanded={expandedPlans[planId] || false}
                 onToggle={() => togglePlanExpansion(planId)}
                 onDeleteVoucher={handleDeleteVoucher}
-                onPrintVoucher={printVoucher}
                 selectedVouchers={selectedVouchers}
                 onVoucherSelect={toggleVoucherSelection}
               />
