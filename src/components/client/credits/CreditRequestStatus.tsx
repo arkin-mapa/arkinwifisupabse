@@ -19,7 +19,6 @@ export const CreditRequestStatus = () => {
   useEffect(() => {
     loadRequests();
 
-    // Subscribe to credit purchase changes
     const channel = supabase
       .channel('credit-purchase-changes')
       .on(
@@ -64,7 +63,7 @@ export const CreditRequestStatus = () => {
   if (loading) {
     return (
       <div className="flex justify-center items-center p-4">
-        <Loader2 className="h-6 w-6 animate-spin" />
+        <Loader2 className="h-6 w-6 animate-spin text-purple-500" />
       </div>
     );
   }
@@ -76,20 +75,20 @@ export const CreditRequestStatus = () => {
   }
 
   return (
-    <Card className="mb-4">
+    <Card className="mb-4 bg-gradient-to-r from-yellow-50 to-orange-50 dark:from-yellow-900/20 dark:to-orange-900/20 border-yellow-100 dark:border-yellow-900/50">
       <CardContent className="p-4">
         <div className="space-y-3">
           {pendingRequests.map((request) => (
             <div key={request.id} className="flex justify-between items-center">
               <div>
-                <p className="text-sm font-medium">
+                <p className="text-sm font-medium text-yellow-800 dark:text-yellow-200">
                   Credit Request: ₱{request.amount.toFixed(2)}
                 </p>
-                <p className="text-xs text-muted-foreground">
+                <p className="text-xs text-yellow-600 dark:text-yellow-400">
                   {new Date(request.created_at).toLocaleDateString()}
                 </p>
               </div>
-              <Badge variant="warning" className="ml-2">
+              <Badge variant="warning" className="bg-yellow-500/20 text-yellow-700 dark:text-yellow-300 border-yellow-500/50">
                 Pending
               </Badge>
             </div>
