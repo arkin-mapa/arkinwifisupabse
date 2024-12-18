@@ -2,7 +2,7 @@ import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
-import { Check, X, Loader2 } from "lucide-react";
+import { Check, X, Loader2, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
@@ -71,6 +71,22 @@ export const CreditRequests = () => {
     }
   };
 
+  const handleDelete = async (id: string) => {
+    try {
+      const { error } = await supabase
+        .from('credit_purchases')
+        .delete()
+        .eq('id', id);
+
+      if (error) throw error;
+      toast.success("Credit request deleted");
+      loadRequests();
+    } catch (error) {
+      console.error('Error deleting credit request:', error);
+      toast.error("Failed to delete credit request");
+    }
+  };
+
   if (loading) {
     return (
       <div className="flex justify-center items-center p-4">
@@ -100,7 +116,7 @@ export const CreditRequests = () => {
                   </div>
                   <Badge 
                     variant={
-                      request.status === 'pending' ? 'warning' : 
+                      request.status === 'pending' ? 'secondary' : 
                       request.status === 'approved' ? 'default' : 
                       'destructive'
                     }
@@ -108,27 +124,39 @@ export const CreditRequests = () => {
                     {request.status}
                   </Badge>
                 </div>
-                {request.status === 'pending' && (
-                  <div className="flex gap-2 mt-2">
+                <div className="flex gap-2 mt-2">
+                  {request.status === 'pending' ? (
+                    <>
+                      <Button
+                        size="sm"
+                        className="flex-1"
+                        onClick={() => handleApprove(request.id)}
+                      >
+                        <Check className="w-4 h-4 mr-1" />
+                        Approve
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="destructive"
+                        className="flex-1"
+                        onClick={() => handleReject(request.id)}
+                      >
+                        <X className="w-4 h-4 mr-1" />
+                        Reject
+                      </Button>
+                    </>
+                  ) : (
                     <Button
                       size="sm"
+                      variant="outline"
                       className="flex-1"
-                      onClick={() => handleApprove(request.id)}
+                      onClick={() => handleDelete(request.id)}
                     >
-                      <Check className="w-4 h-4 mr-1" />
-                      Approve
+                      <Trash2 className="w-4 h-4 mr-1" />
+                      Delete
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="destructive"
-                      className="flex-1"
-                      onClick={() => handleReject(request.id)}
-                    >
-                      <X className="w-4 h-4 mr-1" />
-                      Reject
-                    </Button>
-                  </div>
-                )}
+                  )}
+                </div>
               </Card>
             ))
           )}
