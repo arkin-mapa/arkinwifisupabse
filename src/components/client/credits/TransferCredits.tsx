@@ -27,15 +27,27 @@ export const TransferCredits = () => {
         return;
       }
 
-      // Verify recipient exists
-      const { data: recipientData, error: recipientError } = await supabase
+      // Verify recipient exists in profiles table
+      const { data: recipientProfile, error: recipientError } = await supabase
         .from('profiles')
-        .select('id')
+        .select('id, role')
         .eq('id', recipientId)
         .single();
 
-      if (recipientError || !recipientData) {
-        toast.error("Recipient not found");
+      if (recipientError || !recipientProfile) {
+        toast.error("Recipient ID not found. Please check and try again.");
+        return;
+      }
+
+      // Don't allow transfers to admin accounts
+      if (recipientProfile.role === 'admin') {
+        toast.error("Cannot transfer credits to admin accounts");
+        return;
+      }
+
+      // Don't allow self-transfers
+      if (recipientProfile.id === session.session.user.id) {
+        toast.error("Cannot transfer credits to yourself");
         return;
       }
 
