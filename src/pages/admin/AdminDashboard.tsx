@@ -85,9 +85,7 @@ const AdminDashboard = () => {
 
           <TabsContent value="settings">
             <Card className="p-4">
-              <div className="space-y-6">
-                <PaymentMethodSettings />
-              </div>
+              <PaymentMethodSettings />
             </Card>
           </TabsContent>
         </Tabs>

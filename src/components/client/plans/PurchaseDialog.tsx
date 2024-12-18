@@ -1,13 +1,12 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
+import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 import type { Database } from "@/types/database.types";
-import { PaymentMethodSelector } from "./PaymentMethodSelector";
-import { usePaymentMethods } from "@/hooks/usePaymentMethods";
 
 type PaymentMethod = Database['public']['Enums']['payment_method'];
 
@@ -37,7 +36,6 @@ export const PurchaseDialog = ({
   isPending
 }: PurchaseDialogProps) => {
   const [creditBalance, setCreditBalance] = useState<number>(0);
-  const { enabledPaymentMethods, getMethodLabel } = usePaymentMethods();
 
   useEffect(() => {
     loadCreditBalance();
@@ -65,11 +63,6 @@ export const PurchaseDialog = ({
 
   const totalAmount = (selectedPlan?.price || 0) * purchaseDetails.quantity;
   const canUseCredit = creditBalance >= totalAmount;
-
-  // Filter payment methods based on credit balance
-  const availablePaymentMethods = enabledPaymentMethods.filter(method => 
-    method.method !== 'credit' || (method.method === 'credit' && canUseCredit)
-  );
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
@@ -112,18 +105,40 @@ export const PurchaseDialog = ({
             />
           </div>
 
-          {availablePaymentMethods.length > 0 && (
-            <PaymentMethodSelector
-              paymentMethods={availablePaymentMethods}
-              currentMethod={purchaseDetails.paymentMethod}
-              creditBalance={creditBalance}
-              onMethodChange={(method) => setPurchaseDetails({
+          <div>
+            <Label>Payment Method</Label>
+            <RadioGroup
+              value={purchaseDetails.paymentMethod}
+              onValueChange={(value: PaymentMethod) => setPurchaseDetails({
                 ...purchaseDetails,
-                paymentMethod: method
+                paymentMethod: value
               })}
-              getMethodLabel={getMethodLabel}
-            />
-          )}
+              className="mt-2 space-y-2"
+            >
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="cash" id="cash" />
+                <Label htmlFor="cash">Cash</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="gcash" id="gcash" />
+                <Label htmlFor="gcash">GCash</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem value="paymaya" id="paymaya" />
+                <Label htmlFor="paymaya">PayMaya</Label>
+              </div>
+              <div className="flex items-center space-x-2">
+                <RadioGroupItem 
+                  value="credit" 
+                  id="credit" 
+                  disabled={!canUseCredit}
+                />
+                <Label htmlFor="credit" className={!canUseCredit ? "text-muted-foreground" : ""}>
+                  Credit Balance (₱{creditBalance.toFixed(2)})
+                </Label>
+              </div>
+            </RadioGroup>
+          </div>
 
           <div className="pt-2">
             <p className="text-sm text-muted-foreground">
@@ -134,7 +149,7 @@ export const PurchaseDialog = ({
           <Button
             className="w-full"
             onClick={onSubmit}
-            disabled={isPending || availablePaymentMethods.length === 0}
+            disabled={isPending || (purchaseDetails.paymentMethod === 'credit' && !canUseCredit)}
           >
             {isPending ? "Processing..." : "Confirm Purchase"}
           </Button>
