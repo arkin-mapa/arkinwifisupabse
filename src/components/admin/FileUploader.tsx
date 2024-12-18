@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { Upload, Loader2 } from 'lucide-react';
 import mammoth from 'mammoth';
-import { toast } from 'react-hot-toast';
+import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
 
 interface Props {
@@ -21,6 +21,7 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
     if (error) {
       console.error('Error checking for duplicates:', error);
+      toast.error('Failed to check for duplicate vouchers');
       throw new Error('Failed to check for duplicate vouchers');
     }
 
@@ -29,13 +30,7 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
 
     if (existingCodes.size > 0) {
       const duplicateCount = codes.length - uniqueCodes.length;
-      toast(
-        <div className="space-y-1">
-          <p className="font-medium text-yellow-600">Found {duplicateCount} duplicate voucher{duplicateCount !== 1 ? 's' : ''}</p>
-          <p className="text-xs text-gray-500">These will be skipped to avoid duplicates.</p>
-        </div>,
-        { duration: 5000 }
-      );
+      toast.warning(`Found ${duplicateCount} duplicate voucher${duplicateCount !== 1 ? 's' : ''}. These will be skipped.`);
     }
 
     return uniqueCodes;
@@ -75,14 +70,16 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       const voucherArray = Array.from(vouchers).sort();
 
       if (voucherArray.length === 0) {
-        throw new Error('No valid voucher codes found in the document. Please ensure your document contains numeric codes between 6-14 digits.');
+        toast.error('No valid voucher codes found in the document. Please ensure your document contains numeric codes between 6-14 digits.');
+        throw new Error('No valid voucher codes found in the document');
       }
 
       // Check for duplicates in the database
       const uniqueVouchers = await checkForDuplicates(voucherArray);
 
       if (uniqueVouchers.length === 0) {
-        throw new Error('All voucher codes in the document already exist in the system.');
+        toast.error('All voucher codes in the document already exist in the system.');
+        throw new Error('All voucher codes already exist');
       }
 
       return uniqueVouchers;
@@ -90,9 +87,11 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
     } catch (error) {
       console.error('Error extracting vouchers:', error);
       if (error instanceof Error) {
-        throw new Error(error.message);
+        toast.error(error.message);
+      } else {
+        toast.error('Failed to process the document');
       }
-      throw new Error('Failed to process the document');
+      throw error;
     }
   };
 
@@ -111,25 +110,14 @@ export function FileUploader({ onExtracted, className = '' }: Props) {
       const vouchers = await extractVouchersFromWord(arrayBuffer);
       
       const totalFound = vouchers.length;
-      const previewCodes = vouchers.slice(0, 3).join(', ');
-      
-      toast(
-        <div className="space-y-1">
-          <p className="font-medium">Found {totalFound} unique voucher codes:</p>
-          <p className="font-mono text-xs bg-gray-50 p-1 rounded">
-            {previewCodes}...
-          </p>
-          <p className="text-xs text-gray-500">
-            Range: {vouchers[0]} to {vouchers[vouchers.length - 1]}
-          </p>
-        </div>,
-        { duration: 5000 }
-      );
+      toast.success(`Successfully extracted ${totalFound} unique voucher codes`, {
+        description: `Range: ${vouchers[0]} to ${vouchers[vouchers.length - 1]}`
+      });
 
       onExtracted(vouchers);
     } catch (error) {
       console.error('Error reading document:', error);
-      toast.error(error instanceof Error ? error.message : 'Failed to extract voucher codes');
+      // Error toast is already shown in extractVouchersFromWord
     } finally {
       setLoading(false);
       if (fileInputRef.current) {
