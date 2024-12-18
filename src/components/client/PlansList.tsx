@@ -77,7 +77,7 @@ const PlansList = () => {
           .from('credits')
           .insert({
             client_id: clientId,
-            amount: plan.price * purchaseDetails.quantity,
+            amount: -(plan.price * purchaseDetails.quantity),
             transaction_type: 'purchase',
             reference_id: purchase.id
           });
@@ -105,6 +105,9 @@ const PlansList = () => {
           .in('id', voucherIds);
 
         if (updateError) throw updateError;
+
+        // Force refresh of plans data to update voucher counts
+        await queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
 
         return null;
       }
