@@ -44,22 +44,22 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className="p-3 bg-background hover:bg-accent/5 transition-colors">
-        <div className="flex items-center gap-3">
+      <Card className={`p-3 bg-white dark:bg-gray-800 hover:bg-accent/5 transition-colors ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+        <div className="flex items-start gap-3">
           <Checkbox
             checked={isSelected}
             onCheckedChange={() => onSelect()}
             className="translate-y-[2px]"
           />
-          <div className="flex flex-col gap-2 flex-1">
-            <code className="bg-muted px-3 py-2 rounded text-sm font-mono text-center break-all">
+          <div className="flex flex-col gap-2 flex-1 min-w-0">
+            <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono text-center break-all">
               {voucher.code}
             </code>
             <div className="flex items-center justify-between gap-2">
-              <div className="text-xs text-muted-foreground">
+              <div className="text-xs text-muted-foreground font-medium">
                 ₱{plan?.price.toFixed(2)}
               </div>
-              <div className="flex gap-2">
+              <div className="flex gap-1">
                 <Button
                   size="sm"
                   variant="ghost"

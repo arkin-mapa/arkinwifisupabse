@@ -29,7 +29,7 @@ const PlanGroup = ({
     <motion.div
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
-      className="rounded-lg border bg-card shadow-sm"
+      className="rounded-lg border bg-white/50 backdrop-blur-sm shadow-sm dark:bg-gray-800/50"
     >
       <div className="p-3">
         <div 
@@ -41,7 +41,7 @@ const PlanGroup = ({
             <h3 className="text-sm font-medium">
               {plan?.duration || 'Unknown Plan'}
             </h3>
-            <span className="ml-2 px-2 py-0.5 rounded-full bg-secondary text-secondary-foreground text-xs">
+            <span className="ml-2 px-2 py-0.5 rounded-full bg-primary/10 text-primary text-xs font-medium">
               {vouchers.length}
             </span>
           </div>
@@ -50,7 +50,7 @@ const PlanGroup = ({
       
       {isExpanded && (
         <div className="px-3 pb-3">
-          <div className="space-y-2">
+          <div className="grid gap-2 sm:grid-cols-2">
             {vouchers.map((voucher) => (
               <VoucherCard
                 key={voucher.id}
