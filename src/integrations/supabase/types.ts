@@ -269,6 +269,12 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      get_user_id_by_email: {
+        Args: {
+          user_email: string
+        }
+        Returns: string
+      }
       transfer_credits: {
         Args: {
           from_client_id: string

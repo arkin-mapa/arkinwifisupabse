@@ -27,21 +27,26 @@ export const TransferCredits = () => {
         return;
       }
 
-      // First get the user ID from the email using the profiles table
-      const { data: recipientProfile, error: recipientError } = await supabase
+      // Get the recipient's user ID using the function we created
+      const { data: recipientId, error: recipientIdError } = await supabase
+        .rpc('get_user_id_by_email', {
+          user_email: recipientEmail
+        });
+
+      if (recipientIdError || !recipientId) {
+        toast.error("Recipient email not found. Please check and try again.");
+        return;
+      }
+
+      // Get recipient's profile to check role
+      const { data: recipientProfile, error: recipientProfileError } = await supabase
         .from('profiles')
-        .select('id, role')
-        .eq('id', (
-          await supabase
-            .from('auth')
-            .select('id')
-            .eq('email', recipientEmail)
-            .single()
-        ).data?.id)
+        .select('role')
+        .eq('id', recipientId)
         .single();
 
-      if (recipientError || !recipientProfile) {
-        toast.error("Recipient email not found. Please check and try again.");
+      if (recipientProfileError || !recipientProfile) {
+        toast.error("Recipient profile not found. Please try again.");
         return;
       }
 
@@ -52,14 +57,14 @@ export const TransferCredits = () => {
       }
 
       // Don't allow self-transfers
-      if (recipientProfile.id === session.session.user.id) {
+      if (recipientId === session.session.user.id) {
         toast.error("Cannot transfer credits to yourself");
         return;
       }
 
       const { data, error } = await supabase.rpc('transfer_credits', {
         from_client_id: session.session.user.id,
-        to_client_id: recipientProfile.id,
+        to_client_id: recipientId,
         transfer_amount: transferAmount
       });
 
