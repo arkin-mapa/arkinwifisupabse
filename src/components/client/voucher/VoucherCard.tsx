@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Voucher, Plan } from "@/types/plans";
 import { Checkbox } from "@/components/ui/checkbox";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VoucherCardProps {
   voucher: Voucher;
@@ -18,9 +19,21 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
-      toast.success("Voucher code copied!");
+      
+      // Mark voucher as used in the database
+      const { error } = await supabase
+        .from('vouchers')
+        .update({ is_used: true })
+        .eq('id', voucher.id);
+
+      if (error) {
+        throw error;
+      }
+
+      toast.success("Voucher code copied and marked as used!");
     } catch (err) {
-      toast.error("Failed to copy code. Please try again.");
+      console.error('Error:', err);
+      toast.error("Failed to copy code or mark as used. Please try again.");
     }
   };
 
@@ -44,7 +57,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className={`p-3 bg-white dark:bg-gray-800 hover:bg-accent/5 transition-colors ${isSelected ? 'ring-2 ring-primary' : ''}`}>
+      <Card className={`p-3 bg-white dark:bg-gray-800 hover:bg-accent/5 transition-colors ${isSelected ? 'ring-2 ring-primary' : ''} ${voucher.isUsed ? 'opacity-50' : ''}`}>
         <div className="flex items-start gap-3">
           <Checkbox
             checked={isSelected}
@@ -58,6 +71,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
             <div className="flex items-center justify-between gap-2">
               <div className="text-xs text-muted-foreground font-medium">
                 ₱{plan?.price.toFixed(2)}
+                {voucher.isUsed && <span className="ml-2 text-yellow-500">(Used)</span>}
               </div>
               <div className="flex gap-1">
                 <Button
@@ -65,6 +79,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
                   variant="ghost"
                   onClick={() => copyToClipboard(voucher.code)}
                   className="h-7 w-7 p-0"
+                  disabled={voucher.isUsed}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
