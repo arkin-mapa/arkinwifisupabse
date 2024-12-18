@@ -3,6 +3,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import PendingPurchases from "@/components/admin/PendingPurchases";
 import PlansManager from "@/components/admin/PlansManager";
 import SalesSummary from "@/components/admin/SalesSummary";
+import { CreditRequests } from "@/components/admin/credits/CreditRequests";
 import { motion } from "framer-motion";
 import { useState, useEffect } from "react";
 import type { Purchase } from "@/types/plans";
@@ -58,9 +59,10 @@ const AdminDashboard = () => {
         </div>
 
         <Tabs defaultValue="plans" className="space-y-4">
-          <TabsList className="w-full grid grid-cols-2">
+          <TabsList className="w-full grid grid-cols-3">
             <TabsTrigger value="plans">Plans</TabsTrigger>
             <TabsTrigger value="requests">Requests</TabsTrigger>
+            <TabsTrigger value="credits">Credits</TabsTrigger>
           </TabsList>
           
           <TabsContent value="plans">
@@ -73,6 +75,10 @@ const AdminDashboard = () => {
             <Card className="p-4">
               <PendingPurchases onPurchaseUpdate={loadPurchases} />
             </Card>
+          </TabsContent>
+
+          <TabsContent value="credits">
+            <CreditRequests />
           </TabsContent>
         </Tabs>
       </motion.div>

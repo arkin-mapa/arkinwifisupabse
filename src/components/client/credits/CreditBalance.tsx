@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import type { CreditBalance } from "@/types/credits";
+import { CreditRequestStatus } from "./CreditRequestStatus";
 
 export const CreditBalanceCard = () => {
   const [balance, setBalance] = useState<number>(0);
@@ -72,44 +72,47 @@ export const CreditBalanceCard = () => {
   };
 
   return (
-    <Card>
-      <CardHeader>
-        <CardTitle className="text-lg">Credit Balance</CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="flex justify-between items-center">
-          <p className="text-2xl font-bold">₱{balance.toFixed(2)}</p>
-          <Button onClick={() => setIsTopUpOpen(true)}>Top Up</Button>
-        </div>
+    <>
+      <CreditRequestStatus />
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-lg">Credit Balance</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="flex justify-between items-center">
+            <p className="text-2xl font-bold">₱{balance.toFixed(2)}</p>
+            <Button onClick={() => setIsTopUpOpen(true)}>Top Up</Button>
+          </div>
 
-        <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
-          <DialogContent>
-            <DialogHeader>
-              <DialogTitle>Top Up Credits</DialogTitle>
-            </DialogHeader>
-            <div className="space-y-4 pt-4">
-              <div className="space-y-2">
-                <Label htmlFor="amount">Amount</Label>
-                <Input
-                  id="amount"
-                  type="number"
-                  min="0"
-                  step="0.01"
-                  value={topUpAmount}
-                  onChange={(e) => setTopUpAmount(e.target.value)}
-                  placeholder="Enter amount"
-                />
+          <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>Top Up Credits</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4 pt-4">
+                <div className="space-y-2">
+                  <Label htmlFor="amount">Amount</Label>
+                  <Input
+                    id="amount"
+                    type="number"
+                    min="0"
+                    step="0.01"
+                    value={topUpAmount}
+                    onChange={(e) => setTopUpAmount(e.target.value)}
+                    placeholder="Enter amount"
+                  />
+                </div>
+                <Button 
+                  className="w-full" 
+                  onClick={handleTopUpRequest}
+                >
+                  Request Top Up
+                </Button>
               </div>
-              <Button 
-                className="w-full" 
-                onClick={handleTopUpRequest}
-              >
-                Request Top Up
-              </Button>
-            </div>
-          </DialogContent>
-        </Dialog>
-      </CardContent>
-    </Card>
+            </DialogContent>
+          </Dialog>
+        </CardContent>
+      </Card>
+    </>
   );
 };
