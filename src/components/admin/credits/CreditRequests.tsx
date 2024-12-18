@@ -101,7 +101,7 @@ export const CreditRequests = () => {
                   <Badge 
                     variant={
                       request.status === 'pending' ? 'warning' : 
-                      request.status === 'approved' ? 'success' : 
+                      request.status === 'approved' ? 'default' : 
                       'destructive'
                     }
                   >
