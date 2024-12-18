@@ -15,11 +15,32 @@ import { Wallet, QrCode, Send } from "lucide-react";
 export const CreditBalanceCard = () => {
   const [balance, setBalance] = useState<number>(0);
   const [isTopUpOpen, setIsTopUpOpen] = useState(false);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [isQRGeneratorOpen, setIsQRGeneratorOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
 
   useEffect(() => {
     fetchBalance();
+    // Subscribe to realtime changes
+    const channel = supabase
+      .channel('credit-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'credits'
+        },
+        () => {
+          fetchBalance();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const fetchBalance = async () => {
@@ -107,30 +128,25 @@ export const CreditBalanceCard = () => {
               <Button
                 variant="outline"
                 className="flex items-center justify-center space-x-2 h-auto py-4"
-                onClick={() => document.getElementById('transferCreditsBtn')?.click()}
+                onClick={() => setIsQRGeneratorOpen(true)}
               >
-                <Send className="h-4 w-4" />
-                <span>Send</span>
+                <QrCode className="h-4 w-4" />
+                <span>Show QR</span>
               </Button>
               <Button
                 variant="outline"
                 className="flex items-center justify-center space-x-2 h-auto py-4"
-                onClick={() => document.getElementById('scanQRBtn')?.click()}
+                onClick={() => setIsQRScannerOpen(true)}
               >
-                <QrCode className="h-4 w-4" />
-                <span>Scan QR</span>
+                <Send className="h-4 w-4" />
+                <span>Scan & Send</span>
               </Button>
             </div>
           </div>
         </CardContent>
       </Card>
 
-      <div className="hidden">
-        <TransferCredits />
-        <QRCodeGenerator />
-        <QRCodeScanner />
-      </div>
-
+      {/* Top Up Dialog */}
       <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
         <DialogContent className="sm:max-w-md">
           <DialogHeader>
@@ -159,6 +175,16 @@ export const CreditBalanceCard = () => {
           </div>
         </DialogContent>
       </Dialog>
+
+      {/* QR Code Generator Dialog */}
+      {isQRGeneratorOpen && (
+        <QRCodeGenerator isOpen={isQRGeneratorOpen} onClose={() => setIsQRGeneratorOpen(false)} />
+      )}
+
+      {/* QR Code Scanner Dialog */}
+      {isQRScannerOpen && (
+        <QRCodeScanner isOpen={isQRScannerOpen} onClose={() => setIsQRScannerOpen(false)} />
+      )}
     </>
   );
 };

@@ -7,19 +7,17 @@ import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
 
-export const QRCodeScanner = () => {
-  const [isOpen, setIsOpen] = useState(false);
+interface QRCodeScannerProps {
+  isOpen: boolean;
+  onClose: () => void;
+}
+
+export const QRCodeScanner = ({ isOpen, onClose }: QRCodeScannerProps) => {
   const [amount, setAmount] = useState("");
   const [recipientData, setRecipientData] = useState<{ userId: string; email: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
 
-  const handleScan = (result: any, error: any) => {
-    if (error) {
-      console.error(error);
-      toast.error("Error scanning QR code");
-      return;
-    }
-
+  const handleScan = (result: any) => {
     if (result) {
       try {
         const data = JSON.parse(result?.text);
@@ -31,6 +29,7 @@ export const QRCodeScanner = () => {
           toast.success("QR Code scanned successfully!");
         }
       } catch (error) {
+        console.error('QR scan error:', error);
         toast.error("Invalid QR Code");
       }
     }
@@ -64,7 +63,7 @@ export const QRCodeScanner = () => {
 
       if (error) throw error;
 
-      setIsOpen(false);
+      onClose();
       setAmount("");
       setRecipientData(null);
       toast.success("Credits transferred successfully");
@@ -76,53 +75,53 @@ export const QRCodeScanner = () => {
     }
   };
 
-  return (
-    <>
-      <Button onClick={() => setIsOpen(true)} variant="outline" className="w-full mt-4">
-        Scan QR Code to Transfer
-      </Button>
+  const handleClose = () => {
+    setAmount("");
+    setRecipientData(null);
+    onClose();
+  };
 
-      <Dialog open={isOpen} onOpenChange={setIsOpen}>
-        <DialogContent className="sm:max-w-md">
-          <DialogHeader>
-            <DialogTitle>Scan QR Code</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            {!recipientData ? (
-              <QrReader
-                onResult={handleScan}
-                constraints={{ facingMode: 'environment' }}
-                className="w-full"
-              />
-            ) : (
-              <div className="space-y-4">
-                <div>
-                  <Label>Recipient Email</Label>
-                  <Input value={recipientData.email} disabled />
-                </div>
-                <div>
-                  <Label>Amount</Label>
-                  <Input
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={amount}
-                    onChange={(e) => setAmount(e.target.value)}
-                    placeholder="Enter amount"
-                  />
-                </div>
-                <Button 
-                  className="w-full" 
-                  onClick={handleTransfer}
-                  disabled={isLoading}
-                >
-                  Transfer
-                </Button>
+  return (
+    <Dialog open={isOpen} onOpenChange={handleClose}>
+      <DialogContent className="sm:max-w-md">
+        <DialogHeader>
+          <DialogTitle>Scan QR Code</DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {!recipientData ? (
+            <QrReader
+              onResult={handleScan}
+              constraints={{ facingMode: 'environment' }}
+              className="w-full"
+            />
+          ) : (
+            <div className="space-y-4">
+              <div>
+                <Label>Recipient Email</Label>
+                <Input value={recipientData.email} disabled />
               </div>
-            )}
-          </div>
-        </DialogContent>
-      </Dialog>
-    </>
+              <div>
+                <Label>Amount</Label>
+                <Input
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  placeholder="Enter amount"
+                />
+              </div>
+              <Button 
+                className="w-full bg-purple-600 hover:bg-purple-700 text-white" 
+                onClick={handleTransfer}
+                disabled={isLoading}
+              >
+                {isLoading ? "Processing..." : "Transfer"}
+              </Button>
+            </div>
+          )}
+        </div>
+      </DialogContent>
+    </Dialog>
   );
 };
