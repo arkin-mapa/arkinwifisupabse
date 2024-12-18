@@ -1,5 +1,5 @@
 import { motion } from "framer-motion";
-import { ChevronDown, ChevronUp, PrinterIcon, Bluetooth } from "lucide-react";
+import { ChevronDown, ChevronUp, PrinterIcon } from "lucide-react";
 import type { Voucher, Plan } from "@/types/plans";
 import VoucherCard from "./VoucherCard";
 import { Button } from "@/components/ui/button";
@@ -13,7 +13,9 @@ interface PlanGroupProps {
   isExpanded: boolean;
   onToggle: () => void;
   onDeleteVoucher: (id: string) => void;
-  onPrintVoucher: (voucher: Voucher, useBluetooth?: boolean) => void;
+  onPrintVoucher: (voucher: Voucher) => void;
+  selectedVouchers: Voucher[];
+  onVoucherSelect: (voucher: Voucher) => void;
 }
 
 const PlanGroup = ({
@@ -24,23 +26,19 @@ const PlanGroup = ({
   onToggle,
   onDeleteVoucher,
   onPrintVoucher,
+  selectedVouchers,
+  onVoucherSelect,
 }: PlanGroupProps) => {
-  const handlePrintAllPlanVouchers = (useBluetooth = false) => {
+  const handlePrintAllPlanVouchers = () => {
     if (!plan) {
       toast.error("Plan information not available");
       return;
     }
     
-    if (!printPlanVouchers(vouchers, plan, useBluetooth)) {
-      toast.error(useBluetooth ? 
-        "Failed to connect to Bluetooth printer" : 
-        "Unable to open print window. Please check your popup settings."
-      );
+    if (!printPlanVouchers(vouchers, plan)) {
+      toast.error("Unable to open print window. Please check your popup settings.");
     } else {
-      toast.success(useBluetooth ? 
-        "Sent to Bluetooth printer" : 
-        "Print window opened successfully"
-      );
+      toast.success("Print window opened successfully");
     }
   };
 
@@ -67,20 +65,12 @@ const PlanGroup = ({
           {vouchers.length > 0 && (
             <div className="flex gap-2" onClick={(e) => e.stopPropagation()}>
               <Button
-                onClick={() => handlePrintAllPlanVouchers()}
+                onClick={handlePrintAllPlanVouchers}
                 variant="ghost"
                 size="sm"
                 className="h-8"
               >
                 <PrinterIcon className="h-4 w-4" />
-              </Button>
-              <Button
-                onClick={() => handlePrintAllPlanVouchers(true)}
-                variant="ghost"
-                size="sm"
-                className="h-8"
-              >
-                <Bluetooth className="h-4 w-4" />
               </Button>
             </div>
           )}
@@ -97,6 +87,8 @@ const PlanGroup = ({
                 plan={plan}
                 onDelete={onDeleteVoucher}
                 onPrint={onPrintVoucher}
+                isSelected={selectedVouchers.some(v => v.id === voucher.id)}
+                onSelect={() => onVoucherSelect(voucher)}
               />
             ))}
           </div>

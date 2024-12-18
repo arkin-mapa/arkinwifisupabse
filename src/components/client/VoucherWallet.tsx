@@ -4,15 +4,23 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
 import { fetchClientVouchers, fetchClientPlans } from "@/utils/supabaseData";
-import { printVoucher, printPlanVouchers } from "@/utils/printUtils";
+import { printVoucher } from "@/utils/printUtils";
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher, Plan } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
+import { Button } from "@/components/ui/button";
+import { QrCode } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { QRCodeScanner } from "./voucher/QRCodeScanner";
+import { QRCodeGenerator } from "./voucher/QRCodeGenerator";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
   const [plans, setPlans] = useState<Record<string, Plan>>({});
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
+  const [selectedVouchers, setSelectedVouchers] = useState<Voucher[]>([]);
+  const [isQRScannerOpen, setIsQRScannerOpen] = useState(false);
+  const [isQRGeneratorOpen, setIsQRGeneratorOpen] = useState(false);
   const session = useSession();
 
   useEffect(() => {
@@ -44,18 +52,10 @@ const VoucherWallet = () => {
       
       setVouchers(groupedVouchers);
       setPlans(plansLookup);
+      setSelectedVouchers([]);
     } catch (error) {
       console.error('Error loading data:', error);
       toast.error("Failed to load vouchers");
-    }
-  };
-
-  const handlePrintVoucher = async (voucher: Voucher, useBluetooth = false) => {
-    const plan = plans[voucher.planId];
-    if (!printVoucher(voucher, plan, useBluetooth)) {
-      toast.error(useBluetooth ? "Failed to connect to Bluetooth printer" : "Unable to open print window");
-    } else {
-      toast.success(useBluetooth ? "Sent to Bluetooth printer" : "Print window opened successfully");
     }
   };
 
@@ -94,6 +94,17 @@ const VoucherWallet = () => {
     }));
   };
 
+  const toggleVoucherSelection = (voucher: Voucher) => {
+    setSelectedVouchers(prev => {
+      const isSelected = prev.some(v => v.id === voucher.id);
+      if (isSelected) {
+        return prev.filter(v => v.id !== voucher.id);
+      } else {
+        return [...prev, voucher];
+      }
+    });
+  };
+
   if (!session) {
     return (
       <Card className="mx-4">
@@ -117,7 +128,27 @@ const VoucherWallet = () => {
   return (
     <Card className="mx-0">
       <CardHeader className="pb-3">
-        <CardTitle className="text-lg">Your Vouchers</CardTitle>
+        <div className="flex items-center justify-between">
+          <CardTitle className="text-lg">Your Vouchers</CardTitle>
+          <div className="flex gap-2">
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsQRGeneratorOpen(true)}
+              disabled={selectedVouchers.length === 0}
+            >
+              <QrCode className="h-4 w-4 mr-2" />
+              Share ({selectedVouchers.length})
+            </Button>
+            <Button
+              variant="outline"
+              size="sm"
+              onClick={() => setIsQRScannerOpen(true)}
+            >
+              Scan QR
+            </Button>
+          </div>
+        </div>
       </CardHeader>
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-12rem)]">
@@ -130,13 +161,35 @@ const VoucherWallet = () => {
                 vouchers={planVouchers}
                 isExpanded={expandedPlans[planId] || false}
                 onToggle={() => togglePlanExpansion(planId)}
-                onPrintVoucher={handlePrintVoucher}
                 onDeleteVoucher={handleDeleteVoucher}
+                onPrintVoucher={printVoucher}
+                selectedVouchers={selectedVouchers}
+                onVoucherSelect={toggleVoucherSelection}
               />
             ))}
           </div>
         </ScrollArea>
       </CardContent>
+
+      {isQRGeneratorOpen && (
+        <QRCodeGenerator
+          isOpen={isQRGeneratorOpen}
+          onClose={() => setIsQRGeneratorOpen(false)}
+          vouchers={selectedVouchers}
+          onTransferComplete={() => {
+            loadData();
+            setIsQRGeneratorOpen(false);
+          }}
+        />
+      )}
+
+      {isQRScannerOpen && (
+        <QRCodeScanner
+          isOpen={isQRScannerOpen}
+          onClose={() => setIsQRScannerOpen(false)}
+          onTransferComplete={loadData}
+        />
+      )}
     </Card>
   );
 };
