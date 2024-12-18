@@ -1,44 +1,19 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "sonner";
-import { supabase } from "@/integrations/supabase/client";
-import { CreditRequestStatus } from "./CreditRequestStatus";
 import { TransferCredits } from "./TransferCredits";
+import { QRCodeGenerator } from "./QRCodeGenerator";
+import { QRCodeScanner } from "./QRCodeScanner";
+import { supabase } from "@/integrations/supabase/client";
+import { toast } from "sonner";
 
 export const CreditBalanceCard = () => {
   const [balance, setBalance] = useState<number>(0);
-  const [isTopUpOpen, setIsTopUpOpen] = useState(false);
-  const [topUpAmount, setTopUpAmount] = useState("");
 
   useEffect(() => {
-    loadCreditBalance();
-
-    // Subscribe to credit changes
-    const channel = supabase
-      .channel('credit-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'credits'
-        },
-        () => {
-          loadCreditBalance();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
+    fetchBalance();
   }, []);
 
-  const loadCreditBalance = async () => {
+  const fetchBalance = async () => {
     try {
       const { data: credits, error } = await supabase
         .from('credits')
@@ -46,96 +21,31 @@ export const CreditBalanceCard = () => {
 
       if (error) throw error;
 
-      const total = credits?.reduce((acc, curr) => {
-        return curr.transaction_type === 'deposit' 
-          ? acc + Number(curr.amount) 
-          : acc - Number(curr.amount);
-      }, 0) || 0;
+      const totalBalance = credits.reduce((acc, credit) => {
+        return credit.transaction_type === 'deposit' 
+          ? acc + Number(credit.amount) 
+          : acc - Number(credit.amount);
+      }, 0);
 
-      setBalance(total);
+      setBalance(totalBalance);
     } catch (error) {
-      console.error('Error loading credit balance:', error);
-      toast.error("Failed to load credit balance");
-    }
-  };
-
-  const handleTopUpRequest = async () => {
-    try {
-      const amount = parseFloat(topUpAmount);
-      if (isNaN(amount) || amount <= 0) {
-        toast.error("Please enter a valid amount");
-        return;
-      }
-
-      const { data: session } = await supabase.auth.getSession();
-      if (!session?.session?.user) {
-        toast.error("Please log in to request top-up");
-        return;
-      }
-
-      const { error: purchaseError } = await supabase
-        .from('credit_purchases')
-        .insert({
-          client_id: session.session.user.id,
-          amount: amount,
-          status: 'pending'
-        });
-
-      if (purchaseError) throw purchaseError;
-
-      setIsTopUpOpen(false);
-      setTopUpAmount("");
-      toast.success("Top-up request submitted successfully");
-    } catch (error) {
-      console.error('Error requesting top-up:', error);
-      toast.error("Failed to submit top-up request");
+      console.error('Error fetching balance:', error);
+      toast.error("Failed to fetch credit balance");
     }
   };
 
   return (
-    <>
-      <CreditRequestStatus />
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-lg">Credit Balance</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="flex justify-between items-center">
-            <p className="text-2xl font-bold">₱{balance.toFixed(2)}</p>
-            <Button onClick={() => setIsTopUpOpen(true)}>Top Up</Button>
-          </div>
-
-          <TransferCredits />
-
-          <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
-            <DialogContent>
-              <DialogHeader>
-                <DialogTitle>Top Up Credits</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4 pt-4">
-                <div className="space-y-2">
-                  <Label htmlFor="amount">Amount</Label>
-                  <Input
-                    id="amount"
-                    type="number"
-                    min="0"
-                    step="0.01"
-                    value={topUpAmount}
-                    onChange={(e) => setTopUpAmount(e.target.value)}
-                    placeholder="Enter amount"
-                  />
-                </div>
-                <Button 
-                  className="w-full" 
-                  onClick={handleTopUpRequest}
-                >
-                  Request Top Up
-                </Button>
-              </div>
-            </DialogContent>
-          </Dialog>
-        </CardContent>
-      </Card>
-    </>
+    <Card>
+      <CardHeader className="pb-3">
+        <CardTitle className="text-2xl font-bold text-center">
+          ₱{balance.toFixed(2)}
+        </CardTitle>
+      </CardHeader>
+      <CardContent className="space-y-0">
+        <TransferCredits />
+        <QRCodeGenerator />
+        <QRCodeScanner />
+      </CardContent>
+    </Card>
   );
 };
