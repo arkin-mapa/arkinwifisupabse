@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QRCodeScannerProps {
   isOpen: boolean;
@@ -16,6 +17,7 @@ export const QRCodeScanner = ({ isOpen, onClose }: QRCodeScannerProps) => {
   const [amount, setAmount] = useState("");
   const [recipientData, setRecipientData] = useState<{ userId: string; email: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   const handleScan = (result: any) => {
     if (result) {
@@ -83,17 +85,19 @@ export const QRCodeScanner = ({ isOpen, onClose }: QRCodeScannerProps) => {
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`${isMobile ? 'w-[95vw] rounded-lg p-4' : 'sm:max-w-md'}`}>
         <DialogHeader>
           <DialogTitle>Scan QR Code</DialogTitle>
         </DialogHeader>
         <div className="space-y-4">
           {!recipientData ? (
-            <QrReader
-              onResult={handleScan}
-              constraints={{ facingMode: 'environment' }}
-              className="w-full"
-            />
+            <div className={`${isMobile ? 'w-full aspect-square' : 'w-full'}`}>
+              <QrReader
+                onResult={handleScan}
+                constraints={{ facingMode: 'environment' }}
+                className="w-full"
+              />
+            </div>
           ) : (
             <div className="space-y-4">
               <div>

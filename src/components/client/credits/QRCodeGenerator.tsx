@@ -1,6 +1,8 @@
+import { useEffect, useState } from "react";
 import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useSession } from "@supabase/auth-helpers-react";
+import { supabase } from "@/integrations/supabase/client";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QRCodeGeneratorProps {
   isOpen: boolean;
@@ -8,29 +10,41 @@ interface QRCodeGeneratorProps {
 }
 
 export const QRCodeGenerator = ({ isOpen, onClose }: QRCodeGeneratorProps) => {
-  const session = useSession();
+  const [qrData, setQrData] = useState<string>("");
+  const isMobile = useIsMobile();
 
-  if (!session?.user?.id) return null;
+  useEffect(() => {
+    const generateQRData = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session?.user) {
+        const qrContent = {
+          type: 'credit-transfer',
+          userId: session.session.user.id,
+          email: session.session.user.email
+        };
+        setQrData(JSON.stringify(qrContent));
+      }
+    };
 
-  const qrData = JSON.stringify({
-    type: 'credit-transfer',
-    userId: session.user.id,
-    email: session.user.email
-  });
+    generateQRData();
+  }, []);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`${isMobile ? 'w-[95vw] rounded-lg' : 'sm:max-w-md'}`}>
         <DialogHeader>
-          <DialogTitle>Your Transfer QR Code</DialogTitle>
+          <DialogTitle>Your QR Code</DialogTitle>
         </DialogHeader>
-        <div className="flex items-center justify-center p-6">
-          <QRCodeSVG
-            value={qrData}
-            size={256}
-            level="H"
-            includeMargin={true}
-          />
+        <div className="flex justify-center items-center p-4">
+          <div className={`${isMobile ? 'w-64 h-64' : 'w-72 h-72'}`}>
+            <QRCodeSVG
+              value={qrData}
+              size={isMobile ? 256 : 288}
+              level="H"
+              includeMargin
+              className="w-full h-full"
+            />
+          </div>
         </div>
       </DialogContent>
     </Dialog>

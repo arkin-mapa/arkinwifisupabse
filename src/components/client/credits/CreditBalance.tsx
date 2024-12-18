@@ -11,6 +11,7 @@ import { Label } from "@/components/ui/label";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
 import { Wallet, QrCode, Send } from "lucide-react";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 export const CreditBalanceCard = () => {
   const [balance, setBalance] = useState<number>(0);
@@ -19,6 +20,7 @@ export const CreditBalanceCard = () => {
   const [isQRGeneratorOpen, setIsQRGeneratorOpen] = useState(false);
   const [amount, setAmount] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     fetchBalance();
@@ -104,9 +106,9 @@ export const CreditBalanceCard = () => {
     <>
       <CreditRequestStatus />
       <Card className="bg-gradient-to-br from-purple-50 to-white dark:from-gray-900 dark:to-gray-800">
-        <CardContent className="p-6">
-          <div className="flex flex-col space-y-6">
-            <div className="flex items-center justify-between">
+        <CardContent className={`p-4 ${isMobile ? 'space-y-4' : 'p-6'}`}>
+          <div className="flex flex-col space-y-4">
+            <div className={`flex ${isMobile ? 'flex-col space-y-3' : 'items-center justify-between'}`}>
               <div className="flex items-center space-x-3">
                 <Wallet className="h-6 w-6 text-purple-500" />
                 <div>
@@ -118,13 +120,13 @@ export const CreditBalanceCard = () => {
               </div>
               <Button 
                 onClick={() => setIsTopUpOpen(true)}
-                className="bg-purple-600 hover:bg-purple-700 text-white"
+                className={`bg-purple-600 hover:bg-purple-700 text-white ${isMobile ? 'w-full' : ''}`}
               >
                 Top Up
               </Button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3">
+            <div className={`grid ${isMobile ? 'grid-cols-1' : 'grid-cols-2'} gap-3`}>
               <Button
                 variant="outline"
                 className="flex items-center justify-center space-x-2 h-auto py-4"
@@ -148,7 +150,7 @@ export const CreditBalanceCard = () => {
 
       {/* Top Up Dialog */}
       <Dialog open={isTopUpOpen} onOpenChange={setIsTopUpOpen}>
-        <DialogContent className="sm:max-w-md">
+        <DialogContent className={`${isMobile ? 'w-[95vw] rounded-lg' : 'sm:max-w-md'}`}>
           <DialogHeader>
             <DialogTitle>Top Up Credits</DialogTitle>
           </DialogHeader>
