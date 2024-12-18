@@ -15,6 +15,26 @@ export const CreditBalanceCard = () => {
 
   useEffect(() => {
     loadCreditBalance();
+
+    // Subscribe to credit changes
+    const channel = supabase
+      .channel('credit-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'credits'
+        },
+        () => {
+          loadCreditBalance();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadCreditBalance = async () => {

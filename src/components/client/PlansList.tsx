@@ -55,8 +55,8 @@ const PlansList = () => {
           throw new Error('Not enough vouchers available');
         }
 
-        // Create purchase record for tracking
-        const { error: purchaseError } = await supabase
+        // Create purchase record
+        const { data: purchase, error: purchaseError } = await supabase
           .from('purchases')
           .insert({
             customer_name: purchaseDetails.customerName,
@@ -65,8 +65,10 @@ const PlansList = () => {
             quantity: purchaseDetails.quantity,
             total_amount: plan.price * purchaseDetails.quantity,
             payment_method: purchaseDetails.paymentMethod,
-            status: 'approved' as PurchaseStatus
-          });
+            status: 'approved'
+          })
+          .select()
+          .single();
 
         if (purchaseError) throw purchaseError;
 
@@ -76,16 +78,17 @@ const PlansList = () => {
           .insert({
             client_id: clientId,
             amount: plan.price * purchaseDetails.quantity,
-            transaction_type: 'purchase'
+            transaction_type: 'purchase',
+            reference_id: purchase.id
           });
 
         if (creditError) throw creditError;
 
-        // Add vouchers to wallet
+        // Add vouchers to wallet and mark them as used
         const walletEntries = availableVouchers.map(voucher => ({
           client_id: clientId,
           voucher_id: voucher.id,
-          status: 'approved' as PurchaseStatus
+          status: 'approved'
         }));
 
         const { error: walletError } = await supabase
@@ -93,6 +96,15 @@ const PlansList = () => {
           .insert(walletEntries);
 
         if (walletError) throw walletError;
+
+        // Update vouchers as used
+        const voucherIds = availableVouchers.map(v => v.id);
+        const { error: updateError } = await supabase
+          .from('vouchers')
+          .update({ is_used: true })
+          .in('id', voucherIds);
+
+        if (updateError) throw updateError;
 
         return null;
       }

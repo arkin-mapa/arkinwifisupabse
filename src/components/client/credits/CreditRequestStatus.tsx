@@ -18,6 +18,26 @@ export const CreditRequestStatus = () => {
 
   useEffect(() => {
     loadRequests();
+
+    // Subscribe to credit purchase changes
+    const channel = supabase
+      .channel('credit-purchase-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'credit_purchases'
+        },
+        () => {
+          loadRequests();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadRequests = async () => {
