@@ -32,12 +32,8 @@ export const TransferCredits = () => {
         .from('profiles')
         .select('id')
         .eq('id', (
-          await supabase
-            .from('auth.users')
-            .select('id')
-            .eq('email', recipientEmail)
-            .single()
-        ).data?.id)
+          await supabase.auth.admin.getUserByEmail(recipientEmail)
+        )?.data?.user?.id)
         .single();
 
       if (userError || !userData) {
