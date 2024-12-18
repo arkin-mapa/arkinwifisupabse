@@ -53,13 +53,10 @@ export const CreditBalanceCard = () => {
       }
 
       const { error: purchaseError } = await supabase
-        .from('purchases')
+        .from('credit_purchases')
         .insert({
-          customer_name: session.session.user.email,
           client_id: session.session.user.id,
-          quantity: 1,
-          total_amount: amount,
-          payment_method: 'cash',
+          amount: amount,
           status: 'pending'
         });
 
