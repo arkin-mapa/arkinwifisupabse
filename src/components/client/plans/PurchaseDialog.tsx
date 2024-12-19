@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerDetails } from "./purchase/CustomerDetails";
 import { PaymentMethodSelector } from "./purchase/PaymentMethodSelector";
+import { X } from "lucide-react";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -107,10 +108,20 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[60vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
-        <div className="px-4 py-2 border-b flex flex-col items-center space-y-0.5">
-          <h3 className="text-base font-medium">{selectedPlan?.duration} Plan</h3>
-          <p className="text-sm text-muted-foreground">₱{selectedPlan?.price.toFixed(2)}</p>
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[calc(100vh-8rem)] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+        <div className="px-4 py-2 border-b flex items-center justify-between">
+          <div className="flex flex-col items-start space-y-0.5">
+            <h3 className="text-base font-medium">{selectedPlan?.duration} Plan</h3>
+            <p className="text-sm text-muted-foreground">₱{selectedPlan?.price.toFixed(2)}</p>
+          </div>
+          <Button 
+            variant="ghost" 
+            size="icon" 
+            onClick={onClose}
+            className="h-8 w-8"
+          >
+            <X className="h-4 w-4" />
+          </Button>
         </div>
 
         <ScrollArea className="flex-grow overflow-y-auto px-4 py-2">
