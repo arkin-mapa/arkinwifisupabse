@@ -23,6 +23,7 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
+      // Only delete the voucher from the vouchers table
       await deleteVoucher(voucherId);
       
       // Fetch updated vouchers and transform into the required format
@@ -44,7 +45,7 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
 
       toast({
         title: "Voucher deleted",
-        description: "The voucher has been removed successfully.",
+        description: "The voucher has been removed from the pool successfully.",
       });
     } catch (error) {
       console.error('Error deleting voucher:', error);
