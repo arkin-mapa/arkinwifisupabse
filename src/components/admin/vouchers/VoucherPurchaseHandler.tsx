@@ -58,36 +58,7 @@ export const VoucherPurchaseHandler = ({
 
         console.log('Credit transaction successful, proceeding with voucher transfer');
 
-        // Use the credit payment voucher transfer function
-        const { error: transferError } = await supabase.rpc(
-          'handle_credit_payment_voucher_transfer',
-          {
-            p_client_id: purchase.client_id,
-            p_voucher_ids: voucherIds
-          }
-        );
-
-        if (transferError) {
-          console.error('Transfer error:', transferError);
-          throw transferError;
-        }
-
-        // Verify deletion of original vouchers
-        const { data: checkVouchers, error: checkError } = await supabase
-          .from('vouchers')
-          .select('id')
-          .in('id', voucherIds);
-
-        if (checkError) {
-          console.error('Error checking voucher deletion:', checkError);
-        } else {
-          console.log('Remaining original vouchers:', checkVouchers?.length || 0);
-          if (checkVouchers && checkVouchers.length > 0) {
-            console.warn('Some original vouchers were not deleted:', checkVouchers);
-          }
-        }
-      } else {
-        // For non-credit payments, use the regular transfer function
+        // Add vouchers to client's wallet and mark them as used
         const { error: transferError } = await supabase.rpc(
           'transfer_vouchers_to_client',
           {
@@ -100,8 +71,22 @@ export const VoucherPurchaseHandler = ({
           console.error('Transfer error:', transferError);
           throw transferError;
         }
+      } else {
+        // For non-credit payments, add to wallet and mark as used
+        const { error: walletError } = await supabase
+          .from('voucher_wallet')
+          .insert(voucherIds.map(id => ({
+            client_id: purchase.client_id,
+            voucher_id: id,
+            status: 'approved'
+          })));
 
-        // For non-credit payments, explicitly mark vouchers as used
+        if (walletError) {
+          console.error('Error adding to wallet:', walletError);
+          throw walletError;
+        }
+
+        // Mark vouchers as used
         const { error: updateError } = await supabase
           .from('vouchers')
           .update({ is_used: true })
