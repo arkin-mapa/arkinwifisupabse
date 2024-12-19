@@ -103,24 +103,6 @@ const VoucherWallet = () => {
     });
   };
 
-  const handleSelectAll = () => {
-    // Get all unused vouchers
-    const allUnusedVouchers = Object.values(vouchers)
-      .flat()
-      .filter(voucher => !voucher.isUsed);
-
-    // If all unused vouchers are already selected, deselect all
-    const allUnusedSelected = allUnusedVouchers.every(voucher =>
-      selectedVouchers.some(selected => selected.id === voucher.id)
-    );
-
-    if (allUnusedSelected) {
-      setSelectedVouchers([]);
-    } else {
-      setSelectedVouchers(allUnusedVouchers);
-    }
-  };
-
   const handleTransferComplete = async (transferredVoucherIds: string[]) => {
     setSelectedVouchers(prev => prev.filter(v => !transferredVoucherIds.includes(v.id)));
     await loadData();
@@ -149,13 +131,6 @@ const VoucherWallet = () => {
     }
   };
 
-  const getTotalUnusedVouchers = () => {
-    return Object.values(vouchers)
-      .flat()
-      .filter(voucher => !voucher.isUsed)
-      .length;
-  };
-
   if (!session) {
     return (
       <Card className="mx-4">
@@ -173,8 +148,6 @@ const VoucherWallet = () => {
         onOpenQRGenerator={() => setIsQRGeneratorOpen(true)}
         onOpenQRScanner={() => setIsQRScannerOpen(true)}
         onPrintSelected={handlePrintSelected}
-        onSelectAll={handleSelectAll}
-        totalVouchers={getTotalUnusedVouchers()}
       />
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-16rem)]">
