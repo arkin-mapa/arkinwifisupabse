@@ -22,6 +22,21 @@ export const VoucherPurchaseHandler = ({
         toast.error("Plan ID is required for voucher transfer");
         return;
       }
+
+      // For credit payments, we need to handle the credit transaction first
+      if (purchase.paymentMethod === 'credit') {
+        // Create credit transaction (deduction)
+        const { error: creditError } = await supabase
+          .from('credits')
+          .insert({
+            client_id: purchase.client_id,
+            amount: purchase.total,
+            transaction_type: 'purchase',
+            reference_id: purchase.id
+          });
+
+        if (creditError) throw creditError;
+      }
       
       await transferVouchersToClient(purchase);
       
