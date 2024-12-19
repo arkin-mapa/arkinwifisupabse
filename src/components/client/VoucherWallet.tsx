@@ -1,8 +1,6 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
-import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
-import PlanGroup from "./voucher/PlanGroup";
 import VoucherHeader from "./voucher/VoucherHeader";
 import { fetchClientVouchers, fetchClientPlans } from "@/utils/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
@@ -11,6 +9,7 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { QRCodeScanner } from "./voucher/QRCodeScanner";
 import { QRCodeGenerator } from "./voucher/QRCodeGenerator";
 import { printPlanVouchers } from "@/utils/printUtils";
+import { VoucherList } from "./voucher/VoucherList";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
@@ -63,7 +62,6 @@ const VoucherWallet = () => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
-      // First delete from voucher_wallet
       const { error: walletError } = await supabase
         .from('voucher_wallet')
         .delete()
@@ -71,16 +69,6 @@ const VoucherWallet = () => {
 
       if (walletError) {
         throw walletError;
-      }
-
-      // Then delete from vouchers table
-      const { error: voucherError } = await supabase
-        .from('vouchers')
-        .delete()
-        .eq('id', voucherId);
-
-      if (voucherError) {
-        throw voucherError;
       }
 
       await loadData();
@@ -91,10 +79,10 @@ const VoucherWallet = () => {
     }
   };
 
-  const togglePlanExpansion = (planDuration: string) => {
+  const togglePlanExpansion = (planId: string) => {
     setExpandedPlans(prev => ({
       ...prev,
-      [planDuration]: !prev[planDuration]
+      [planId]: !prev[planId]
     }));
   };
 
@@ -156,30 +144,15 @@ const VoucherWallet = () => {
         onPrintSelected={handlePrintSelected}
       />
       <CardContent className="p-0">
-        <ScrollArea className="h-[calc(100vh-16rem)]">
-          <div className="space-y-3 px-4 pb-4">
-            {Object.keys(vouchers).length > 0 ? (
-              Object.entries(vouchers).map(([planId, planVouchers]) => (
-                <PlanGroup
-                  key={planId}
-                  planId={planId}
-                  plan={plans[planId]}
-                  vouchers={planVouchers}
-                  isExpanded={expandedPlans[planId] || false}
-                  onToggle={() => togglePlanExpansion(planId)}
-                  onDeleteVoucher={handleDeleteVoucher}
-                  selectedVouchers={selectedVouchers}
-                  onVoucherSelect={toggleVoucherSelection}
-                />
-              ))
-            ) : (
-              <div className="text-center py-8 text-muted-foreground">
-                <p>No vouchers in your wallet.</p>
-                <p className="mt-2">Scan a QR code to receive vouchers.</p>
-              </div>
-            )}
-          </div>
-        </ScrollArea>
+        <VoucherList
+          vouchers={vouchers}
+          plans={plans}
+          expandedPlans={expandedPlans}
+          onTogglePlan={togglePlanExpansion}
+          onDeleteVoucher={handleDeleteVoucher}
+          selectedVouchers={selectedVouchers}
+          onVoucherSelect={toggleVoucherSelection}
+        />
       </CardContent>
 
       {isQRGeneratorOpen && (

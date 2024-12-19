@@ -82,7 +82,6 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
       supabase
         .from('voucher_wallet')
         .select('voucher_id')
-        .eq('status', 'approved')
     ));
 
   if (error) {
