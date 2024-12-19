@@ -1,8 +1,9 @@
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
-import { supabase } from "@/integrations/supabase/client";
+import { transferVouchersToClient } from "@/utils/voucherTransfer";
 import type { Purchase } from "@/types/plans";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VoucherPurchaseHandlerProps {
   purchase: Purchase;
@@ -17,29 +18,12 @@ export const VoucherPurchaseHandler = ({
 }: VoucherPurchaseHandlerProps) => {
   const handleVoucherTransfer = async () => {
     try {
-      console.log('Starting voucher transfer for purchase:', purchase);
-
-      // Get available vouchers first
-      const { data: availableVouchers, error: voucherError } = await supabase
-        .from('vouchers')
-        .select('id, code, plan_id')
-        .eq('plan_id', purchase.plan_id)
-        .eq('is_used', false)
-        .limit(purchase.quantity);
-
-      if (voucherError) {
-        console.error('Error fetching vouchers:', voucherError);
-        throw voucherError;
+      if (!purchase.plan_id) {
+        toast.error("Plan ID is required for voucher transfer");
+        return;
       }
 
-      if (!availableVouchers || availableVouchers.length < purchase.quantity) {
-        throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers?.length || 0}`);
-      }
-
-      const voucherIds = availableVouchers.map(v => v.id);
-      console.log('Selected voucher IDs:', voucherIds);
-
-      // For credit payments
+      // For credit payments, we need to handle the credit transaction first
       if (purchase.paymentMethod === 'credit') {
         // Create credit transaction (deduction)
         const { error: creditError } = await supabase
@@ -51,107 +35,18 @@ export const VoucherPurchaseHandler = ({
             reference_id: purchase.id
           });
 
-        if (creditError) {
-          console.error('Credit transaction error:', creditError);
-          throw creditError;
-        }
-
-        console.log('Credit transaction successful, proceeding with voucher transfer');
-
-        // Create copies of vouchers and add them to client's wallet
-        for (const voucherId of voucherIds) {
-          const { data: originalVoucher } = await supabase
-            .from('vouchers')
-            .select('code, plan_id')
-            .eq('id', voucherId)
-            .single();
-
-          if (originalVoucher) {
-            // Create a copy of the voucher
-            const { data: newVoucher, error: copyError } = await supabase
-              .from('vouchers')
-              .insert({
-                code: originalVoucher.code,
-                plan_id: originalVoucher.plan_id,
-                is_copy: true,
-                original_voucher_id: voucherId
-              })
-              .select()
-              .single();
-
-            if (copyError) {
-              console.error('Error creating voucher copy:', copyError);
-              throw copyError;
-            }
-
-            // Add to client's wallet
-            const { error: walletError } = await supabase
-              .from('voucher_wallet')
-              .insert({
-                client_id: purchase.client_id,
-                voucher_id: newVoucher.id,
-                status: 'approved'
-              });
-
-            if (walletError) {
-              console.error('Error adding to wallet:', walletError);
-              throw walletError;
-            }
-
-            // Delete original voucher from pool
-            const { error: deleteError } = await supabase
-              .from('vouchers')
-              .delete()
-              .eq('id', voucherId);
-
-            if (deleteError) {
-              console.error('Error deleting original voucher:', deleteError);
-              throw deleteError;
-            }
-          }
-        }
-      } else {
-        // For non-credit payments
-        // First add to client's wallet
-        const { error: transferError } = await supabase
-          .from('voucher_wallet')
-          .insert(
-            voucherIds.map(id => ({
-              client_id: purchase.client_id,
-              voucher_id: id,
-              status: 'approved' as const
-            }))
-          );
-
-        if (transferError) {
-          console.error('Transfer error:', transferError);
-          throw transferError;
-        }
-
-        // Then delete original vouchers from pool
-        const { error: deleteError } = await supabase
-          .from('vouchers')
-          .delete()
-          .in('id', voucherIds);
-
-        if (deleteError) {
-          console.error('Error deleting vouchers:', deleteError);
-          throw deleteError;
-        }
+        if (creditError) throw creditError;
       }
       
-      // Update purchase status
+      await transferVouchersToClient(purchase);
+      
       const { error: updateError } = await supabase
         .from('purchases')
         .update({ status: 'approved' })
         .eq('id', purchase.id);
 
-      if (updateError) {
-        console.error('Error updating purchase status:', updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
-      console.log('Voucher transfer completed successfully');
       onSuccess();
       toast.success("Purchase approved and vouchers transferred");
     } catch (error) {

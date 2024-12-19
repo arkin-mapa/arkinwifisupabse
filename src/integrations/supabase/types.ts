@@ -315,13 +315,6 @@ export type Database = {
         }
         Returns: string
       }
-      handle_credit_payment_voucher_transfer: {
-        Args: {
-          p_client_id: string
-          p_voucher_ids: string[]
-        }
-        Returns: undefined
-      }
       transfer_credits: {
         Args: {
           from_client_id: string
