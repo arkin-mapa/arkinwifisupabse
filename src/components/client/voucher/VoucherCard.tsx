@@ -20,14 +20,23 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
     try {
       await navigator.clipboard.writeText(code);
       
-      // Mark voucher as used in the database
-      const { error } = await supabase
+      // Mark voucher as used in both vouchers and voucher_wallet tables
+      const { error: walletError } = await supabase
+        .from('voucher_wallet')
+        .update({ is_used: true })
+        .eq('voucher_id', voucher.id);
+
+      if (walletError) {
+        throw walletError;
+      }
+
+      const { error: voucherError } = await supabase
         .from('vouchers')
         .update({ is_used: true })
         .eq('id', voucher.id);
 
-      if (error) {
-        throw error;
+      if (voucherError) {
+        throw voucherError;
       }
 
       toast.success("Voucher code copied!");

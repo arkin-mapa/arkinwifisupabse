@@ -223,6 +223,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          is_used: boolean | null
           status: Database["public"]["Enums"]["purchase_status"] | null
           updated_at: string
           voucher_id: string
@@ -231,6 +232,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id: string
@@ -239,6 +241,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id?: string

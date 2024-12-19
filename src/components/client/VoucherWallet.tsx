@@ -1,14 +1,13 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
 import PlanGroup from "./voucher/PlanGroup";
+import VoucherHeader from "./voucher/VoucherHeader";
 import { fetchClientVouchers, fetchClientPlans } from "@/utils/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher, Plan } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
-import { Button } from "@/components/ui/button";
-import { QrCode, Printer, Wallet } from "lucide-react";
 import { QRCodeScanner } from "./voucher/QRCodeScanner";
 import { QRCodeGenerator } from "./voucher/QRCodeGenerator";
 import { printPlanVouchers } from "@/utils/printUtils";
@@ -144,45 +143,12 @@ const VoucherWallet = () => {
 
   return (
     <Card className="mx-0 bg-gradient-to-br from-gray-50 to-white dark:from-gray-900 dark:to-gray-800">
-      <CardHeader className="pb-3 space-y-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-2">
-            <Wallet className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Your Vouchers</CardTitle>
-          </div>
-        </div>
-        <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
-          <Button
-            variant="default"
-            size="sm"
-            onClick={() => setIsQRGeneratorOpen(true)}
-            disabled={selectedVouchers.length === 0}
-            className="w-full sm:w-auto"
-          >
-            <QrCode className="h-4 w-4 mr-2" />
-            Share ({selectedVouchers.length})
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setIsQRScannerOpen(true)}
-            className="w-full sm:w-auto"
-          >
-            <QrCode className="h-4 w-4 mr-2" />
-            Scan QR
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handlePrintSelected}
-            disabled={selectedVouchers.length === 0}
-            className="w-full sm:w-auto"
-          >
-            <Printer className="h-4 w-4 mr-2" />
-            Print ({selectedVouchers.length})
-          </Button>
-        </div>
-      </CardHeader>
+      <VoucherHeader
+        selectedVouchers={selectedVouchers}
+        onOpenQRGenerator={() => setIsQRGeneratorOpen(true)}
+        onOpenQRScanner={() => setIsQRScannerOpen(true)}
+        onPrintSelected={handlePrintSelected}
+      />
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-16rem)]">
           <div className="space-y-3 px-4 pb-4">

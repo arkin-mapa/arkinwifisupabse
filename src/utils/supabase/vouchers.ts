@@ -68,6 +68,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     .from('voucher_wallet')
     .select(`
       voucher_id,
+      is_used,
       vouchers (
         id,
         code,
@@ -87,7 +88,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     id: wv.vouchers.id,
     code: wv.vouchers.code,
     planId: wv.vouchers.plan_id || '',
-    isUsed: wv.vouchers.is_used || false
+    isUsed: wv.is_used || false
   }));
 }
 
