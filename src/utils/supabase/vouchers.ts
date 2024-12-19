@@ -45,14 +45,26 @@ export async function addVouchers(planId: string, codes: string[]): Promise<void
 }
 
 export async function deleteVoucher(voucherId: string): Promise<void> {
-  const { error } = await supabase
+  // First delete from voucher_wallet if it exists there
+  const { error: walletError } = await supabase
+    .from('voucher_wallet')
+    .delete()
+    .eq('voucher_id', voucherId);
+
+  if (walletError) {
+    console.error('Error deleting from voucher_wallet:', walletError);
+    throw walletError;
+  }
+
+  // Then delete from vouchers table
+  const { error: voucherError } = await supabase
     .from('vouchers')
     .delete()
     .eq('id', voucherId);
 
-  if (error) {
-    console.error('Error deleting voucher:', error);
-    throw error;
+  if (voucherError) {
+    console.error('Error deleting from vouchers:', voucherError);
+    throw voucherError;
   }
 }
 
