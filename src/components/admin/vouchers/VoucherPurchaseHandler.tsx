@@ -58,58 +58,85 @@ export const VoucherPurchaseHandler = ({
 
         console.log('Credit transaction successful, proceeding with voucher transfer');
 
-        // Use the credit payment voucher transfer function
-        const { error: transferError } = await supabase.rpc(
-          'handle_credit_payment_voucher_transfer',
-          {
-            p_client_id: purchase.client_id,
-            p_voucher_ids: voucherIds
-          }
-        );
+        // Create copies of vouchers and add them to client's wallet
+        for (const voucherId of voucherIds) {
+          const { data: originalVoucher } = await supabase
+            .from('vouchers')
+            .select('code, plan_id')
+            .eq('id', voucherId)
+            .single();
 
-        if (transferError) {
-          console.error('Transfer error:', transferError);
-          throw transferError;
-        }
+          if (originalVoucher) {
+            // Create a copy of the voucher
+            const { data: newVoucher, error: copyError } = await supabase
+              .from('vouchers')
+              .insert({
+                code: originalVoucher.code,
+                plan_id: originalVoucher.plan_id,
+                is_copy: true,
+                original_voucher_id: voucherId
+              })
+              .select()
+              .single();
 
-        // Verify deletion of original vouchers
-        const { data: checkVouchers, error: checkError } = await supabase
-          .from('vouchers')
-          .select('id')
-          .in('id', voucherIds);
+            if (copyError) {
+              console.error('Error creating voucher copy:', copyError);
+              throw copyError;
+            }
 
-        if (checkError) {
-          console.error('Error checking voucher deletion:', checkError);
-        } else {
-          console.log('Remaining original vouchers:', checkVouchers?.length || 0);
-          if (checkVouchers && checkVouchers.length > 0) {
-            console.warn('Some original vouchers were not deleted:', checkVouchers);
+            // Add to client's wallet
+            const { error: walletError } = await supabase
+              .from('voucher_wallet')
+              .insert({
+                client_id: purchase.client_id,
+                voucher_id: newVoucher.id,
+                status: 'approved'
+              });
+
+            if (walletError) {
+              console.error('Error adding to wallet:', walletError);
+              throw walletError;
+            }
+
+            // Delete original voucher
+            const { error: deleteError } = await supabase
+              .from('vouchers')
+              .delete()
+              .eq('id', voucherId);
+
+            if (deleteError) {
+              console.error('Error deleting original voucher:', deleteError);
+              throw deleteError;
+            }
           }
         }
       } else {
-        // For non-credit payments, use the regular transfer function
-        const { error: transferError } = await supabase.rpc(
-          'transfer_vouchers_to_client',
-          {
-            p_client_id: purchase.client_id,
-            p_voucher_ids: voucherIds
-          }
-        );
+        // For non-credit payments, transfer vouchers directly and delete originals
+        // First add to client's wallet
+        const { error: transferError } = await supabase
+          .from('voucher_wallet')
+          .insert(
+            voucherIds.map(id => ({
+              client_id: purchase.client_id,
+              voucher_id: id,
+              status: 'approved' as const
+            }))
+          );
 
         if (transferError) {
           console.error('Transfer error:', transferError);
           throw transferError;
         }
 
-        // For non-credit payments, explicitly mark vouchers as used
-        const { error: updateError } = await supabase
+        // Then delete original vouchers
+        const { error: deleteError } = await supabase
           .from('vouchers')
-          .update({ is_used: true })
+          .delete()
           .in('id', voucherIds);
 
-        if (updateError) {
-          console.error('Error updating voucher status:', updateError);
-          throw updateError;
+        if (deleteError) {
+          console.error('Error deleting vouchers:', deleteError);
+          throw deleteError;
         }
       }
       
