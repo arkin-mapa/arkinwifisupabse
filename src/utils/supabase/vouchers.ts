@@ -27,6 +27,35 @@ export async function fetchVouchers(): Promise<Voucher[]> {
   }));
 }
 
+export async function addVouchers(planId: string, codes: string[]): Promise<void> {
+  const vouchersToInsert = codes.map(code => ({
+    code,
+    plan_id: planId,
+    is_used: false
+  }));
+
+  const { error } = await supabase
+    .from('vouchers')
+    .insert(vouchersToInsert);
+
+  if (error) {
+    console.error('Error adding vouchers:', error);
+    throw error;
+  }
+}
+
+export async function deleteVoucher(voucherId: string): Promise<void> {
+  const { error } = await supabase
+    .from('vouchers')
+    .delete()
+    .eq('id', voucherId);
+
+  if (error) {
+    console.error('Error deleting voucher:', error);
+    throw error;
+  }
+}
+
 export async function fetchClientVouchers(): Promise<Voucher[]> {
   const { data: session } = await supabase.auth.getSession();
   const userId = session?.session?.user?.id;
