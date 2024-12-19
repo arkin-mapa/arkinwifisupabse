@@ -1,90 +1,135 @@
 import { useState, useEffect } from "react";
-import { supabase } from "@/integrations/supabase/client";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
+import { Button } from "@/components/ui/button";
+import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { deleteVoucher, fetchVouchers } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
 
 interface VoucherPoolProps {
   vouchers: Record<string, Voucher[]>;
 }
 
-export const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
-  const [voucherPool, setVoucherPool] = useState<Record<string, Voucher[]>>(vouchers);
-
-  // Update local state when vouchers prop changes
-  useEffect(() => {
-    setVoucherPool(vouchers);
-  }, [vouchers]);
+const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
+  const { toast } = useToast();
+  const [localVouchers, setLocalVouchers] = useState<Record<string, Voucher[]>>(initialVouchers);
+  const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
 
   useEffect(() => {
-    const channel = supabase
-      .channel('voucher-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'vouchers'
-        },
-        (payload) => {
-          // Update the voucher pool when changes occur
-          setVoucherPool(prevPool => {
-            const updatedPool = { ...prevPool };
-            // Handle deletion or transfer
-            if (payload.eventType === 'DELETE' || (payload.eventType === 'UPDATE' && payload.new.is_used)) {
-              Object.keys(updatedPool).forEach(duration => {
-                updatedPool[duration] = updatedPool[duration].filter(
-                  v => v.id !== payload.old.id
-                );
-              });
-            }
-            return updatedPool;
-          });
+    setLocalVouchers(initialVouchers);
+  }, [initialVouchers]);
+
+  const handleDeleteVoucher = async (voucherId: string) => {
+    try {
+      // Only delete the voucher from the vouchers table
+      await deleteVoucher(voucherId);
+      
+      // Fetch updated vouchers and transform into the required format
+      const updatedVouchersArray = await fetchVouchers();
+      const updatedVouchersByPlan = updatedVouchersArray.reduce((acc: Record<string, Voucher[]>, voucher) => {
+        const planDuration = Object.keys(localVouchers).find(duration => 
+          localVouchers[duration].some(v => v.planId === voucher.planId)
+        );
+        if (planDuration) {
+          if (!acc[planDuration]) {
+            acc[planDuration] = [];
+          }
+          acc[planDuration].push(voucher);
         }
-      )
-      .subscribe();
+        return acc;
+      }, {});
 
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, []);
+      setLocalVouchers(updatedVouchersByPlan);
 
-  // Check if there are any vouchers to display
-  const hasVouchers = Object.keys(voucherPool).length > 0;
+      toast({
+        title: "Voucher deleted",
+        description: "The voucher has been removed from the pool successfully.",
+      });
+    } catch (error) {
+      console.error('Error deleting voucher:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete voucher. Please try again.",
+        variant: "destructive",
+      });
+    }
+  };
 
-  if (!hasVouchers) {
+  const togglePlanExpansion = (planDuration: string) => {
+    setExpandedPlans(prev => ({
+      ...prev,
+      [planDuration]: !prev[planDuration]
+    }));
+  };
+
+  if (!localVouchers || Object.keys(localVouchers).length === 0) {
     return (
-      <div className="mt-8">
-        <h3 className="text-lg font-semibold mb-4">Voucher Pool</h3>
-        <p className="text-gray-500">No vouchers available</p>
-      </div>
+      <Card className="p-6 text-center border">
+        <p className="text-gray-600">No vouchers available in the pool.</p>
+      </Card>
     );
   }
 
   return (
-    <div className="mt-8">
-      <h3 className="text-lg font-semibold mb-4">Voucher Pool</h3>
-      <div className="space-y-4">
-        {Object.entries(voucherPool).map(([duration, durationVouchers]) => {
-          const availableVouchers = durationVouchers.filter(v => !v.isUsed);
-          
-          return (
-            <div key={duration} className="border rounded-lg p-4">
-              <h4 className="font-medium mb-2">{duration} Plan Vouchers</h4>
-              <div className="space-y-2">
-                <p className="text-sm text-gray-600">
-                  Available vouchers: {availableVouchers.length}
-                </p>
-                {availableVouchers.length > 0 && (
-                  <div className="mt-2">
-                    <p className="text-xs text-gray-500">
-                      Voucher codes: {availableVouchers.map(v => v.code).join(', ')}
-                    </p>
+    <div className="space-y-4">
+      <Card className="bg-white/50 backdrop-blur-sm border shadow-sm">
+        <CardHeader>
+          <CardTitle>Voucher Pool</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <ScrollArea className="h-[400px] pr-4">
+            {Object.entries(localVouchers).map(([planDuration, planVouchers]) => {
+              if (!planVouchers || planVouchers.length === 0) return null;
+              
+              const unusedCount = planVouchers.filter(v => !v.isUsed).length;
+              const isExpanded = expandedPlans[planDuration];
+              
+              return (
+                <div key={planDuration} className="mb-6">
+                  <div 
+                    className="flex justify-between items-center mb-2 p-2 bg-muted/50 rounded-lg cursor-pointer hover:bg-muted/70"
+                    onClick={() => togglePlanExpansion(planDuration)}
+                  >
+                    <div className="flex items-center gap-2">
+                      {isExpanded ? <ChevronUp className="h-4 w-4" /> : <ChevronDown className="h-4 w-4" />}
+                      <h3 className="font-medium">{planDuration}</h3>
+                    </div>
+                    <div className="flex gap-4 text-sm text-muted-foreground">
+                      <Badge variant="default">Available: {unusedCount}</Badge>
+                    </div>
                   </div>
-                )}
-              </div>
-            </div>
-          );
-        })}
-      </div>
+                  {isExpanded && (
+                    <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2">
+                      {planVouchers.map((voucher) => (
+                        <div key={voucher.id} className="relative group">
+                          <Badge
+                            variant={voucher.isUsed ? "secondary" : "default"}
+                            className="w-full justify-between py-2 px-3"
+                          >
+                            <span className="truncate">{voucher.code}</span>
+                          </Badge>
+                          <Button
+                            variant="ghost"
+                            size="icon"
+                            className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                            onClick={() => handleDeleteVoucher(voucher.id)}
+                          >
+                            <Trash2 className="h-3 w-3" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              );
+            })}
+          </ScrollArea>
+        </CardContent>
+      </Card>
     </div>
   );
 };
+
+export default VoucherPool;
