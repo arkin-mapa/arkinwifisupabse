@@ -222,6 +222,7 @@ export type Database = {
           code: string
           created_at: string
           id: string
+          is_used: boolean | null
           plan_id: string | null
           updated_at: string
         }
@@ -229,6 +230,7 @@ export type Database = {
           code: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           plan_id?: string | null
           updated_at?: string
         }
@@ -236,6 +238,7 @@ export type Database = {
           code?: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           plan_id?: string | null
           updated_at?: string
         }
