@@ -52,9 +52,9 @@ const PlansManager = () => {
     }
   };
 
-  const handleAddPlan = async (newPlan: Omit<Plan, 'id' | 'availableVouchers'>) => {
+  const handleAddPlan = async (newPlan: { duration: string; price: number }) => {
     try {
-      await createPlan(newPlan);
+      await createPlan(newPlan.duration, newPlan.price);
       await loadData();
       
       toast({
