@@ -8,9 +8,8 @@ export async function fetchVouchers(): Promise<Voucher[]> {
       id,
       code,
       plan_id,
-      is_used,
-      plans (
-        duration
+      voucher_wallet!left (
+        status
       )
     `);
 
@@ -23,15 +22,14 @@ export async function fetchVouchers(): Promise<Voucher[]> {
     id: v.id,
     code: v.code,
     planId: v.plan_id || '',
-    isUsed: v.is_used || false
+    isUsed: v.voucher_wallet?.[0]?.status === 'approved'
   }));
 }
 
 export async function addVouchers(planId: string, codes: string[]): Promise<void> {
   const vouchersToInsert = codes.map(code => ({
     code,
-    plan_id: planId,
-    is_used: false
+    plan_id: planId
   }));
 
   const { error } = await supabase
@@ -76,12 +74,11 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     throw new Error('User must be logged in to fetch vouchers');
   }
 
-  // First get the wallet entries
   const { data: walletVouchers, error: walletError } = await supabase
     .from('voucher_wallet')
     .select(`
       voucher_id,
-      is_used,
+      status,
       vouchers (
         id,
         code,
@@ -96,14 +93,13 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     throw walletError;
   }
 
-  // Filter out null vouchers and map to the correct format
   return (walletVouchers || [])
-    .filter(wv => wv.vouchers !== null) // Filter out null vouchers
+    .filter(wv => wv.vouchers !== null)
     .map(wv => ({
       id: wv.vouchers.id,
       code: wv.vouchers.code,
       planId: wv.vouchers.plan_id || '',
-      isUsed: wv.is_used || false
+      isUsed: wv.status === 'approved'
     }));
 }
 
@@ -118,7 +114,9 @@ export async function fetchClientPlans(): Promise<Plan[]> {
       price,
       vouchers!left (
         id,
-        is_used
+        voucher_wallet!left (
+          status
+        )
       )
     `)
     .order('created_at', { ascending: true });
@@ -131,9 +129,9 @@ export async function fetchClientPlans(): Promise<Plan[]> {
   console.log('Raw plans data:', plans); // Debug log
 
   const formattedPlans = plans.map(plan => {
-    // Count only unused vouchers
+    // Count only unused vouchers (those not in voucher_wallet or not approved)
     const availableVouchers = plan.vouchers 
-      ? plan.vouchers.filter(v => v.is_used === false).length 
+      ? plan.vouchers.filter(v => !v.voucher_wallet?.some(w => w.status === 'approved')).length 
       : 0;
     
     console.log(`Plan ${plan.duration}: Found ${availableVouchers} available vouchers`); // Debug log
@@ -153,9 +151,14 @@ export async function fetchClientPlans(): Promise<Plan[]> {
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
   const { data: vouchers, error } = await supabase
     .from('vouchers')
-    .select('id')
+    .select(`
+      id,
+      voucher_wallet!left (
+        status
+      )
+    `)
     .eq('plan_id', planId)
-    .eq('is_used', false);
+    .not('voucher_wallet.status', 'eq', 'approved');
 
   if (error) {
     console.error('Error fetching available vouchers count:', error);
