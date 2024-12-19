@@ -8,9 +8,10 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Voucher, Plan } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
-import { QrCode, Wallet } from "lucide-react";
+import { QrCode, Printer, Wallet } from "lucide-react";
 import { QRCodeScanner } from "./voucher/QRCodeScanner";
 import { QRCodeGenerator } from "./voucher/QRCodeGenerator";
+import { printPlanVouchers } from "@/utils/printUtils";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
@@ -108,6 +109,29 @@ const VoucherWallet = () => {
     await loadData();
   };
 
+  const handlePrintSelected = async () => {
+    if (selectedVouchers.length === 0) {
+      toast.error("Please select vouchers to print");
+      return;
+    }
+
+    const planId = selectedVouchers[0].planId;
+    const plan = plans[planId || ''];
+    
+    if (!plan) {
+      toast.error("Plan not found for selected vouchers");
+      return;
+    }
+
+    const success = await printPlanVouchers(selectedVouchers, plan);
+    if (success) {
+      toast.success("Vouchers sent to printer");
+      setSelectedVouchers([]);
+    } else {
+      toast.error("Failed to print vouchers");
+    }
+  };
+
   if (!session) {
     return (
       <Card className="mx-4">
@@ -146,6 +170,16 @@ const VoucherWallet = () => {
           >
             <QrCode className="h-4 w-4 mr-2" />
             Scan QR
+          </Button>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handlePrintSelected}
+            disabled={selectedVouchers.length === 0}
+            className="w-full sm:w-auto"
+          >
+            <Printer className="h-4 w-4 mr-2" />
+            Print ({selectedVouchers.length})
           </Button>
         </div>
       </CardHeader>
