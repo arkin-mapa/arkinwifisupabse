@@ -8,6 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 import type { Database } from "@/types/database.types";
 import { useQuery } from "@tanstack/react-query";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -53,6 +54,26 @@ export const PurchaseDialog = ({
 
   useEffect(() => {
     loadCreditBalance();
+
+    // Subscribe to credit changes
+    const channel = supabase
+      .channel('credit-balance')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'credits'
+        },
+        () => {
+          loadCreditBalance();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadCreditBalance = async () => {
