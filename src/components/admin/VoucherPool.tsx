@@ -1,15 +1,15 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Badge } from "@/components/ui/badge";
-import { Button } from "@/components/ui/button";
-import { Trash2, ChevronDown, ChevronUp, Ticket, AlertCircle } from "lucide-react";
+import { ChevronDown, ChevronUp, Ticket } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
-import { deleteVoucher, fetchVouchers } from "@/utils/supabaseData";
+import { deleteVoucher } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
 import { motion } from "framer-motion";
-import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { useVoucherSync } from "@/hooks/useVoucherSync";
+import { VoucherItem } from "./voucher/VoucherItem";
 
 interface VoucherPoolProps {
   vouchers: Record<string, Voucher[]>;
@@ -17,91 +17,14 @@ interface VoucherPoolProps {
 
 const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
-  const [localVouchers, setLocalVouchers] = useState<Record<string, Voucher[]>>(initialVouchers);
+  const { localVouchers, setLocalVouchers, syncVoucherStatus } = useVoucherSync(initialVouchers);
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
-
-  useEffect(() => {
-    setLocalVouchers(initialVouchers);
-    subscribeToVoucherWalletChanges();
-  }, [initialVouchers]);
-
-  const subscribeToVoucherWalletChanges = () => {
-    const channel = supabase
-      .channel('voucher-wallet-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'voucher_wallet'
-        },
-        (payload) => {
-          console.log('Voucher wallet change:', payload);
-          updateVoucherStatus();
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  };
-
-  const updateVoucherStatus = async () => {
-    try {
-      // Fetch current status from voucher_wallet
-      const { data: walletVouchers, error: walletError } = await supabase
-        .from('voucher_wallet')
-        .select('voucher_id, is_used')
-        .not('voucher_id', 'is', null);
-
-      if (walletError) throw walletError;
-
-      // Update local vouchers with wallet status
-      const updatedVouchers = { ...localVouchers };
-      Object.keys(updatedVouchers).forEach(planDuration => {
-        updatedVouchers[planDuration] = updatedVouchers[planDuration].map(voucher => {
-          const walletVoucher = walletVouchers?.find(wv => wv.voucher_id === voucher.id);
-          if (walletVoucher) {
-            return {
-              ...voucher,
-              isUsed: walletVoucher.is_used || false
-            };
-          }
-          return voucher;
-        });
-      });
-
-      setLocalVouchers(updatedVouchers);
-    } catch (error) {
-      console.error('Error updating voucher status:', error);
-      toast({
-        title: "Error",
-        description: "Failed to update voucher status",
-        variant: "destructive"
-      });
-    }
-  };
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
       await deleteVoucher(voucherId);
+      await syncVoucherStatus();
       
-      const updatedVouchersArray = await fetchVouchers();
-      const updatedVouchersByPlan = updatedVouchersArray.reduce((acc: Record<string, Voucher[]>, voucher) => {
-        const planDuration = Object.keys(localVouchers).find(duration => 
-          localVouchers[duration].some(v => v.planId === voucher.planId)
-        );
-        if (planDuration) {
-          if (!acc[planDuration]) {
-            acc[planDuration] = [];
-          }
-          acc[planDuration].push(voucher);
-        }
-        return acc;
-      }, {});
-
-      setLocalVouchers(updatedVouchersByPlan);
       toast({
         title: "Success",
         description: "Voucher deleted successfully",
@@ -186,34 +109,11 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
                           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2 p-2"
                         >
                           {planVouchers.map((voucher) => (
-                            <div key={voucher.id} className="relative group">
-                              <Tooltip>
-                                <TooltipTrigger asChild>
-                                  <Badge
-                                    variant={voucher.isUsed ? "secondary" : "default"}
-                                    className={`w-full justify-between py-2 px-3 font-mono text-xs ${
-                                      voucher.isUsed ? 'bg-muted line-through' : ''
-                                    }`}
-                                  >
-                                    <span className="truncate">{voucher.code}</span>
-                                    {voucher.isUsed && (
-                                      <AlertCircle className="h-3 w-3 text-yellow-500 ml-1" />
-                                    )}
-                                  </Badge>
-                                </TooltipTrigger>
-                                <TooltipContent>
-                                  <p>{voucher.isUsed ? 'This voucher has been used' : 'Available voucher'}</p>
-                                </TooltipContent>
-                              </Tooltip>
-                              <Button
-                                variant="ghost"
-                                size="icon"
-                                className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                onClick={() => handleDeleteVoucher(voucher.id)}
-                              >
-                                <Trash2 className="h-3 w-3" />
-                              </Button>
-                            </div>
+                            <VoucherItem
+                              key={voucher.id}
+                              voucher={voucher}
+                              onDelete={handleDeleteVoucher}
+                            />
                           ))}
                         </motion.div>
                       )}
