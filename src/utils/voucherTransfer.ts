@@ -43,17 +43,16 @@ export async function transferVouchersToClient(purchase: Purchase) {
 
   console.log('Inserting wallet entries:', walletEntries);
 
-  const { error: walletError } = await supabase
-    .from('voucher_wallet')
-    .insert(walletEntries);
+  // Start a transaction to ensure all operations complete successfully
+  const { error: transactionError } = await supabase.rpc('transfer_vouchers_to_client', {
+    p_client_id: purchase.client_id,
+    p_voucher_ids: availableVouchers.map(v => v.id)
+  });
 
-  if (walletError) {
-    console.error('Error adding to wallet:', walletError);
-    throw new Error('Failed to add vouchers to client wallet');
+  if (transactionError) {
+    console.error('Error in voucher transfer transaction:', transactionError);
+    throw new Error('Failed to transfer vouchers to client wallet');
   }
-
-  // The trigger we created will automatically delete the vouchers from the vouchers table
-  // after they are inserted into the voucher_wallet table
 
   console.log('Voucher transfer completed successfully');
   return availableVouchers.map(v => v.id);
