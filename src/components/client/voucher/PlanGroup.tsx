@@ -87,17 +87,19 @@ const PlanGroup = ({
               variant="ghost"
               size="sm"
               onClick={handleSelectAll}
-              className="h-7 w-7 p-0"
+              className="h-7"
             >
-              <CheckSquare className="h-4 w-4" />
+              <CheckSquare className="h-4 w-4 mr-2" />
+              Select All
             </Button>
             <Button
               variant="ghost"
               size="sm"
               onClick={handleDeleteAll}
-              className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+              className="h-7 text-destructive hover:text-destructive"
             >
-              <Trash2 className="h-4 w-4" />
+              <Trash2 className="h-4 w-4 mr-2" />
+              Delete
             </Button>
           </div>
         </div>

@@ -1,13 +1,11 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
-import { Trash2 } from "lucide-react";
+import { Copy, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Voucher, Plan } from "@/types/plans";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
-import { useEffect } from "react";
-import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 interface VoucherCardProps {
   voucher: Voucher;
@@ -18,39 +16,6 @@ interface VoucherCardProps {
 }
 
 const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherCardProps) => {
-  useEffect(() => {
-    // Subscribe to real-time updates for this voucher
-    const channel = supabase
-      .channel('voucher-updates')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'vouchers',
-          filter: `id=eq.${voucher.id}`,
-        },
-        (payload: RealtimePostgresChangesPayload<{
-          id: string;
-          code: string;
-          plan_id: string;
-          is_used: boolean;
-        }>) => {
-          console.log('Voucher update:', payload);
-          // Check if payload.new exists and has different is_used value
-          if (payload.new && typeof payload.new.is_used === 'boolean' && payload.new.is_used !== voucher.isUsed) {
-            // Update local state through parent component
-            window.location.reload();
-          }
-        }
-      )
-      .subscribe();
-
-    return () => {
-      supabase.removeChannel(channel);
-    };
-  }, [voucher.id, voucher.isUsed]);
-
   const copyToClipboard = async (code: string) => {
     try {
       await navigator.clipboard.writeText(code);
@@ -112,24 +77,32 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
             className="translate-y-[2px]"
           />
           <div className="flex flex-col gap-2 flex-1 min-w-0">
-            <code 
-              className="bg-muted px-3 py-1.5 rounded text-sm font-mono text-center break-all cursor-pointer hover:bg-muted/80"
-              onClick={() => !voucher.isUsed && copyToClipboard(voucher.code)}
-            >
+            <code className="bg-muted px-3 py-1.5 rounded text-sm font-mono text-center break-all">
               {voucher.code}
             </code>
             <div className="flex items-center justify-between gap-2">
               <div className="text-xs text-muted-foreground font-medium">
                 ₱{plan?.price.toFixed(2)}
               </div>
-              <Button
-                size="sm"
-                variant="ghost"
-                onClick={handleDelete}
-                className="h-7 w-7 p-0 text-destructive hover:text-destructive"
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
+              <div className="flex gap-1">
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={() => copyToClipboard(voucher.code)}
+                  disabled={voucher.isUsed}
+                  className="h-7 w-7 p-0"
+                >
+                  <Copy className="h-3.5 w-3.5" />
+                </Button>
+                <Button
+                  size="sm"
+                  variant="ghost"
+                  onClick={handleDelete}
+                  className="h-7 w-7 p-0 text-destructive hover:text-destructive"
+                >
+                  <Trash2 className="h-3.5 w-3.5" />
+                </Button>
+              </div>
             </div>
           </div>
         </div>
