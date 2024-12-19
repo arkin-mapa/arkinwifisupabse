@@ -45,7 +45,18 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
           .single();
 
         if (originalVoucher) {
-          // Create a copy of the voucher with is_copy flag and modified code
+          // First, update any existing copies to point to null
+          const { error: updateError } = await supabase
+            .from('vouchers')
+            .update({ original_voucher_id: null })
+            .eq('original_voucher_id', voucherId);
+
+          if (updateError) {
+            console.error('Error updating existing copies:', updateError);
+            throw updateError;
+          }
+
+          // Then create a new copy
           const { error: copyError } = await supabase
             .from('vouchers')
             .insert({
@@ -53,7 +64,7 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
               plan_id: originalVoucher.plan_id,
               is_used: originalVoucher.is_used,
               is_copy: true,
-              original_voucher_id: originalVoucher.id
+              original_voucher_id: null // Set to null since original will be deleted
             });
 
           if (copyError) {
