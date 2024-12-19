@@ -98,7 +98,7 @@ export const VoucherPurchaseHandler = ({
               throw walletError;
             }
 
-            // Delete original voucher
+            // Delete original voucher from pool
             const { error: deleteError } = await supabase
               .from('vouchers')
               .delete()
@@ -111,7 +111,7 @@ export const VoucherPurchaseHandler = ({
           }
         }
       } else {
-        // For non-credit payments, transfer vouchers directly and delete originals
+        // For non-credit payments
         // First add to client's wallet
         const { error: transferError } = await supabase
           .from('voucher_wallet')
@@ -128,7 +128,7 @@ export const VoucherPurchaseHandler = ({
           throw transferError;
         }
 
-        // Then delete original vouchers
+        // Then delete original vouchers from pool
         const { error: deleteError } = await supabase
           .from('vouchers')
           .delete()
