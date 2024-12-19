@@ -27,36 +27,6 @@ export async function fetchVouchers(): Promise<Voucher[]> {
   }));
 }
 
-export async function addVouchers(planId: string, codes: string[]): Promise<void> {
-  const vouchersToInsert = codes.map(code => ({
-    code,
-    plan_id: planId,
-    is_used: false
-  }));
-
-  const { error } = await supabase
-    .from('vouchers')
-    .insert(vouchersToInsert);
-
-  if (error) {
-    console.error('Error adding vouchers:', error);
-    throw error;
-  }
-}
-
-export async function deleteVoucher(voucherId: string): Promise<void> {
-  // Only delete from the vouchers table, leaving voucher_wallet entries intact
-  const { error } = await supabase
-    .from('vouchers')
-    .delete()
-    .eq('id', voucherId);
-
-  if (error) {
-    console.error('Error deleting voucher:', error);
-    throw error;
-  }
-}
-
 export async function fetchClientVouchers(): Promise<Voucher[]> {
   const { data: session } = await supabase.auth.getSession();
   const userId = session?.session?.user?.id;
@@ -65,7 +35,8 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     throw new Error('User must be logged in to fetch vouchers');
   }
 
-  const { data: walletVouchers, error } = await supabase
+  // First get the wallet entries
+  const { data: walletVouchers, error: walletError } = await supabase
     .from('voucher_wallet')
     .select(`
       voucher_id,
@@ -73,24 +44,26 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
       vouchers (
         id,
         code,
-        plan_id,
-        is_used
+        plan_id
       )
     `)
     .eq('client_id', userId)
     .eq('status', 'approved');
 
-  if (error) {
-    console.error('Error fetching client vouchers:', error);
-    throw error;
+  if (walletError) {
+    console.error('Error fetching client vouchers:', walletError);
+    throw walletError;
   }
 
-  return (walletVouchers || []).map(wv => ({
-    id: wv.vouchers.id,
-    code: wv.vouchers.code,
-    planId: wv.vouchers.plan_id || '',
-    isUsed: wv.is_used || false
-  }));
+  // Filter out null vouchers and map to the correct format
+  return (walletVouchers || [])
+    .filter(wv => wv.vouchers !== null) // Filter out null vouchers
+    .map(wv => ({
+      id: wv.vouchers.id,
+      code: wv.vouchers.code,
+      planId: wv.vouchers.plan_id || '',
+      isUsed: wv.is_used || false
+    }));
 }
 
 export async function fetchClientPlans(): Promise<Plan[]> {

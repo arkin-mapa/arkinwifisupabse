@@ -226,7 +226,7 @@ export type Database = {
           is_used: boolean | null
           status: Database["public"]["Enums"]["purchase_status"] | null
           updated_at: string
-          voucher_id: string
+          voucher_id: string | null
         }
         Insert: {
           client_id: string
@@ -235,7 +235,7 @@ export type Database = {
           is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
-          voucher_id: string
+          voucher_id?: string | null
         }
         Update: {
           client_id?: string
@@ -244,7 +244,7 @@ export type Database = {
           is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
-          voucher_id?: string
+          voucher_id?: string | null
         }
         Relationships: [
           {
