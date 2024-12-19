@@ -59,6 +59,7 @@ const VoucherWallet = () => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
+      // First delete from voucher_wallet
       const { error: walletError } = await supabase
         .from('voucher_wallet')
         .delete()
@@ -68,6 +69,7 @@ const VoucherWallet = () => {
         throw walletError;
       }
 
+      // Then delete from vouchers table
       const { error: voucherError } = await supabase
         .from('vouchers')
         .delete()
