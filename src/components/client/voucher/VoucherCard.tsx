@@ -7,6 +7,7 @@ import type { Voucher, Plan } from "@/types/plans";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { useEffect } from "react";
+import type { RealtimePostgresChangesPayload } from "@supabase/supabase-js";
 
 interface VoucherCardProps {
   voucher: Voucher;
@@ -29,7 +30,12 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
           table: 'vouchers',
           filter: `id=eq.${voucher.id}`,
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<{
+          id: string;
+          code: string;
+          plan_id: string;
+          is_used: boolean;
+        }>) => {
           console.log('Voucher update:', payload);
           if (payload.new && payload.new.is_used !== voucher.isUsed) {
             // Update local state through parent component
