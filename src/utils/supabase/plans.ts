@@ -11,7 +11,8 @@ export async function fetchPlans(): Promise<Plan[]> {
       duration,
       price,
       vouchers!left (
-        id
+        id,
+        is_used
       )
     `)
     .order('created_at', { ascending: true });
@@ -24,8 +25,9 @@ export async function fetchPlans(): Promise<Plan[]> {
   console.log('Raw plans data:', plans); // Debug log
 
   const formattedPlans = plans.map(plan => {
-    // Count vouchers that are not in any wallet
-    const availableVouchers = plan.vouchers ? plan.vouchers.length : 0;
+    const availableVouchers = plan.vouchers 
+      ? plan.vouchers.filter(v => v.is_used === false).length 
+      : 0;
     
     console.log(`Plan ${plan.duration}: Found ${availableVouchers} available vouchers`); // Debug log
     
@@ -38,6 +40,7 @@ export async function fetchPlans(): Promise<Plan[]> {
   });
 
   console.log('Formatted plans:', formattedPlans); // Debug log
+
   return formattedPlans;
 }
 

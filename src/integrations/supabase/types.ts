@@ -135,6 +135,42 @@ export type Database = {
         }
         Relationships: []
       }
+      purchase_vouchers: {
+        Row: {
+          created_at: string
+          id: string
+          purchase_id: string
+          voucher_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          purchase_id: string
+          voucher_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          purchase_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_vouchers_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_vouchers_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       purchases: {
         Row: {
           client_id: string
@@ -187,6 +223,7 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          is_used: boolean | null
           status: Database["public"]["Enums"]["purchase_status"] | null
           updated_at: string
           voucher_id: string | null
@@ -195,6 +232,7 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id?: string | null
@@ -203,6 +241,7 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id?: string | null
@@ -222,6 +261,9 @@ export type Database = {
           code: string
           created_at: string
           id: string
+          is_copy: boolean | null
+          is_used: boolean | null
+          original_voucher_id: string | null
           plan_id: string | null
           updated_at: string
         }
@@ -229,6 +271,9 @@ export type Database = {
           code: string
           created_at?: string
           id?: string
+          is_copy?: boolean | null
+          is_used?: boolean | null
+          original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string
         }
@@ -236,10 +281,20 @@ export type Database = {
           code?: string
           created_at?: string
           id?: string
+          is_copy?: boolean | null
+          is_used?: boolean | null
+          original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "vouchers_original_voucher_id_fkey"
+            columns: ["original_voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "vouchers_plan_id_fkey"
             columns: ["plan_id"]
