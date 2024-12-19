@@ -8,7 +8,6 @@ import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerDetails } from "./purchase/CustomerDetails";
 import { PaymentMethodSelector } from "./purchase/PaymentMethodSelector";
-import { X } from "lucide-react";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -114,14 +113,6 @@ export const PurchaseDialog = ({
             <h3 className="text-base font-medium">{selectedPlan?.duration} Plan</h3>
             <p className="text-sm text-muted-foreground">₱{selectedPlan?.price.toFixed(2)}</p>
           </div>
-          <Button 
-            variant="ghost" 
-            size="icon" 
-            onClick={onClose}
-            className="h-8 w-8"
-          >
-            <X className="h-4 w-4" />
-          </Button>
         </div>
 
         <ScrollArea className="flex-grow overflow-y-auto px-4 py-2">
