@@ -84,27 +84,14 @@ const PlansList = () => {
 
         if (creditError) throw creditError;
 
-        // Add vouchers to wallet and delete them from voucher pool
-        const walletEntries = availableVouchers.map(voucher => ({
-          client_id: clientId,
-          voucher_id: voucher.id,
-          status: 'approved' as PurchaseStatus
-        }));
+        // Use the transfer_vouchers_to_client function to handle the transfer
+        const { error: transferError } = await supabase
+          .rpc('transfer_vouchers_to_client', {
+            p_client_id: clientId,
+            p_voucher_ids: availableVouchers.map(v => v.id)
+          });
 
-        const { error: walletError } = await supabase
-          .from('voucher_wallet')
-          .insert(walletEntries);
-
-        if (walletError) throw walletError;
-
-        // Delete vouchers from the voucher pool
-        const voucherIds = availableVouchers.map(v => v.id);
-        const { error: deleteError } = await supabase
-          .from('vouchers')
-          .delete()
-          .in('id', voucherIds);
-
-        if (deleteError) throw deleteError;
+        if (transferError) throw transferError;
 
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
