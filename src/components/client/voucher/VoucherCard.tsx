@@ -57,7 +57,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
       animate={{ opacity: 1, x: 0 }}
       transition={{ duration: 0.2 }}
     >
-      <Card className={`p-3 bg-white dark:bg-gray-800 hover:bg-accent/5 transition-colors ${isSelected ? 'ring-2 ring-primary' : ''} ${voucher.isUsed ? 'opacity-50' : ''}`}>
+      <Card className={`p-3 bg-white dark:bg-gray-800 hover:bg-accent/5 transition-colors ${isSelected ? 'ring-2 ring-primary' : ''} ${voucher.is_used ? 'opacity-50' : ''}`}>
         <div className="flex items-start gap-3">
           <Checkbox
             checked={isSelected}
@@ -71,7 +71,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
             <div className="flex items-center justify-between gap-2">
               <div className="text-xs text-muted-foreground font-medium">
                 ₱{plan?.price.toFixed(2)}
-                {voucher.isUsed && <span className="ml-2 text-yellow-500">(Used)</span>}
+                {voucher.is_used && <span className="ml-2 text-yellow-500">(Used)</span>}
               </div>
               <div className="flex gap-1">
                 <Button
@@ -79,7 +79,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
                   variant="ghost"
                   onClick={() => copyToClipboard(voucher.code)}
                   className="h-7 w-7 p-0"
-                  disabled={voucher.isUsed}
+                  disabled={voucher.is_used}
                 >
                   <Copy className="h-3.5 w-3.5" />
                 </Button>
