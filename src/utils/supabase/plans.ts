@@ -57,13 +57,13 @@ export async function fetchClientPlans(): Promise<Plan[]> {
   // For each plan, count available vouchers
   const plansWithVouchers = await Promise.all(plans.map(async (plan) => {
     // Get vouchers that are:
-    // 1. Not used (isUsed = false)
+    // 1. Not used (is_used = false)
     // 2. Not in any wallet
     const { count, error: countError } = await supabase
       .from('vouchers')
       .select('*', { count: 'exact', head: true })
       .eq('plan_id', plan.id)
-      .eq('isUsed', false)
+      .eq('is_used', false)  // Changed from isUsed to is_used
       .not('id', 'in', 
         supabase
           .from('voucher_wallet')
