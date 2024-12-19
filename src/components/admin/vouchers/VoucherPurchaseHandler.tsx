@@ -33,7 +33,7 @@ export const VoucherPurchaseHandler = ({
       }
 
       if (!availableVouchers || availableVouchers.length < purchase.quantity) {
-        throw new Error('Not enough vouchers available');
+        throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers?.length || 0}`);
       }
 
       const voucherIds = availableVouchers.map(v => v.id);
@@ -71,6 +71,21 @@ export const VoucherPurchaseHandler = ({
           console.error('Transfer error:', transferError);
           throw transferError;
         }
+
+        // Verify deletion of original vouchers
+        const { data: checkVouchers, error: checkError } = await supabase
+          .from('vouchers')
+          .select('id')
+          .in('id', voucherIds);
+
+        if (checkError) {
+          console.error('Error checking voucher deletion:', checkError);
+        } else {
+          console.log('Remaining original vouchers:', checkVouchers?.length || 0);
+          if (checkVouchers && checkVouchers.length > 0) {
+            console.warn('Some original vouchers were not deleted:', checkVouchers);
+          }
+        }
       } else {
         // For non-credit payments, use the regular transfer function
         const { error: transferError } = await supabase.rpc(
@@ -86,7 +101,7 @@ export const VoucherPurchaseHandler = ({
           throw transferError;
         }
 
-        // For non-credit payments, we need to explicitly mark vouchers as used
+        // For non-credit payments, explicitly mark vouchers as used
         const { error: updateError } = await supabase
           .from('vouchers')
           .update({ is_used: true })
