@@ -84,7 +84,7 @@ const PlansList = () => {
 
         if (creditError) throw creditError;
 
-        // Add vouchers to wallet and mark them as used
+        // Add vouchers to wallet and delete them from voucher pool
         const walletEntries = availableVouchers.map(voucher => ({
           client_id: clientId,
           voucher_id: voucher.id,
@@ -97,14 +97,14 @@ const PlansList = () => {
 
         if (walletError) throw walletError;
 
-        // Update vouchers as used
+        // Delete vouchers from the voucher pool
         const voucherIds = availableVouchers.map(v => v.id);
-        const { error: updateError } = await supabase
+        const { error: deleteError } = await supabase
           .from('vouchers')
-          .update({ is_used: true })
+          .delete()
           .in('id', voucherIds);
 
-        if (updateError) throw updateError;
+        if (deleteError) throw deleteError;
 
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
