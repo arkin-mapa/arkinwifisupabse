@@ -45,11 +45,11 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
           .single();
 
         if (originalVoucher) {
-          // Create a copy of the voucher with is_copy flag
+          // Create a copy of the voucher with is_copy flag and modified code
           const { error: copyError } = await supabase
             .from('vouchers')
             .insert({
-              code: originalVoucher.code,
+              code: `${originalVoucher.code}_copy`,
               plan_id: originalVoucher.plan_id,
               is_used: originalVoucher.is_used,
               is_copy: true,
