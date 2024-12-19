@@ -37,9 +37,9 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
           is_used: boolean;
         }>) => {
           console.log('Voucher update:', payload);
-          if (payload.new && payload.new.is_used !== voucher.isUsed) {
+          // Check if payload.new exists and has different is_used value
+          if (payload.new && typeof payload.new.is_used === 'boolean' && payload.new.is_used !== voucher.isUsed) {
             // Update local state through parent component
-            // This will trigger a re-render with the new isUsed status
             window.location.reload();
           }
         }
