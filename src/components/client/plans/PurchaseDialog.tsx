@@ -8,7 +8,7 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 import type { Database } from "@/types/database.types";
 import { useQuery } from "@tanstack/react-query";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import { ScrollArea } from "@/components/ui/scroll-area";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -111,104 +111,115 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px]">
-        <DialogHeader>
-          <DialogTitle>Purchase {selectedPlan?.duration} Plan</DialogTitle>
-          <DialogDescription>
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0">
+        <DialogHeader className="p-6 pb-0">
+          <DialogTitle className="text-xl font-bold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
+          <DialogDescription className="text-muted-foreground mt-2">
             Please fill in your details to complete the purchase.
           </DialogDescription>
         </DialogHeader>
         
-        <div className="space-y-4">
-          <div>
-            <Label htmlFor="customerName">Your Name</Label>
-            <Input
-              id="customerName"
-              value={purchaseDetails.customerName}
-              onChange={(e) => setPurchaseDetails({
-                ...purchaseDetails,
-                customerName: e.target.value
-              })}
-              placeholder="Enter your name"
-              className="mt-1"
-            />
-          </div>
+        <ScrollArea className="max-h-[calc(100vh-12rem)]">
+          <div className="p-6 space-y-6">
+            <div className="space-y-2">
+              <Label htmlFor="customerName" className="text-sm font-medium">Your Name</Label>
+              <Input
+                id="customerName"
+                value={purchaseDetails.customerName}
+                onChange={(e) => setPurchaseDetails({
+                  ...purchaseDetails,
+                  customerName: e.target.value
+                })}
+                placeholder="Enter your name"
+                className="h-10"
+              />
+            </div>
 
-          <div>
-            <Label htmlFor="quantity">Quantity</Label>
-            <Input
-              id="quantity"
-              type="number"
-              min="1"
-              max={selectedPlan?.availableVouchers || 1}
-              value={purchaseDetails.quantity}
-              onChange={(e) => setPurchaseDetails({
-                ...purchaseDetails,
-                quantity: parseInt(e.target.value)
-              })}
-              className="mt-1"
-            />
-          </div>
+            <div className="space-y-2">
+              <Label htmlFor="quantity" className="text-sm font-medium">Quantity</Label>
+              <Input
+                id="quantity"
+                type="number"
+                min="1"
+                max={selectedPlan?.availableVouchers || 1}
+                value={purchaseDetails.quantity}
+                onChange={(e) => setPurchaseDetails({
+                  ...purchaseDetails,
+                  quantity: parseInt(e.target.value)
+                })}
+                className="h-10"
+              />
+            </div>
 
-          <div>
-            <Label>Payment Method</Label>
-            <RadioGroup
-              value={purchaseDetails.paymentMethod}
-              onValueChange={(value: PaymentMethod) => setPurchaseDetails({
-                ...purchaseDetails,
-                paymentMethod: value
-              })}
-              className="mt-2 space-y-2"
-            >
-              {enabledPaymentMethods.includes('cash') && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="cash" id="cash" />
-                  <Label htmlFor="cash">Cash</Label>
-                </div>
-              )}
-              {enabledPaymentMethods.includes('gcash') && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="gcash" id="gcash" />
-                  <Label htmlFor="gcash">GCash</Label>
-                </div>
-              )}
-              {enabledPaymentMethods.includes('paymaya') && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem value="paymaya" id="paymaya" />
-                  <Label htmlFor="paymaya">PayMaya</Label>
-                </div>
-              )}
-              {enabledPaymentMethods.includes('credit') && (
-                <div className="flex items-center space-x-2">
-                  <RadioGroupItem 
-                    value="credit" 
-                    id="credit" 
-                    disabled={!canUseCredit}
-                  />
-                  <Label htmlFor="credit" className={!canUseCredit ? "text-muted-foreground" : ""}>
-                    Credit Balance (₱{creditBalance.toFixed(2)})
-                  </Label>
-                </div>
-              )}
-            </RadioGroup>
-          </div>
+            <div className="space-y-3">
+              <Label className="text-sm font-medium">Payment Method</Label>
+              <RadioGroup
+                value={purchaseDetails.paymentMethod}
+                onValueChange={(value: PaymentMethod) => setPurchaseDetails({
+                  ...purchaseDetails,
+                  paymentMethod: value
+                })}
+                className="grid gap-3"
+              >
+                {enabledPaymentMethods.includes('cash') && (
+                  <div className="flex items-center space-x-3 rounded-lg border p-4">
+                    <RadioGroupItem value="cash" id="cash" />
+                    <Label htmlFor="cash" className="flex-1">Cash</Label>
+                  </div>
+                )}
+                {enabledPaymentMethods.includes('gcash') && (
+                  <div className="flex items-center space-x-3 rounded-lg border p-4">
+                    <RadioGroupItem value="gcash" id="gcash" />
+                    <Label htmlFor="gcash" className="flex-1">GCash</Label>
+                  </div>
+                )}
+                {enabledPaymentMethods.includes('paymaya') && (
+                  <div className="flex items-center space-x-3 rounded-lg border p-4">
+                    <RadioGroupItem value="paymaya" id="paymaya" />
+                    <Label htmlFor="paymaya" className="flex-1">PayMaya</Label>
+                  </div>
+                )}
+                {enabledPaymentMethods.includes('credit') && (
+                  <div className="flex items-center space-x-3 rounded-lg border p-4">
+                    <RadioGroupItem 
+                      value="credit" 
+                      id="credit" 
+                      disabled={!canUseCredit}
+                    />
+                    <div className="flex-1">
+                      <Label 
+                        htmlFor="credit" 
+                        className={!canUseCredit ? "text-muted-foreground" : ""}
+                      >
+                        Credit Balance
+                      </Label>
+                      <p className="text-sm text-muted-foreground">
+                        Available: ₱{creditBalance.toFixed(2)}
+                      </p>
+                    </div>
+                  </div>
+                )}
+              </RadioGroup>
+            </div>
 
-          <div className="pt-2">
-            <p className="text-sm text-muted-foreground">
-              Total Amount: ₱{totalAmount.toFixed(2)}
-            </p>
-          </div>
+            <div className="pt-2 space-y-4">
+              <div className="flex justify-between items-center text-sm">
+                <span className="text-muted-foreground">Total Amount:</span>
+                <span className="font-semibold">₱{totalAmount.toFixed(2)}</span>
+              </div>
 
-          <Button
-            className="w-full"
-            onClick={onSubmit}
-            disabled={isPending || 
-              (purchaseDetails.paymentMethod === 'credit' && !canUseCredit) ||
-              !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
-          >
-            {isPending ? "Processing..." : "Confirm Purchase"}
-          </Button>
-        </div>
+              <Button
+                className="w-full h-11"
+                onClick={onSubmit}
+                disabled={isPending || 
+                  (purchaseDetails.paymentMethod === 'credit' && !canUseCredit) ||
+                  !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
+              >
+                {isPending ? "Processing..." : "Confirm Purchase"}
+              </Button>
+            </div>
+          </div>
+        </ScrollArea>
       </DialogContent>
     </Dialog>
   );

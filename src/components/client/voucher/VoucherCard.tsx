@@ -83,7 +83,11 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
             />
             <div className="flex flex-col gap-2 flex-1 min-w-0">
               <code 
-                className="bg-muted px-3 py-1.5 rounded text-sm font-mono text-center break-all cursor-pointer hover:bg-muted/80 transition-colors"
+                className={`px-3 py-1.5 rounded text-sm font-mono text-center break-all cursor-pointer transition-colors ${
+                  voucher.isUsed 
+                    ? 'bg-muted hover:bg-muted/80' 
+                    : 'bg-[#F2FCE2] hover:bg-[#E5F5D5] text-green-700'
+                }`}
                 onClick={() => !voucher.isUsed && setShowConfirmDialog(true)}
               >
                 {voucher.code}
