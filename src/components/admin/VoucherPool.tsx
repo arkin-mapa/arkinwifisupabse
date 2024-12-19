@@ -9,7 +9,6 @@ import { deleteVoucher, fetchVouchers } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
 import { motion } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
-import { supabase } from "@/integrations/supabase/client";
 
 interface VoucherPoolProps {
   vouchers: Record<string, Voucher[]>;
@@ -19,28 +18,10 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
   const { toast } = useToast();
   const [localVouchers, setLocalVouchers] = useState<Record<string, Voucher[]>>(initialVouchers);
   const [expandedPlans, setExpandedPlans] = useState<Record<string, boolean>>({});
-  const [walletVouchers, setWalletVouchers] = useState<Set<string>>(new Set());
 
   useEffect(() => {
     setLocalVouchers(initialVouchers);
-    checkVoucherWalletStatus();
   }, [initialVouchers]);
-
-  const checkVoucherWalletStatus = async () => {
-    try {
-      const { data: walletData, error } = await supabase
-        .from('voucher_wallet')
-        .select('voucher_id');
-
-      if (error) throw error;
-
-      // Create a Set of voucher IDs from wallet
-      const walletIds = new Set((walletData || []).map(w => w.voucher_id));
-      setWalletVouchers(walletIds);
-    } catch (error) {
-      console.error('Error checking voucher wallet status:', error);
-    }
-  };
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
@@ -61,8 +42,6 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
       }, {});
 
       setLocalVouchers(updatedVouchersByPlan);
-      await checkVoucherWalletStatus(); // Refresh wallet status after deletion
-      
       toast({
         title: "Success",
         description: "Voucher deleted successfully",
@@ -115,7 +94,7 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
                 {Object.entries(localVouchers).map(([planDuration, planVouchers]) => {
                   if (!planVouchers || planVouchers.length === 0) return null;
                   
-                  const unusedCount = planVouchers.filter(v => !v.isUsed && !walletVouchers.has(v.id)).length;
+                  const unusedCount = planVouchers.filter(v => !v.isUsed).length;
                   const isExpanded = expandedPlans[planDuration];
                   
                   return (
@@ -146,41 +125,36 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
                           animate={{ opacity: 1 }}
                           className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-2 mt-2 p-2"
                         >
-                          {planVouchers.map((voucher) => {
-                            const isInWallet = walletVouchers.has(voucher.id);
-                            const voucherStatus = isInWallet ? 'In wallet' : voucher.isUsed ? 'Used' : 'Available';
-                            
-                            return (
-                              <div key={voucher.id} className="relative group">
-                                <Tooltip>
-                                  <TooltipTrigger asChild>
-                                    <Badge
-                                      variant={voucher.isUsed || isInWallet ? "secondary" : "default"}
-                                      className={`w-full justify-between py-2 px-3 font-mono text-xs ${
-                                        voucher.isUsed || isInWallet ? 'bg-muted line-through' : ''
-                                      }`}
-                                    >
-                                      <span className="truncate">{voucher.code}</span>
-                                      {(voucher.isUsed || isInWallet) && (
-                                        <AlertCircle className="h-3 w-3 text-yellow-500 ml-1" />
-                                      )}
-                                    </Badge>
-                                  </TooltipTrigger>
-                                  <TooltipContent>
-                                    <p>{voucherStatus}</p>
-                                  </TooltipContent>
-                                </Tooltip>
-                                <Button
-                                  variant="ghost"
-                                  size="icon"
-                                  className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
-                                  onClick={() => handleDeleteVoucher(voucher.id)}
-                                >
-                                  <Trash2 className="h-3 w-3" />
-                                </Button>
-                              </div>
-                            );
-                          })}
+                          {planVouchers.map((voucher) => (
+                            <div key={voucher.id} className="relative group">
+                              <Tooltip>
+                                <TooltipTrigger asChild>
+                                  <Badge
+                                    variant={voucher.isUsed ? "secondary" : "default"}
+                                    className={`w-full justify-between py-2 px-3 font-mono text-xs ${
+                                      voucher.isUsed ? 'bg-muted line-through' : ''
+                                    }`}
+                                  >
+                                    <span className="truncate">{voucher.code}</span>
+                                    {voucher.isUsed && (
+                                      <AlertCircle className="h-3 w-3 text-yellow-500 ml-1" />
+                                    )}
+                                  </Badge>
+                                </TooltipTrigger>
+                                <TooltipContent>
+                                  <p>{voucher.isUsed ? 'This voucher has been used' : 'Available voucher'}</p>
+                                </TooltipContent>
+                              </Tooltip>
+                              <Button
+                                variant="ghost"
+                                size="icon"
+                                className="absolute -right-2 -top-2 h-6 w-6 rounded-full bg-destructive/10 text-destructive opacity-0 group-hover:opacity-100 transition-opacity"
+                                onClick={() => handleDeleteVoucher(voucher.id)}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                              </Button>
+                            </div>
+                          ))}
                         </motion.div>
                       )}
                     </motion.div>
