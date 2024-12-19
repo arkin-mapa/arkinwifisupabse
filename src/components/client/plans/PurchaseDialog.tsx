@@ -107,16 +107,16 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[90vh] flex flex-col">
-        <DialogHeader className="p-6 pb-0 shrink-0">
-          <DialogTitle className="text-xl font-bold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
-          <DialogDescription className="text-muted-foreground mt-2">
-            Please fill in your details to complete the purchase.
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[80vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+        <DialogHeader className="p-4 pb-2 shrink-0 border-b">
+          <DialogTitle className="text-lg font-semibold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground">
+            Complete your purchase details below
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="flex-grow overflow-y-auto px-6 py-4">
-          <div className="space-y-6">
+        <ScrollArea className="flex-grow overflow-y-auto px-4 py-3">
+          <div className="space-y-4">
             <CustomerDetails
               customerName={purchaseDetails.customerName}
               quantity={purchaseDetails.quantity}
@@ -141,25 +141,25 @@ export const PurchaseDialog = ({
               creditBalance={creditBalance}
               totalAmount={totalAmount}
             />
-
-            <div className="pt-2 space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Total Amount:</span>
-                <span className="font-semibold">₱{totalAmount.toFixed(2)}</span>
-              </div>
-
-              <Button
-                className="w-full h-11"
-                onClick={onSubmit}
-                disabled={isPending || 
-                  (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
-                  !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
-              >
-                {isPending ? "Processing..." : "Confirm Purchase"}
-              </Button>
-            </div>
           </div>
         </ScrollArea>
+
+        <div className="p-4 border-t bg-gray-50 dark:bg-gray-900 rounded-b-lg space-y-3">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Total Amount:</span>
+            <span className="font-semibold">₱{totalAmount.toFixed(2)}</span>
+          </div>
+
+          <Button
+            className="w-full h-10"
+            onClick={onSubmit}
+            disabled={isPending || 
+              (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
+              !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
+          >
+            {isPending ? "Processing..." : "Confirm Purchase"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );
