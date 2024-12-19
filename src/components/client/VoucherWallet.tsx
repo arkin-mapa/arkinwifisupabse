@@ -8,10 +8,9 @@ import { supabase } from "@/integrations/supabase/client";
 import type { Voucher, Plan } from "@/types/plans";
 import { useSession } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
-import { QrCode, Printer, Wallet } from "lucide-react";
+import { QrCode, Wallet } from "lucide-react";
 import { QRCodeScanner } from "./voucher/QRCodeScanner";
 import { QRCodeGenerator } from "./voucher/QRCodeGenerator";
-import { printVoucher, printPlanVouchers } from "@/utils/printUtils";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
@@ -104,37 +103,8 @@ const VoucherWallet = () => {
     });
   };
 
-  const handlePrintSelected = async () => {
-    if (selectedVouchers.length === 0) {
-      toast.error("Please select vouchers to print");
-      return;
-    }
-
-    try {
-      for (const voucher of selectedVouchers) {
-        await printVoucher(voucher, plans[voucher.planId || '']);
-      }
-      toast.success("Selected vouchers sent to printer");
-    } catch (error) {
-      toast.error("Failed to print vouchers");
-    }
-  };
-
-  const handlePrintAll = async () => {
-    try {
-      for (const [planId, planVouchers] of Object.entries(vouchers)) {
-        await printPlanVouchers(planVouchers, plans[planId]);
-      }
-      toast.success("All vouchers sent to printer");
-    } catch (error) {
-      toast.error("Failed to print vouchers");
-    }
-  };
-
   const handleTransferComplete = async (transferredVoucherIds: string[]) => {
-    // Remove transferred vouchers from the selected list
     setSelectedVouchers(prev => prev.filter(v => !transferredVoucherIds.includes(v.id)));
-    // Reload data to reflect changes
     await loadData();
   };
 
@@ -155,26 +125,6 @@ const VoucherWallet = () => {
           <div className="flex items-center gap-2">
             <Wallet className="h-5 w-5 text-primary" />
             <CardTitle className="text-lg">Your Vouchers</CardTitle>
-          </div>
-          <div className="hidden sm:flex gap-2">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintSelected}
-              disabled={selectedVouchers.length === 0}
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              Print Selected
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintAll}
-              disabled={Object.keys(vouchers).length === 0}
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              Print All
-            </Button>
           </div>
         </div>
         <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap">
@@ -197,28 +147,6 @@ const VoucherWallet = () => {
             <QrCode className="h-4 w-4 mr-2" />
             Scan QR
           </Button>
-          <div className="flex sm:hidden gap-2 w-full">
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintSelected}
-              disabled={selectedVouchers.length === 0}
-              className="flex-1"
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              Print Selected
-            </Button>
-            <Button
-              variant="outline"
-              size="sm"
-              onClick={handlePrintAll}
-              disabled={Object.keys(vouchers).length === 0}
-              className="flex-1"
-            >
-              <Printer className="h-4 w-4 mr-2" />
-              Print All
-            </Button>
-          </div>
         </div>
       </CardHeader>
       <CardContent className="p-0">
