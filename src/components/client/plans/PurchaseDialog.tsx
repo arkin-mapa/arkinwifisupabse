@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,16 +107,14 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[80vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
-        <DialogHeader className="p-4 pb-2 shrink-0 border-b">
-          <DialogTitle className="text-lg font-semibold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
-          <DialogDescription className="text-sm text-muted-foreground">
-            Complete your purchase details below
-          </DialogDescription>
-        </DialogHeader>
-        
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[70vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
         <ScrollArea className="flex-grow overflow-y-auto px-4 py-3">
           <div className="space-y-4">
+            <div className="mb-4">
+              <h3 className="text-lg font-semibold text-center">{selectedPlan?.duration} Plan</h3>
+              <p className="text-sm text-muted-foreground text-center">₱{selectedPlan?.price.toFixed(2)}</p>
+            </div>
+            
             <CustomerDetails
               customerName={purchaseDetails.customerName}
               quantity={purchaseDetails.quantity}
@@ -144,14 +142,14 @@ export const PurchaseDialog = ({
           </div>
         </ScrollArea>
 
-        <div className="p-4 border-t bg-gray-50 dark:bg-gray-900 rounded-b-lg space-y-3">
+        <div className="p-3 border-t bg-gray-50 dark:bg-gray-900 rounded-b-lg space-y-2">
           <div className="flex justify-between items-center text-sm">
             <span className="text-muted-foreground">Total Amount:</span>
             <span className="font-semibold">₱{totalAmount.toFixed(2)}</span>
           </div>
 
           <Button
-            className="w-full h-10"
+            className="w-full h-9"
             onClick={onSubmit}
             disabled={isPending || 
               (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
