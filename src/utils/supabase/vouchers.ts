@@ -101,7 +101,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
       id: wv.vouchers.id,
       code: wv.vouchers.code,
       planId: wv.vouchers.plan_id || '',
-      isUsed: wv.status === 'used' // Use the status from voucher_wallet instead
+      isUsed: wv.status === 'approved' // Consider 'approved' as used
     }));
 }
 

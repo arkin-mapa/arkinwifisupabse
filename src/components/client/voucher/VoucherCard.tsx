@@ -27,7 +27,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
       // Mark voucher as used in voucher_wallet
       const { error: walletError } = await supabase
         .from('voucher_wallet')
-        .update({ status: 'used' })
+        .update({ status: 'approved' })
         .eq('voucher_id', voucher.id);
 
       if (walletError) {
