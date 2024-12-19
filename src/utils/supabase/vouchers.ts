@@ -48,12 +48,7 @@ export async function deleteVoucher(voucherId: string): Promise<void> {
   const { error } = await supabase
     .from('vouchers')
     .delete()
-    .eq('id', voucherId)
-    .not('id', 'in', (
-      supabase
-        .from('voucher_wallet')
-        .select('voucher_id')
-    ));
+    .eq('id', voucherId);
 
   if (error) {
     console.error('Error deleting voucher:', error);

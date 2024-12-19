@@ -37,15 +37,33 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
       }
 
       if (walletData) {
-        toast({
-          title: "Cannot delete voucher",
-          description: "This voucher is currently assigned to a client and cannot be deleted.",
-          variant: "destructive",
-        });
-        return;
+        // If voucher is in a wallet, create a copy first
+        const { data: originalVoucher } = await supabase
+          .from('vouchers')
+          .select('*')
+          .eq('id', voucherId)
+          .single();
+
+        if (originalVoucher) {
+          // Create a copy of the voucher with is_copy flag
+          const { error: copyError } = await supabase
+            .from('vouchers')
+            .insert({
+              code: originalVoucher.code,
+              plan_id: originalVoucher.plan_id,
+              is_used: originalVoucher.is_used,
+              is_copy: true,
+              original_voucher_id: originalVoucher.id
+            });
+
+          if (copyError) {
+            console.error('Error copying voucher:', copyError);
+            throw copyError;
+          }
+        }
       }
 
-      // If voucher is not in any wallet, proceed with deletion
+      // Now proceed with deletion of the original voucher
       await deleteVoucher(voucherId);
       
       // Fetch updated vouchers and transform into the required format
