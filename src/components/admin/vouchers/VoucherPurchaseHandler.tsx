@@ -17,21 +17,27 @@ export const VoucherPurchaseHandler = ({
 }: VoucherPurchaseHandlerProps) => {
   const handleVoucherTransfer = async () => {
     try {
+      console.log('Starting voucher transfer for purchase:', purchase);
+
       // Get available vouchers first
       const { data: availableVouchers, error: voucherError } = await supabase
         .from('vouchers')
-        .select('id')
+        .select('id, code, plan_id')
         .eq('plan_id', purchase.plan_id)
         .eq('is_used', false)
         .limit(purchase.quantity);
 
-      if (voucherError) throw voucherError;
+      if (voucherError) {
+        console.error('Error fetching vouchers:', voucherError);
+        throw voucherError;
+      }
 
       if (!availableVouchers || availableVouchers.length < purchase.quantity) {
         throw new Error('Not enough vouchers available');
       }
 
       const voucherIds = availableVouchers.map(v => v.id);
+      console.log('Selected voucher IDs:', voucherIds);
 
       // For credit payments
       if (purchase.paymentMethod === 'credit') {
@@ -45,7 +51,12 @@ export const VoucherPurchaseHandler = ({
             reference_id: purchase.id
           });
 
-        if (creditError) throw creditError;
+        if (creditError) {
+          console.error('Credit transaction error:', creditError);
+          throw creditError;
+        }
+
+        console.log('Credit transaction successful, proceeding with voucher transfer');
 
         // Use the credit payment voucher transfer function
         const { error: transferError } = await supabase.rpc(
@@ -56,7 +67,10 @@ export const VoucherPurchaseHandler = ({
           }
         );
 
-        if (transferError) throw transferError;
+        if (transferError) {
+          console.error('Transfer error:', transferError);
+          throw transferError;
+        }
       } else {
         // For non-credit payments, use the regular transfer function
         const { error: transferError } = await supabase.rpc(
@@ -67,7 +81,21 @@ export const VoucherPurchaseHandler = ({
           }
         );
 
-        if (transferError) throw transferError;
+        if (transferError) {
+          console.error('Transfer error:', transferError);
+          throw transferError;
+        }
+
+        // For non-credit payments, we need to explicitly mark vouchers as used
+        const { error: updateError } = await supabase
+          .from('vouchers')
+          .update({ is_used: true })
+          .in('id', voucherIds);
+
+        if (updateError) {
+          console.error('Error updating voucher status:', updateError);
+          throw updateError;
+        }
       }
       
       // Update purchase status
@@ -76,8 +104,12 @@ export const VoucherPurchaseHandler = ({
         .update({ status: 'approved' })
         .eq('id', purchase.id);
 
-      if (updateError) throw updateError;
+      if (updateError) {
+        console.error('Error updating purchase status:', updateError);
+        throw updateError;
+      }
 
+      console.log('Voucher transfer completed successfully');
       onSuccess();
       toast.success("Purchase approved and vouchers transferred");
     } catch (error) {
