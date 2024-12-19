@@ -4,37 +4,30 @@ import type { Voucher } from "@/types/plans";
 export async function fetchVouchers(): Promise<Voucher[]> {
   const { data: vouchers, error } = await supabase
     .from('vouchers')
-    .select(`
-      id,
-      code,
-      plan_id,
-      voucher_wallet!left (
-        status
-      )
-    `);
+    .select('*');
 
   if (error) {
     console.error('Error fetching vouchers:', error);
     throw error;
   }
 
-  return (vouchers || []).map(v => ({
-    id: v.id,
-    code: v.code,
-    planId: v.plan_id || '',
-    isUsed: v.voucher_wallet?.[0]?.status === 'approved'
+  return vouchers.map(voucher => ({
+    id: voucher.id,
+    code: voucher.code,
+    planId: voucher.plan_id || '',
+    isUsed: false
   }));
 }
 
-export async function addVouchers(planId: string, codes: string[]): Promise<void> {
-  const vouchersToInsert = codes.map(code => ({
-    code,
-    plan_id: planId
-  }));
-
+export async function addVouchers(planId: string, codes: string[]) {
   const { error } = await supabase
     .from('vouchers')
-    .insert(vouchersToInsert);
+    .insert(
+      codes.map(code => ({
+        code,
+        plan_id: planId
+      }))
+    );
 
   if (error) {
     console.error('Error adding vouchers:', error);
@@ -42,42 +35,22 @@ export async function addVouchers(planId: string, codes: string[]): Promise<void
   }
 }
 
-export async function deleteVoucher(voucherId: string): Promise<void> {
-  // First delete from voucher_wallet if it exists there
-  const { error: walletError } = await supabase
-    .from('voucher_wallet')
-    .delete()
-    .eq('voucher_id', voucherId);
-
-  if (walletError) {
-    console.error('Error deleting from voucher_wallet:', walletError);
-    throw walletError;
-  }
-
-  // Then delete from vouchers table
-  const { error: voucherError } = await supabase
+export async function deleteVoucher(voucherId: string) {
+  const { error } = await supabase
     .from('vouchers')
     .delete()
     .eq('id', voucherId);
 
-  if (voucherError) {
-    console.error('Error deleting from vouchers:', voucherError);
-    throw voucherError;
+  if (error) {
+    console.error('Error deleting voucher:', error);
+    throw error;
   }
 }
 
-export async function fetchClientVouchers(): Promise<Voucher[]> {
-  const { data: session } = await supabase.auth.getSession();
-  const userId = session?.session?.user?.id;
-
-  if (!userId) {
-    throw new Error('User must be logged in to fetch vouchers');
-  }
-
+export async function fetchClientVouchers(userId: string): Promise<Voucher[]> {
   const { data: walletVouchers, error: walletError } = await supabase
     .from('voucher_wallet')
     .select(`
-      voucher_id,
       status,
       vouchers (
         id,
@@ -92,32 +65,30 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     throw walletError;
   }
 
-  return (walletVouchers || [])
-    .filter(wv => wv.vouchers !== null)
-    .map(wv => ({
-      id: wv.vouchers.id,
-      code: wv.vouchers.code,
-      planId: wv.vouchers.plan_id || '',
-      isUsed: wv.status === 'approved'
-    }));
+  return walletVouchers.map(wv => ({
+    id: wv.vouchers?.id || '',
+    code: wv.vouchers?.code || '',
+    planId: wv.vouchers?.plan_id || '',
+    isUsed: wv.status === 'approved'
+  }));
 }
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
-  const { data: vouchers, error } = await supabase
+  const { count, error } = await supabase
     .from('vouchers')
-    .select(`
-      id,
-      voucher_wallet!left (
-        status
-      )
-    `)
+    .select('*', { count: 'exact', head: true })
     .eq('plan_id', planId)
-    .not('voucher_wallet.status', 'eq', 'approved');
+    .not('id', 'in', (
+      supabase
+        .from('voucher_wallet')
+        .select('voucher_id')
+        .eq('status', 'approved')
+    ));
 
   if (error) {
-    console.error('Error fetching available vouchers count:', error);
+    console.error('Error counting available vouchers:', error);
     throw error;
   }
 
-  return (vouchers || []).length;
+  return count || 0;
 }
