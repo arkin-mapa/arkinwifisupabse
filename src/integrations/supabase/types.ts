@@ -318,6 +318,13 @@ export type Database = {
         }
         Returns: boolean
       }
+      transfer_vouchers_to_client: {
+        Args: {
+          p_client_id: string
+          p_voucher_ids: string[]
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       credit_purchase_status: "pending" | "approved" | "rejected"
