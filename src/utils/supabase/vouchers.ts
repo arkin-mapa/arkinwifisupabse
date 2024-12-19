@@ -22,7 +22,7 @@ export async function fetchVouchers(): Promise<Voucher[]> {
     id: v.id,
     code: v.code,
     planId: v.plan_id || '',
-    isUsed: false // Default to false since we're not tracking this anymore
+    isUsed: false // Default to false since we check wallet status separately
   }));
 }
 
@@ -74,7 +74,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
     throw new Error('User must be logged in to fetch vouchers');
   }
 
-  // First get the wallet entries
+  // Get vouchers from wallet with their status
   const { data: walletVouchers, error: walletError } = await supabase
     .from('voucher_wallet')
     .select(`
@@ -86,8 +86,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
         plan_id
       )
     `)
-    .eq('client_id', userId)
-    .eq('status', 'approved');
+    .eq('client_id', userId);
 
   if (walletError) {
     console.error('Error fetching client vouchers:', walletError);
@@ -108,6 +107,7 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
 export async function fetchClientPlans(): Promise<Plan[]> {
   console.log('Fetching client plans...'); // Debug log
 
+  // First, get all plans with their vouchers
   const { data: plans, error } = await supabase
     .from('plans')
     .select(`
@@ -127,28 +127,47 @@ export async function fetchClientPlans(): Promise<Plan[]> {
 
   console.log('Raw plans data:', plans); // Debug log
 
-  const formattedPlans = plans.map(plan => {
-    // Count vouchers that are not in any wallet
-    const availableVouchers = plan.vouchers ? plan.vouchers.length : 0;
-    
-    console.log(`Plan ${plan.duration}: Found ${availableVouchers} available vouchers`); // Debug log
-    
+  // For each plan, we need to count vouchers that are not in any wallet
+  const formattedPlans = await Promise.all(plans.map(async plan => {
+    // Get count of vouchers that are not in any wallet
+    const { count, error: countError } = await supabase
+      .from('vouchers')
+      .select('id', { count: 'exact', head: true })
+      .eq('plan_id', plan.id)
+      .not('id', 'in', (
+        supabase
+          .from('voucher_wallet')
+          .select('voucher_id')
+      ));
+
+    if (countError) {
+      console.error('Error counting available vouchers:', countError);
+      return {
+        id: plan.id,
+        duration: plan.duration,
+        price: Number(plan.price),
+        availableVouchers: 0
+      };
+    }
+
+    console.log(`Plan ${plan.duration}: Found ${count} available vouchers`); // Debug log
+
     return {
       id: plan.id,
       duration: plan.duration,
       price: Number(plan.price),
-      availableVouchers
+      availableVouchers: count || 0
     };
-  });
+  }));
 
   console.log('Formatted plans:', formattedPlans); // Debug log
   return formattedPlans;
 }
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
-  const { data: vouchers, error } = await supabase
+  const { count, error } = await supabase
     .from('vouchers')
-    .select('id')
+    .select('id', { count: 'exact', head: true })
     .eq('plan_id', planId)
     .not('id', 'in', (
       supabase
@@ -161,5 +180,5 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
     throw error;
   }
 
-  return (vouchers || []).length;
+  return count || 0;
 }
