@@ -34,11 +34,12 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers?.length || 0}`);
   }
 
-  // Add vouchers to client's wallet
+  // Add vouchers to client's wallet without marking them as used in the vouchers table
   const walletEntries = availableVouchers.map(voucher => ({
     client_id: purchase.client_id,
     voucher_id: voucher.id,
-    status: 'approved' as PurchaseStatus
+    status: 'approved' as PurchaseStatus,
+    is_used: false
   }));
 
   console.log('Inserting wallet entries:', walletEntries);
@@ -52,8 +53,20 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error('Failed to add vouchers to client wallet');
   }
 
-  // The trigger we created will automatically delete the vouchers from the vouchers table
-  // after they are inserted into the voucher_wallet table
+  // Create purchase_vouchers entries to track which vouchers are assigned to this purchase
+  const purchaseVouchers = availableVouchers.map(voucher => ({
+    purchase_id: purchase.id,
+    voucher_id: voucher.id
+  }));
+
+  const { error: purchaseVouchersError } = await supabase
+    .from('purchase_vouchers')
+    .insert(purchaseVouchers);
+
+  if (purchaseVouchersError) {
+    console.error('Error creating purchase vouchers:', purchaseVouchersError);
+    throw new Error('Failed to create purchase voucher records');
+  }
 
   console.log('Voucher transfer completed successfully');
   return availableVouchers.map(v => v.id);
