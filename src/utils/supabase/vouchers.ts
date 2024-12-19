@@ -45,6 +45,7 @@ export async function addVouchers(planId: string, codes: string[]): Promise<void
 }
 
 export async function deleteVoucher(voucherId: string): Promise<void> {
+  // Only delete from the vouchers table, leaving voucher_wallet entries intact
   const { error } = await supabase
     .from('vouchers')
     .delete()
