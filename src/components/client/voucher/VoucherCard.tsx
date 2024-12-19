@@ -24,23 +24,14 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
     try {
       await navigator.clipboard.writeText(code);
       
-      // Mark voucher as used in both vouchers and voucher_wallet tables
+      // Update voucher status in wallet
       const { error: walletError } = await supabase
         .from('voucher_wallet')
-        .update({ is_used: true })
+        .update({ status: 'approved' })
         .eq('voucher_id', voucher.id);
 
       if (walletError) {
         throw walletError;
-      }
-
-      const { error: voucherError } = await supabase
-        .from('vouchers')
-        .update({ is_used: true })
-        .eq('id', voucher.id);
-
-      if (voucherError) {
-        throw voucherError;
       }
 
       toast.success("Voucher code copied!");
@@ -58,23 +49,23 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
         transition={{ duration: 0.2 }}
       >
         <Card className={`p-3 bg-white dark:bg-gray-800 hover:bg-accent/5 transition-colors ${
-          voucher.isUsed ? 'opacity-50' : ''
+          voucher.isAssigned ? 'opacity-50' : ''
         } ${isSelected ? 'ring-2 ring-primary' : ''}`}>
           <div className="flex items-start gap-3">
             <Checkbox
               checked={isSelected}
-              onCheckedChange={() => !voucher.isUsed && onSelect()}
-              disabled={voucher.isUsed}
+              onCheckedChange={() => !voucher.isAssigned && onSelect()}
+              disabled={voucher.isAssigned}
               className="translate-y-[2px]"
             />
             <div className="flex flex-col gap-2 flex-1 min-w-0">
               <code 
                 className={`px-3 py-1.5 rounded text-sm font-mono text-center break-all cursor-pointer transition-colors ${
-                  voucher.isUsed 
+                  voucher.isAssigned 
                     ? 'bg-muted hover:bg-muted/80' 
                     : 'bg-green-800 hover:bg-green-700 text-white'
                 }`}
-                onClick={() => !voucher.isUsed && setShowConfirmDialog(true)}
+                onClick={() => !voucher.isAssigned && setShowConfirmDialog(true)}
               >
                 {voucher.code}
               </code>
