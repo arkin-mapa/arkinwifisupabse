@@ -9,6 +9,7 @@ import { deleteVoucher, fetchVouchers } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
 import { motion } from "framer-motion";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VoucherPoolProps {
   vouchers: Record<string, Voucher[]>;
@@ -21,7 +22,66 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
 
   useEffect(() => {
     setLocalVouchers(initialVouchers);
+    subscribeToVoucherWalletChanges();
   }, [initialVouchers]);
+
+  const subscribeToVoucherWalletChanges = () => {
+    const channel = supabase
+      .channel('voucher-wallet-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'voucher_wallet'
+        },
+        (payload) => {
+          console.log('Voucher wallet change:', payload);
+          updateVoucherStatus();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
+
+  const updateVoucherStatus = async () => {
+    try {
+      // Fetch current status from voucher_wallet
+      const { data: walletVouchers, error: walletError } = await supabase
+        .from('voucher_wallet')
+        .select('voucher_id, is_used')
+        .not('voucher_id', 'is', null);
+
+      if (walletError) throw walletError;
+
+      // Update local vouchers with wallet status
+      const updatedVouchers = { ...localVouchers };
+      Object.keys(updatedVouchers).forEach(planDuration => {
+        updatedVouchers[planDuration] = updatedVouchers[planDuration].map(voucher => {
+          const walletVoucher = walletVouchers?.find(wv => wv.voucher_id === voucher.id);
+          if (walletVoucher) {
+            return {
+              ...voucher,
+              isUsed: walletVoucher.is_used || false
+            };
+          }
+          return voucher;
+        });
+      });
+
+      setLocalVouchers(updatedVouchers);
+    } catch (error) {
+      console.error('Error updating voucher status:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update voucher status",
+        variant: "destructive"
+      });
+    }
+  };
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
