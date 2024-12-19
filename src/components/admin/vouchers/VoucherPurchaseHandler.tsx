@@ -17,12 +17,23 @@ export const VoucherPurchaseHandler = ({
 }: VoucherPurchaseHandlerProps) => {
   const handleVoucherTransfer = async () => {
     try {
-      if (!purchase.plan_id) {
-        toast.error("Plan ID is required for voucher transfer");
-        return;
+      // Get available vouchers first
+      const { data: availableVouchers, error: voucherError } = await supabase
+        .from('vouchers')
+        .select('id')
+        .eq('plan_id', purchase.plan_id)
+        .eq('is_used', false)
+        .limit(purchase.quantity);
+
+      if (voucherError) throw voucherError;
+
+      if (!availableVouchers || availableVouchers.length < purchase.quantity) {
+        throw new Error('Not enough vouchers available');
       }
 
-      // For credit payments, we need to handle the credit transaction first
+      const voucherIds = availableVouchers.map(v => v.id);
+
+      // For credit payments
       if (purchase.paymentMethod === 'credit') {
         // Create credit transaction (deduction)
         const { error: creditError } = await supabase
@@ -36,50 +47,23 @@ export const VoucherPurchaseHandler = ({
 
         if (creditError) throw creditError;
 
-        // Get available vouchers for this plan
-        const { data: availableVouchers, error: voucherError } = await supabase
-          .from('vouchers')
-          .select('id')
-          .eq('plan_id', purchase.plan_id)
-          .eq('is_used', false)
-          .limit(purchase.quantity);
-
-        if (voucherError) throw voucherError;
-
-        if (!availableVouchers || availableVouchers.length < purchase.quantity) {
-          throw new Error('Not enough vouchers available');
-        }
-
-        // Use the new function to handle credit payment voucher transfer
+        // Use the credit payment voucher transfer function
         const { error: transferError } = await supabase.rpc(
           'handle_credit_payment_voucher_transfer',
           {
             p_client_id: purchase.client_id,
-            p_voucher_ids: availableVouchers.map(v => v.id)
+            p_voucher_ids: voucherIds
           }
         );
 
         if (transferError) throw transferError;
       } else {
         // For non-credit payments, use the regular transfer function
-        const { data: availableVouchers, error: voucherError } = await supabase
-          .from('vouchers')
-          .select('id')
-          .eq('plan_id', purchase.plan_id)
-          .eq('is_used', false)
-          .limit(purchase.quantity);
-
-        if (voucherError) throw voucherError;
-
-        if (!availableVouchers || availableVouchers.length < purchase.quantity) {
-          throw new Error('Not enough vouchers available');
-        }
-
         const { error: transferError } = await supabase.rpc(
           'transfer_vouchers_to_client',
           {
             p_client_id: purchase.client_id,
-            p_voucher_ids: availableVouchers.map(v => v.id)
+            p_voucher_ids: voucherIds
           }
         );
 
