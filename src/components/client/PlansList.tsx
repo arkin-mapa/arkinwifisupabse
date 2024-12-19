@@ -41,16 +41,12 @@ const PlansList = () => {
       const clientId = session.session.user.id;
 
       if (purchaseDetails.paymentMethod === 'credit') {
-        // For credit payments, check available vouchers first
+        // For credit payments, directly create voucher wallet entries
         const { data: availableVouchers, error: voucherError } = await supabase
           .from('vouchers')
           .select('id')
           .eq('plan_id', plan.id)
-          .not('id', 'in', (
-            supabase
-              .from('voucher_wallet')
-              .select('voucher_id')
-          ))
+          .eq('is_used', false)
           .limit(purchaseDetails.quantity);
 
         if (voucherError) throw voucherError;
@@ -88,7 +84,7 @@ const PlansList = () => {
 
         if (creditError) throw creditError;
 
-        // Transfer vouchers to client's wallet
+        // Use the transfer_vouchers_to_client function to handle the transfer
         const { error: transferError } = await supabase
           .rpc('transfer_vouchers_to_client', {
             p_client_id: clientId,
