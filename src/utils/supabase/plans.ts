@@ -59,16 +59,16 @@ export async function fetchClientPlans(): Promise<Plan[]> {
     // Get vouchers that are:
     // 1. Not used (is_used = false)
     // 2. Not in any wallet
+    const walletQuery = supabase
+      .from('voucher_wallet')
+      .select('voucher_id');
+    
     const { count, error: countError } = await supabase
       .from('vouchers')
       .select('*', { count: 'exact', head: true })
       .eq('plan_id', plan.id)
-      .eq('is_used', false)  // Changed from isUsed to is_used
-      .not('id', 'in', 
-        supabase
-          .from('voucher_wallet')
-          .select('voucher_id')
-      );
+      .eq('is_used', false)
+      .not('id', 'in', walletQuery);
 
     if (countError) {
       console.error(`Error counting vouchers for plan ${plan.duration}:`, countError);
