@@ -98,12 +98,12 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
 
   // Filter out null vouchers and map to the correct format
   return (walletVouchers || [])
-    .filter(wv => wv.vouchers !== null) // Filter out null vouchers
+    .filter(wv => wv.vouchers !== null)
     .map(wv => ({
       id: wv.vouchers.id,
       code: wv.vouchers.code,
       planId: wv.vouchers.plan_id || '',
-      isUsed: wv.is_used || false
+      isUsed: wv.is_used || false // Use the wallet's is_used status
     }));
 }
 

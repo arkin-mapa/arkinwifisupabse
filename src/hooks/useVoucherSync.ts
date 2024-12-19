@@ -45,7 +45,8 @@ export const useVoucherSync = (initialVouchers: Record<string, Voucher[]>) => {
           is_used,
           vouchers (
             id,
-            is_used
+            code,
+            plan_id
           )
         `);
 
@@ -56,13 +57,12 @@ export const useVoucherSync = (initialVouchers: Record<string, Voucher[]>) => {
       Object.keys(updatedVouchers).forEach(planDuration => {
         updatedVouchers[planDuration] = updatedVouchers[planDuration].map(voucher => {
           const walletVoucher = walletVouchers?.find(wv => wv.voucher_id === voucher.id);
-          if (walletVoucher) {
-            return {
-              ...voucher,
-              isUsed: walletVoucher.is_used || walletVoucher.vouchers?.is_used || false
-            };
-          }
-          return voucher;
+          // If voucher is in wallet, use wallet's is_used status
+          // If voucher is not in wallet, it's available (not used)
+          return {
+            ...voucher,
+            isUsed: walletVoucher ? walletVoucher.is_used : false
+          };
         });
       });
 
