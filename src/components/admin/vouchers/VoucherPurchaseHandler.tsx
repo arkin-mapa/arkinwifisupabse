@@ -18,8 +18,6 @@ export const VoucherPurchaseHandler = ({
 }: VoucherPurchaseHandlerProps) => {
   const handleVoucherTransfer = async () => {
     try {
-      console.log('Starting voucher transfer for purchase:', purchase);
-
       if (!purchase.plan_id) {
         toast.error("Plan ID is required for voucher transfer");
         return;
@@ -27,8 +25,6 @@ export const VoucherPurchaseHandler = ({
 
       // For credit payments, we need to handle the credit transaction first
       if (purchase.paymentMethod === 'credit') {
-        console.log('Processing credit payment...');
-        
         // Create credit transaction (deduction)
         const { error: creditError } = await supabase
           .from('credits')
@@ -39,30 +35,18 @@ export const VoucherPurchaseHandler = ({
             reference_id: purchase.id
           });
 
-        if (creditError) {
-          console.error('Credit transaction error:', creditError);
-          throw creditError;
-        }
-        
-        console.log('Credit transaction processed successfully');
+        if (creditError) throw creditError;
       }
       
-      // Transfer vouchers
-      console.log('Transferring vouchers...');
       await transferVouchersToClient(purchase);
       
-      // Update purchase status
       const { error: updateError } = await supabase
         .from('purchases')
         .update({ status: 'approved' })
         .eq('id', purchase.id);
 
-      if (updateError) {
-        console.error('Purchase status update error:', updateError);
-        throw updateError;
-      }
+      if (updateError) throw updateError;
 
-      console.log('Purchase approved successfully');
       onSuccess();
       toast.success("Purchase approved and vouchers transferred");
     } catch (error) {

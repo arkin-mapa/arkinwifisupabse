@@ -7,7 +7,6 @@ import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { deleteVoucher, fetchVouchers } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
-import { supabase } from "@/integrations/supabase/client";
 
 interface VoucherPoolProps {
   vouchers: Record<string, Voucher[]>;
@@ -24,70 +23,7 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
-      console.log('Starting voucher deletion process for:', voucherId);
-      
-      // First check if the voucher is in any wallet
-      const { data: walletData, error: walletError } = await supabase
-        .from('voucher_wallet')
-        .select('*')
-        .eq('voucher_id', voucherId)
-        .maybeSingle(); // Changed from .single() to .maybeSingle()
-
-      if (walletError && walletError.code !== 'PGRST116') { // PGRST116 means no rows returned
-        console.error('Error checking wallet:', walletError);
-        throw walletError;
-      }
-
-      if (walletData) {
-        console.log('Voucher found in wallet, creating copy...');
-        
-        // If voucher is in a wallet, create a copy first
-        const { data: originalVoucher, error: fetchError } = await supabase
-          .from('vouchers')
-          .select('*')
-          .eq('id', voucherId)
-          .single();
-
-        if (fetchError) {
-          console.error('Error fetching original voucher:', fetchError);
-          throw fetchError;
-        }
-
-        if (originalVoucher) {
-          // First, update any existing copies to point to null
-          const { error: updateError } = await supabase
-            .from('vouchers')
-            .update({ original_voucher_id: null })
-            .eq('original_voucher_id', voucherId);
-
-          if (updateError) {
-            console.error('Error updating existing copies:', updateError);
-            throw updateError;
-          }
-
-          // Generate a unique code for the copy
-          const timestamp = new Date().getTime();
-          const uniqueCode = `${originalVoucher.code}_copy_${timestamp}`;
-
-          // Then create a new copy with a unique code
-          const { error: copyError } = await supabase
-            .from('vouchers')
-            .insert({
-              code: uniqueCode,
-              plan_id: originalVoucher.plan_id,
-              is_used: originalVoucher.is_used,
-              is_copy: true,
-              original_voucher_id: null // Set to null since original will be deleted
-            });
-
-          if (copyError) {
-            console.error('Error copying voucher:', copyError);
-            throw copyError;
-          }
-        }
-      }
-
-      // Now proceed with deletion of the original voucher
+      // Only delete the voucher from the vouchers table
       await deleteVoucher(voucherId);
       
       // Fetch updated vouchers and transform into the required format

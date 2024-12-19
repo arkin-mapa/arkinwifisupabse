@@ -261,9 +261,7 @@ export type Database = {
           code: string
           created_at: string
           id: string
-          is_copy: boolean | null
           is_used: boolean | null
-          original_voucher_id: string | null
           plan_id: string | null
           updated_at: string
         }
@@ -271,9 +269,7 @@ export type Database = {
           code: string
           created_at?: string
           id?: string
-          is_copy?: boolean | null
           is_used?: boolean | null
-          original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string
         }
@@ -281,20 +277,11 @@ export type Database = {
           code?: string
           created_at?: string
           id?: string
-          is_copy?: boolean | null
           is_used?: boolean | null
-          original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "vouchers_original_voucher_id_fkey"
-            columns: ["original_voucher_id"]
-            isOneToOne: false
-            referencedRelation: "vouchers"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "vouchers_plan_id_fkey"
             columns: ["plan_id"]
