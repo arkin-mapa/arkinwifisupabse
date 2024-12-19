@@ -107,7 +107,7 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[60vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[60vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg fixed top-4 left-1/2 -translate-x-1/2">
         <div className="px-4 py-2 border-b flex flex-col items-center space-y-0.5">
           <h3 className="text-base font-medium">{selectedPlan?.duration} Plan</h3>
           <p className="text-sm text-muted-foreground">₱{selectedPlan?.price.toFixed(2)}</p>
