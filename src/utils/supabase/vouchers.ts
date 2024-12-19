@@ -22,15 +22,14 @@ export async function fetchVouchers(): Promise<Voucher[]> {
     id: v.id,
     code: v.code,
     planId: v.plan_id || '',
-    isAssigned: v.voucher_wallet !== null
+    isAssigned: v.voucher_wallet !== null && v.voucher_wallet.length > 0
   }));
 }
 
 export async function addVouchers(planId: string, codes: string[]): Promise<void> {
   const vouchersToInsert = codes.map(code => ({
     code,
-    plan_id: planId,
-    is_used: false
+    plan_id: planId
   }));
 
   const { error } = await supabase
@@ -115,7 +114,7 @@ export async function fetchClientPlans(): Promise<Plan[]> {
       price,
       vouchers!left (
         id,
-        voucher_wallet (
+        voucher_wallet!left (
           id
         )
       )
@@ -130,7 +129,7 @@ export async function fetchClientPlans(): Promise<Plan[]> {
   console.log('Raw plans data:', plans); // Debug log
 
   const formattedPlans = plans.map(plan => {
-    // Count only unassigned vouchers
+    // Count vouchers that don't have any entries in voucher_wallet
     const availableVouchers = plan.vouchers 
       ? plan.vouchers.filter(v => !v.voucher_wallet || v.voucher_wallet.length === 0).length 
       : 0;
