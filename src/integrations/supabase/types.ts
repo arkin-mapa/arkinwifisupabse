@@ -187,7 +187,6 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
-          is_used: boolean | null
           status: Database["public"]["Enums"]["purchase_status"] | null
           updated_at: string
           voucher_id: string | null
@@ -196,7 +195,6 @@ export type Database = {
           client_id: string
           created_at?: string
           id?: string
-          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id?: string | null
@@ -205,7 +203,6 @@ export type Database = {
           client_id?: string
           created_at?: string
           id?: string
-          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id?: string | null
@@ -226,7 +223,6 @@ export type Database = {
           created_at: string
           id: string
           is_copy: boolean | null
-          is_used: boolean | null
           original_voucher_id: string | null
           plan_id: string | null
           updated_at: string
@@ -236,7 +232,6 @@ export type Database = {
           created_at?: string
           id?: string
           is_copy?: boolean | null
-          is_used?: boolean | null
           original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string
@@ -246,7 +241,6 @@ export type Database = {
           created_at?: string
           id?: string
           is_copy?: boolean | null
-          is_used?: boolean | null
           original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string

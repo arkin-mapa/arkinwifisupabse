@@ -11,7 +11,7 @@ export interface Voucher {
   id: string;
   code: string;
   planId: string;
-  isUsed: boolean;
+  isAssigned?: boolean;
 }
 
 export interface Purchase {
