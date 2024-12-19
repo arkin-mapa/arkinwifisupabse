@@ -9,6 +9,11 @@ interface VoucherPoolProps {
 export const VoucherPool = ({ vouchers }: VoucherPoolProps) => {
   const [voucherPool, setVoucherPool] = useState<Record<string, Voucher[]>>(vouchers);
 
+  // Update local state when vouchers prop changes
+  useEffect(() => {
+    setVoucherPool(vouchers);
+  }, [vouchers]);
+
   useEffect(() => {
     const channel = supabase
       .channel('voucher-changes')
