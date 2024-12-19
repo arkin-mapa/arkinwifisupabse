@@ -107,15 +107,15 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0">
-        <DialogHeader className="p-6 pb-0">
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[90vh] flex flex-col">
+        <DialogHeader className="p-6 pb-0 shrink-0">
           <DialogTitle className="text-xl font-bold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
           <DialogDescription className="text-muted-foreground mt-2">
             Please fill in your details to complete the purchase.
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[calc(100vh-12rem)] px-6 py-4">
+        <ScrollArea className="flex-grow overflow-y-auto px-6 py-4">
           <div className="space-y-6">
             <CustomerDetails
               customerName={purchaseDetails.customerName}
