@@ -29,8 +29,12 @@ const VoucherWallet = () => {
 
   const loadData = async () => {
     try {
+      if (!session?.user?.id) {
+        throw new Error("User not authenticated");
+      }
+
       const [vouchersData, plansData] = await Promise.all([
-        fetchClientVouchers(),
+        fetchClientVouchers(session.user.id),
         fetchClientPlans()
       ]);
 
