@@ -8,6 +8,7 @@ import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerDetails } from "./purchase/CustomerDetails";
 import { PaymentMethodSelector } from "./purchase/PaymentMethodSelector";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -37,6 +38,7 @@ export const PurchaseDialog = ({
   isPending
 }: PurchaseDialogProps) => {
   const [creditBalance, setCreditBalance] = useState<number>(0);
+  const isMobile = useIsMobile();
 
   const { data: enabledPaymentMethods = [] } = useQuery({
     queryKey: ['paymentMethods'],
@@ -107,16 +109,22 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-xl font-bold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
-          <DialogDescription className="text-muted-foreground mt-2">
+      <DialogContent 
+        className={`max-w-[calc(100vw-2rem)] w-full sm:max-w-[400px] p-0 gap-0 ${
+          isMobile ? 'h-[calc(100vh-8rem)]' : ''
+        }`}
+      >
+        <DialogHeader className="p-4 pb-0 border-b">
+          <DialogTitle className="text-lg font-semibold">
+            Purchase {selectedPlan?.duration} Plan
+          </DialogTitle>
+          <DialogDescription className="text-sm text-muted-foreground mt-1">
             Please fill in your details to complete the purchase.
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[calc(100vh-12rem)] px-6 py-4">
-          <div className="space-y-6">
+        <ScrollArea className={`px-4 py-3 ${isMobile ? 'h-[calc(100vh-16rem)]' : 'max-h-[calc(100vh-16rem)]'}`}>
+          <div className="space-y-4">
             <CustomerDetails
               customerName={purchaseDetails.customerName}
               quantity={purchaseDetails.quantity}
@@ -141,25 +149,25 @@ export const PurchaseDialog = ({
               creditBalance={creditBalance}
               totalAmount={totalAmount}
             />
-
-            <div className="pt-2 space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Total Amount:</span>
-                <span className="font-semibold">₱{totalAmount.toFixed(2)}</span>
-              </div>
-
-              <Button
-                className="w-full h-11"
-                onClick={onSubmit}
-                disabled={isPending || 
-                  (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
-                  !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
-              >
-                {isPending ? "Processing..." : "Confirm Purchase"}
-              </Button>
-            </div>
           </div>
         </ScrollArea>
+
+        <div className="p-4 border-t bg-muted/10">
+          <div className="flex justify-between items-center mb-3 text-sm">
+            <span className="text-muted-foreground">Total Amount:</span>
+            <span className="font-medium">₱{totalAmount.toFixed(2)}</span>
+          </div>
+
+          <Button
+            className="w-full h-10"
+            onClick={onSubmit}
+            disabled={isPending || 
+              (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
+              !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
+          >
+            {isPending ? "Processing..." : "Confirm Purchase"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

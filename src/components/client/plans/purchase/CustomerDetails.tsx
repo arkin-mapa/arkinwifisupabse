@@ -25,7 +25,7 @@ export const CustomerDetails = ({
           value={customerName}
           onChange={(e) => onCustomerNameChange(e.target.value)}
           placeholder="Enter your name"
-          className="h-10"
+          className="h-9"
         />
       </div>
 
@@ -38,7 +38,7 @@ export const CustomerDetails = ({
           max={maxQuantity}
           value={quantity}
           onChange={(e) => onQuantityChange(parseInt(e.target.value))}
-          className="h-10"
+          className="h-9"
         />
       </div>
     </div>
