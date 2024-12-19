@@ -131,6 +131,20 @@ const VoucherWallet = () => {
     }
   };
 
+  const handleSelectAll = () => {
+    const allUnusedVouchers = Object.values(vouchers)
+      .flat()
+      .filter(v => !v.isUsed);
+    setSelectedVouchers(allUnusedVouchers);
+  };
+
+  const getTotalUnusedVouchers = () => {
+    return Object.values(vouchers)
+      .flat()
+      .filter(v => !v.isUsed)
+      .length;
+  };
+
   if (!session) {
     return (
       <Card className="mx-4">
@@ -148,6 +162,8 @@ const VoucherWallet = () => {
         onOpenQRGenerator={() => setIsQRGeneratorOpen(true)}
         onOpenQRScanner={() => setIsQRScannerOpen(true)}
         onPrintSelected={handlePrintSelected}
+        onSelectAll={handleSelectAll}
+        totalVouchers={getTotalUnusedVouchers()}
       />
       <CardContent className="p-0">
         <ScrollArea className="h-[calc(100vh-16rem)]">

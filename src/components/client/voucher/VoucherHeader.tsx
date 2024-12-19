@@ -1,6 +1,6 @@
 import { Button } from "@/components/ui/button";
 import { CardHeader, CardTitle } from "@/components/ui/card";
-import { QrCode, Printer, Wallet } from "lucide-react";
+import { QrCode, Printer, Wallet, CheckSquare } from "lucide-react";
 import type { Voucher } from "@/types/plans";
 
 interface VoucherHeaderProps {
@@ -8,13 +8,17 @@ interface VoucherHeaderProps {
   onOpenQRGenerator: () => void;
   onOpenQRScanner: () => void;
   onPrintSelected: () => void;
+  onSelectAll: () => void;
+  totalVouchers: number;
 }
 
 const VoucherHeader = ({
   selectedVouchers,
   onOpenQRGenerator,
   onOpenQRScanner,
-  onPrintSelected
+  onPrintSelected,
+  onSelectAll,
+  totalVouchers
 }: VoucherHeaderProps) => {
   return (
     <CardHeader className="pb-3 space-y-4">
@@ -53,6 +57,15 @@ const VoucherHeader = ({
         >
           <Printer className="h-4 w-4 mr-2" />
           Print ({selectedVouchers.length})
+        </Button>
+        <Button
+          variant="outline"
+          size="sm"
+          onClick={onSelectAll}
+          className="w-full sm:w-auto"
+        >
+          <CheckSquare className="h-4 w-4 mr-2" />
+          Select All ({totalVouchers})
         </Button>
       </div>
     </CardHeader>
