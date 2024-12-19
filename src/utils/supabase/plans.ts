@@ -64,11 +64,11 @@ export async function fetchClientPlans(): Promise<Plan[]> {
       .select('*', { count: 'exact', head: true })
       .eq('plan_id', plan.id)
       .eq('is_used', false)
-      .is('id', 'not.in', (
+      .not('id', 'in', 
         supabase
           .from('voucher_wallet')
           .select('voucher_id')
-      ));
+      );
 
     if (countError) {
       console.error(`Error counting vouchers for plan ${plan.duration}:`, countError);
