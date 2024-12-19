@@ -1,7 +1,7 @@
 import { useState, useEffect } from "react";
 import { useToast } from "@/hooks/use-toast";
 import PlanCard from "./PlanCard";
-import VoucherPool from "./VoucherPool";
+import { VoucherPool } from "./VoucherPool";
 import AddPlanDialog from "./AddPlanDialog";
 import { fetchPlans, createPlan, deletePlan, fetchVouchers, addVouchers } from "@/utils/supabaseData";
 import type { Plan, Voucher } from "@/types/plans";
