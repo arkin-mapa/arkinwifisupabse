@@ -107,16 +107,13 @@ export async function fetchClientVouchers(): Promise<Voucher[]> {
 export async function fetchClientPlans(): Promise<Plan[]> {
   console.log('Fetching client plans...'); // Debug log
 
-  // First, get all plans with their vouchers
+  // First, get all plans
   const { data: plans, error } = await supabase
     .from('plans')
     .select(`
       id,
       duration,
-      price,
-      vouchers!left (
-        id
-      )
+      price
     `)
     .order('created_at', { ascending: true });
 
@@ -127,18 +124,21 @@ export async function fetchClientPlans(): Promise<Plan[]> {
 
   console.log('Raw plans data:', plans); // Debug log
 
-  // For each plan, we need to count vouchers that are not in any wallet
+  // For each plan, we need to count available vouchers
   const formattedPlans = await Promise.all(plans.map(async plan => {
-    // Get count of vouchers that are not in any wallet
+    // Get the subquery for vouchers in wallet first
+    const { data: walletVouchers } = await supabase
+      .from('voucher_wallet')
+      .select('voucher_id');
+    
+    const usedVoucherIds = walletVouchers?.map(v => v.voucher_id) || [];
+
+    // Then count available vouchers
     const { count, error: countError } = await supabase
       .from('vouchers')
-      .select('id', { count: 'exact', head: true })
+      .select('*', { count: 'exact', head: true })
       .eq('plan_id', plan.id)
-      .not('id', 'in', (
-        supabase
-          .from('voucher_wallet')
-          .select('voucher_id')
-      ));
+      .not('id', 'in', usedVoucherIds);
 
     if (countError) {
       console.error('Error counting available vouchers:', countError);
@@ -165,15 +165,19 @@ export async function fetchClientPlans(): Promise<Plan[]> {
 }
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
+  // Get the subquery for vouchers in wallet first
+  const { data: walletVouchers } = await supabase
+    .from('voucher_wallet')
+    .select('voucher_id');
+  
+  const usedVoucherIds = walletVouchers?.map(v => v.voucher_id) || [];
+
+  // Then count available vouchers
   const { count, error } = await supabase
     .from('vouchers')
-    .select('id', { count: 'exact', head: true })
+    .select('*', { count: 'exact', head: true })
     .eq('plan_id', planId)
-    .not('id', 'in', (
-      supabase
-        .from('voucher_wallet')
-        .select('voucher_id')
-    ));
+    .not('id', 'in', usedVoucherIds);
 
   if (error) {
     console.error('Error fetching available vouchers count:', error);
