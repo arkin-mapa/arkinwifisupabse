@@ -1,7 +1,4 @@
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,6 +6,8 @@ import type { Plan } from "@/types/plans";
 import type { Database } from "@/types/database.types";
 import { useQuery } from "@tanstack/react-query";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { CustomerDetails } from "./purchase/CustomerDetails";
+import { PaymentMethodSelector } from "./purchase/PaymentMethodSelector";
 
 type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 
@@ -55,7 +54,6 @@ export const PurchaseDialog = ({
   useEffect(() => {
     loadCreditBalance();
 
-    // Subscribe to credit changes
     const channel = supabase
       .channel('credit-balance')
       .on(
@@ -97,9 +95,7 @@ export const PurchaseDialog = ({
   };
 
   const totalAmount = (selectedPlan?.price || 0) * purchaseDetails.quantity;
-  const canUseCredit = creditBalance >= totalAmount;
 
-  // Reset payment method if current one is disabled
   useEffect(() => {
     if (!enabledPaymentMethods.includes(purchaseDetails.paymentMethod)) {
       setPurchaseDetails({
@@ -111,7 +107,7 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0">
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0">
         <DialogHeader className="p-6 pb-0">
           <DialogTitle className="text-xl font-bold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
           <DialogDescription className="text-muted-foreground mt-2">
@@ -119,88 +115,32 @@ export const PurchaseDialog = ({
           </DialogDescription>
         </DialogHeader>
         
-        <ScrollArea className="max-h-[calc(100vh-12rem)]">
-          <div className="p-6 space-y-6">
-            <div className="space-y-2">
-              <Label htmlFor="customerName" className="text-sm font-medium">Your Name</Label>
-              <Input
-                id="customerName"
-                value={purchaseDetails.customerName}
-                onChange={(e) => setPurchaseDetails({
-                  ...purchaseDetails,
-                  customerName: e.target.value
-                })}
-                placeholder="Enter your name"
-                className="h-10"
-              />
-            </div>
+        <ScrollArea className="max-h-[calc(100vh-12rem)] px-6 py-4">
+          <div className="space-y-6">
+            <CustomerDetails
+              customerName={purchaseDetails.customerName}
+              quantity={purchaseDetails.quantity}
+              maxQuantity={selectedPlan?.availableVouchers || 1}
+              onCustomerNameChange={(value) => setPurchaseDetails({
+                ...purchaseDetails,
+                customerName: value
+              })}
+              onQuantityChange={(value) => setPurchaseDetails({
+                ...purchaseDetails,
+                quantity: value
+              })}
+            />
 
-            <div className="space-y-2">
-              <Label htmlFor="quantity" className="text-sm font-medium">Quantity</Label>
-              <Input
-                id="quantity"
-                type="number"
-                min="1"
-                max={selectedPlan?.availableVouchers || 1}
-                value={purchaseDetails.quantity}
-                onChange={(e) => setPurchaseDetails({
-                  ...purchaseDetails,
-                  quantity: parseInt(e.target.value)
-                })}
-                className="h-10"
-              />
-            </div>
-
-            <div className="space-y-3">
-              <Label className="text-sm font-medium">Payment Method</Label>
-              <RadioGroup
-                value={purchaseDetails.paymentMethod}
-                onValueChange={(value: PaymentMethod) => setPurchaseDetails({
-                  ...purchaseDetails,
-                  paymentMethod: value
-                })}
-                className="grid gap-3"
-              >
-                {enabledPaymentMethods.includes('cash') && (
-                  <div className="flex items-center space-x-3 rounded-lg border p-4">
-                    <RadioGroupItem value="cash" id="cash" />
-                    <Label htmlFor="cash" className="flex-1">Cash</Label>
-                  </div>
-                )}
-                {enabledPaymentMethods.includes('gcash') && (
-                  <div className="flex items-center space-x-3 rounded-lg border p-4">
-                    <RadioGroupItem value="gcash" id="gcash" />
-                    <Label htmlFor="gcash" className="flex-1">GCash</Label>
-                  </div>
-                )}
-                {enabledPaymentMethods.includes('paymaya') && (
-                  <div className="flex items-center space-x-3 rounded-lg border p-4">
-                    <RadioGroupItem value="paymaya" id="paymaya" />
-                    <Label htmlFor="paymaya" className="flex-1">PayMaya</Label>
-                  </div>
-                )}
-                {enabledPaymentMethods.includes('credit') && (
-                  <div className="flex items-center space-x-3 rounded-lg border p-4">
-                    <RadioGroupItem 
-                      value="credit" 
-                      id="credit" 
-                      disabled={!canUseCredit}
-                    />
-                    <div className="flex-1">
-                      <Label 
-                        htmlFor="credit" 
-                        className={!canUseCredit ? "text-muted-foreground" : ""}
-                      >
-                        Credit Balance
-                      </Label>
-                      <p className="text-sm text-muted-foreground">
-                        Available: ₱{creditBalance.toFixed(2)}
-                      </p>
-                    </div>
-                  </div>
-                )}
-              </RadioGroup>
-            </div>
+            <PaymentMethodSelector
+              selectedMethod={purchaseDetails.paymentMethod}
+              onMethodChange={(value) => setPurchaseDetails({
+                ...purchaseDetails,
+                paymentMethod: value
+              })}
+              enabledMethods={enabledPaymentMethods}
+              creditBalance={creditBalance}
+              totalAmount={totalAmount}
+            />
 
             <div className="pt-2 space-y-4">
               <div className="flex justify-between items-center text-sm">
@@ -212,7 +152,7 @@ export const PurchaseDialog = ({
                 className="w-full h-11"
                 onClick={onSubmit}
                 disabled={isPending || 
-                  (purchaseDetails.paymentMethod === 'credit' && !canUseCredit) ||
+                  (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
                   !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
               >
                 {isPending ? "Processing..." : "Confirm Purchase"}

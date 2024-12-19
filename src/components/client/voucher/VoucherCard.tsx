@@ -86,7 +86,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
                 className={`px-3 py-1.5 rounded text-sm font-mono text-center break-all cursor-pointer transition-colors ${
                   voucher.isUsed 
                     ? 'bg-muted hover:bg-muted/80' 
-                    : 'bg-[#F2FCE2] hover:bg-[#E5F5D5] text-green-700'
+                    : 'bg-green-800 hover:bg-green-700 text-white'
                 }`}
                 onClick={() => !voucher.isUsed && setShowConfirmDialog(true)}
               >
