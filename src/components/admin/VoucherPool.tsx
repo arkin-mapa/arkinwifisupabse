@@ -7,6 +7,7 @@ import { Trash2, ChevronDown, ChevronUp } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { deleteVoucher, fetchVouchers } from "@/utils/supabaseData";
 import type { Voucher } from "@/types/plans";
+import { supabase } from "@/integrations/supabase/client";
 
 interface VoucherPoolProps {
   vouchers: Record<string, Voucher[]>;
@@ -23,7 +24,28 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
-      // Only delete the voucher from the vouchers table
+      // First check if the voucher is in any wallet
+      const { data: walletData, error: walletError } = await supabase
+        .from('voucher_wallet')
+        .select('*')
+        .eq('voucher_id', voucherId)
+        .single();
+
+      if (walletError && walletError.code !== 'PGRST116') { // PGRST116 means no rows returned
+        console.error('Error checking wallet:', walletError);
+        throw walletError;
+      }
+
+      if (walletData) {
+        toast({
+          title: "Cannot delete voucher",
+          description: "This voucher is currently assigned to a client and cannot be deleted.",
+          variant: "destructive",
+        });
+        return;
+      }
+
+      // If voucher is not in any wallet, proceed with deletion
       await deleteVoucher(voucherId);
       
       // Fetch updated vouchers and transform into the required format
