@@ -107,22 +107,17 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[65vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
-        <div className="px-4 py-3 border-b flex flex-col items-center space-y-0.5">
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[60vh] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+        <div className="px-4 py-2 border-b flex flex-col items-center space-y-0.5">
           <h3 className="text-base font-medium">{selectedPlan?.duration} Plan</h3>
           <p className="text-sm text-muted-foreground">₱{selectedPlan?.price.toFixed(2)}</p>
         </div>
 
-        <ScrollArea className="flex-grow overflow-y-auto px-4 py-3">
+        <ScrollArea className="flex-grow overflow-y-auto px-4 py-2">
           <div className="space-y-4">
             <CustomerDetails
-              customerName={purchaseDetails.customerName}
               quantity={purchaseDetails.quantity}
               maxQuantity={selectedPlan?.availableVouchers || 1}
-              onCustomerNameChange={(value) => setPurchaseDetails({
-                ...purchaseDetails,
-                customerName: value
-              })}
               onQuantityChange={(value) => setPurchaseDetails({
                 ...purchaseDetails,
                 quantity: value
