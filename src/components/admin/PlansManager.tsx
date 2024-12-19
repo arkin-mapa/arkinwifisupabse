@@ -37,7 +37,7 @@ const PlansManager = () => {
       // Transform plans data to include available vouchers count
       const plansWithCounts = plansData.map(plan => ({
         ...plan,
-        availableVouchers: (vouchersByPlan[plan.duration] || []).filter(v => !v.isAssigned).length
+        availableVouchers: (vouchersByPlan[plan.duration] || []).filter(v => !v.isUsed).length
       }));
 
       setPlans(plansWithCounts);

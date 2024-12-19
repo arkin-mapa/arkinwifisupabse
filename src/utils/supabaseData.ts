@@ -18,5 +18,6 @@ export {
   addVouchers,
   deleteVoucher,
   fetchClientVouchers,
+  fetchAvailableVouchersCount,
   fetchClientPlans
 } from './supabase/vouchers';

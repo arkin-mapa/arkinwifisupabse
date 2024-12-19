@@ -26,7 +26,7 @@ const PlanGroup = ({
   selectedVouchers,
   onVoucherSelect,
 }: PlanGroupProps) => {
-  const unusedVouchers = vouchers.filter(v => !v.isAssigned);
+  const unusedVouchers = vouchers.filter(v => !v.isUsed);
   
   const handleSelectAll = () => {
     const allSelected = unusedVouchers.every(voucher =>
