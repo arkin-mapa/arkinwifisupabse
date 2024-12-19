@@ -24,12 +24,14 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
+      console.log('Starting voucher deletion process for:', voucherId);
+      
       // First check if the voucher is in any wallet
       const { data: walletData, error: walletError } = await supabase
         .from('voucher_wallet')
         .select('*')
         .eq('voucher_id', voucherId)
-        .single();
+        .maybeSingle(); // Changed from .single() to .maybeSingle()
 
       if (walletError && walletError.code !== 'PGRST116') { // PGRST116 means no rows returned
         console.error('Error checking wallet:', walletError);
@@ -37,12 +39,19 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
       }
 
       if (walletData) {
+        console.log('Voucher found in wallet, creating copy...');
+        
         // If voucher is in a wallet, create a copy first
-        const { data: originalVoucher } = await supabase
+        const { data: originalVoucher, error: fetchError } = await supabase
           .from('vouchers')
           .select('*')
           .eq('id', voucherId)
           .single();
+
+        if (fetchError) {
+          console.error('Error fetching original voucher:', fetchError);
+          throw fetchError;
+        }
 
         if (originalVoucher) {
           // First, update any existing copies to point to null
@@ -56,11 +65,15 @@ const VoucherPool = ({ vouchers: initialVouchers }: VoucherPoolProps) => {
             throw updateError;
           }
 
-          // Then create a new copy
+          // Generate a unique code for the copy
+          const timestamp = new Date().getTime();
+          const uniqueCode = `${originalVoucher.code}_copy_${timestamp}`;
+
+          // Then create a new copy with a unique code
           const { error: copyError } = await supabase
             .from('vouchers')
             .insert({
-              code: `${originalVoucher.code}_copy`,
+              code: uniqueCode,
               plan_id: originalVoucher.plan_id,
               is_used: originalVoucher.is_used,
               is_copy: true,
