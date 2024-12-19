@@ -1,74 +1,88 @@
 import { supabase } from "@/integrations/supabase/client";
 import type { Plan } from "@/types/plans";
 
-export async function fetchPlans(): Promise<Plan[]> {
-  console.log('Fetching plans...'); // Debug log
-
+export async function fetchPlans() {
   const { data: plans, error } = await supabase
     .from('plans')
-    .select(`
-      id,
-      duration,
-      price,
-      vouchers!left (
-        id,
-        voucher_wallet!left (
-          status
-        )
-      )
-    `)
-    .order('created_at', { ascending: true });
+    .select('*')
+    .order('price');
 
   if (error) {
     console.error('Error fetching plans:', error);
     throw error;
   }
 
-  console.log('Raw plans data:', plans); // Debug log
-
-  const formattedPlans = plans.map(plan => {
-    // Count vouchers that are either not in wallet or not approved
-    const availableVouchers = plan.vouchers 
-      ? plan.vouchers.filter(v => !v.voucher_wallet?.some(w => w.status === 'approved')).length 
-      : 0;
-    
-    console.log(`Plan ${plan.duration}: Found ${availableVouchers} available vouchers`); // Debug log
-    
-    return {
-      id: plan.id,
-      duration: plan.duration,
-      price: Number(plan.price),
-      availableVouchers
-    };
-  });
-
-  console.log('Formatted plans:', formattedPlans); // Debug log
-
-  return formattedPlans;
+  return plans;
 }
 
-// Alias for client-side use
-export const fetchClientPlans = fetchPlans;
-
-export async function createPlan(data: { duration: string; price: number }) {
-  const { error } = await supabase
+export async function createPlan(duration: string, price: number) {
+  const { data, error } = await supabase
     .from('plans')
-    .insert([data]);
+    .insert([{ duration, price }])
+    .select()
+    .single();
 
   if (error) {
     console.error('Error creating plan:', error);
     throw error;
   }
+
+  return data;
 }
 
-export async function deletePlan(planId: string) {
+export async function deletePlan(id: string) {
   const { error } = await supabase
     .from('plans')
     .delete()
-    .eq('id', planId);
+    .eq('id', id);
 
   if (error) {
     console.error('Error deleting plan:', error);
     throw error;
   }
+}
+
+export async function fetchClientPlans(): Promise<Plan[]> {
+  // First get all plans
+  const { data: plans, error: plansError } = await supabase
+    .from('plans')
+    .select('*')
+    .order('price');
+
+  if (plansError) {
+    console.error('Error fetching plans:', plansError);
+    throw plansError;
+  }
+
+  // For each plan, count available vouchers
+  const plansWithVouchers = await Promise.all(plans.map(async (plan) => {
+    console.log(`Plan ${plan.duration}: Checking available vouchers`);
+    
+    const { count, error: countError } = await supabase
+      .from('vouchers')
+      .select('*', { count: 'exact', head: true })
+      .eq('plan_id', plan.id)
+      .not('id', 'in', (
+        supabase
+          .from('voucher_wallet')
+          .select('voucher_id')
+      ));
+
+    if (countError) {
+      console.error(`Error counting vouchers for plan ${plan.duration}:`, countError);
+      throw countError;
+    }
+
+    console.log(`Plan ${plan.duration}: Found ${count} available vouchers`);
+
+    return {
+      id: plan.id,
+      duration: plan.duration,
+      price: plan.price,
+      availableVouchers: count || 0
+    };
+  }));
+
+  console.log('Formatted plans:', plansWithVouchers);
+  return plansWithVouchers;
 }
