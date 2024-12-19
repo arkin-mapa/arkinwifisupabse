@@ -1,9 +1,8 @@
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
 import { Check, X } from "lucide-react";
-import { transferVouchersToClient } from "@/utils/voucherTransfer";
-import type { Purchase } from "@/types/plans";
 import { supabase } from "@/integrations/supabase/client";
+import type { Purchase } from "@/types/plans";
 
 interface VoucherPurchaseHandlerProps {
   purchase: Purchase;
@@ -36,10 +35,58 @@ export const VoucherPurchaseHandler = ({
           });
 
         if (creditError) throw creditError;
+
+        // Get available vouchers for this plan
+        const { data: availableVouchers, error: voucherError } = await supabase
+          .from('vouchers')
+          .select('id')
+          .eq('plan_id', purchase.plan_id)
+          .eq('is_used', false)
+          .limit(purchase.quantity);
+
+        if (voucherError) throw voucherError;
+
+        if (!availableVouchers || availableVouchers.length < purchase.quantity) {
+          throw new Error('Not enough vouchers available');
+        }
+
+        // Use the new function to handle credit payment voucher transfer
+        const { error: transferError } = await supabase.rpc(
+          'handle_credit_payment_voucher_transfer',
+          {
+            p_client_id: purchase.client_id,
+            p_voucher_ids: availableVouchers.map(v => v.id)
+          }
+        );
+
+        if (transferError) throw transferError;
+      } else {
+        // For non-credit payments, use the regular transfer function
+        const { data: availableVouchers, error: voucherError } = await supabase
+          .from('vouchers')
+          .select('id')
+          .eq('plan_id', purchase.plan_id)
+          .eq('is_used', false)
+          .limit(purchase.quantity);
+
+        if (voucherError) throw voucherError;
+
+        if (!availableVouchers || availableVouchers.length < purchase.quantity) {
+          throw new Error('Not enough vouchers available');
+        }
+
+        const { error: transferError } = await supabase.rpc(
+          'transfer_vouchers_to_client',
+          {
+            p_client_id: purchase.client_id,
+            p_voucher_ids: availableVouchers.map(v => v.id)
+          }
+        );
+
+        if (transferError) throw transferError;
       }
       
-      await transferVouchersToClient(purchase);
-      
+      // Update purchase status
       const { error: updateError } = await supabase
         .from('purchases')
         .update({ status: 'approved' })
