@@ -222,8 +222,6 @@ export type Database = {
           code: string
           created_at: string
           id: string
-          is_copy: boolean | null
-          original_voucher_id: string | null
           plan_id: string | null
           updated_at: string
         }
@@ -231,8 +229,6 @@ export type Database = {
           code: string
           created_at?: string
           id?: string
-          is_copy?: boolean | null
-          original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string
         }
@@ -240,19 +236,10 @@ export type Database = {
           code?: string
           created_at?: string
           id?: string
-          is_copy?: boolean | null
-          original_voucher_id?: string | null
           plan_id?: string | null
           updated_at?: string
         }
         Relationships: [
-          {
-            foreignKeyName: "vouchers_original_voucher_id_fkey"
-            columns: ["original_voucher_id"]
-            isOneToOne: false
-            referencedRelation: "vouchers"
-            referencedColumns: ["id"]
-          },
           {
             foreignKeyName: "vouchers_plan_id_fkey"
             columns: ["plan_id"]
@@ -272,13 +259,6 @@ export type Database = {
           user_email: string
         }
         Returns: string
-      }
-      handle_credit_payment_voucher_transfer: {
-        Args: {
-          p_client_id: string
-          p_voucher_ids: string[]
-        }
-        Returns: undefined
       }
       transfer_credits: {
         Args: {
