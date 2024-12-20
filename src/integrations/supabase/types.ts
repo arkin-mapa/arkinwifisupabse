@@ -9,6 +9,87 @@ export type Json =
 export type Database = {
   public: {
     Tables: {
+      credit_purchases: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          id: string
+          status: Database["public"]["Enums"]["credit_purchase_status"] | null
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["credit_purchase_status"] | null
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          id?: string
+          status?: Database["public"]["Enums"]["credit_purchase_status"] | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      credits: {
+        Row: {
+          amount: number
+          client_id: string
+          created_at: string
+          id: string
+          reference_id: string | null
+          transaction_type: Database["public"]["Enums"]["credit_transaction_type"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          client_id: string
+          created_at?: string
+          id?: string
+          reference_id?: string | null
+          transaction_type: Database["public"]["Enums"]["credit_transaction_type"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          client_id?: string
+          created_at?: string
+          id?: string
+          reference_id?: string | null
+          transaction_type?: Database["public"]["Enums"]["credit_transaction_type"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      payment_method_settings: {
+        Row: {
+          created_at: string
+          id: string
+          is_enabled: boolean | null
+          method: Database["public"]["Enums"]["payment_method"]
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          method: Database["public"]["Enums"]["payment_method"]
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_enabled?: boolean | null
+          method?: Database["public"]["Enums"]["payment_method"]
+          updated_at?: string
+        }
+        Relationships: []
+      }
       plans: {
         Row: {
           created_at: string
@@ -152,6 +233,7 @@ export type Database = {
           client_id: string | null
           created_at: string
           id: string
+          is_used: boolean | null
           status: Database["public"]["Enums"]["purchase_status"] | null
           updated_at: string
           voucher_id: string | null
@@ -160,6 +242,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id?: string | null
@@ -168,6 +251,7 @@ export type Database = {
           client_id?: string | null
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
           voucher_id?: string | null
