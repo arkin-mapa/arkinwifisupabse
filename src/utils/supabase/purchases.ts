@@ -7,7 +7,7 @@ export async function createPurchase(data: {
   planId: string;
   quantity: number;
   totalAmount: number;
-  paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
+  paymentMethod: Database['public']['Enums']['payment_method'];
 }): Promise<void> {
   // Get the current user's ID
   const { data: session } = await supabase.auth.getSession();
@@ -15,6 +15,12 @@ export async function createPurchase(data: {
 
   if (!clientId) {
     throw new Error('User must be logged in to make a purchase');
+  }
+
+  // Validate payment method is one of the allowed enum values
+  const validPaymentMethods = ['cash', 'gcash', 'paymaya', 'credit'] as const;
+  if (!validPaymentMethods.includes(data.paymentMethod)) {
+    throw new Error('Invalid payment method');
   }
 
   const { error } = await supabase
