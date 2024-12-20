@@ -34,27 +34,38 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers?.length || 0}`);
   }
 
-  // Add vouchers to client's wallet and mark them as used in the vouchers table
-  const walletEntries = availableVouchers.map(voucher => ({
+  const voucherIds = availableVouchers.map(v => v.id);
+
+  // Start a transaction to update both vouchers and voucher_wallet tables
+  const { error: updateError } = await supabase
+    .from('vouchers')
+    .update({ is_used: true })
+    .in('id', voucherIds);
+
+  if (updateError) {
+    console.error('Error updating vouchers:', updateError);
+    throw new Error('Failed to mark vouchers as used');
+  }
+
+  // Add vouchers to client's wallet
+  const walletEntries = voucherIds.map(voucherId => ({
     client_id: purchase.client_id,
-    voucher_id: voucher.id,
+    voucher_id: voucherId,
     status: 'approved' as PurchaseStatus,
-    is_used: false // Initially not used when transferred
+    is_used: true // Mark as used when transferred
   }));
 
   console.log('Inserting wallet entries:', walletEntries);
 
-  // Start a transaction to ensure all operations complete successfully
-  const { error: transactionError } = await supabase.rpc('transfer_vouchers_to_client', {
-    p_client_id: purchase.client_id,
-    p_voucher_ids: availableVouchers.map(v => v.id)
-  });
+  const { error: walletError } = await supabase
+    .from('voucher_wallet')
+    .insert(walletEntries);
 
-  if (transactionError) {
-    console.error('Error in voucher transfer transaction:', transactionError);
+  if (walletError) {
+    console.error('Error inserting into voucher_wallet:', walletError);
     throw new Error('Failed to transfer vouchers to client wallet');
   }
 
   console.log('Voucher transfer completed successfully');
-  return availableVouchers.map(v => v.id);
+  return voucherIds;
 }
