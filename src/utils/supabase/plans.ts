@@ -45,29 +45,26 @@ export async function deletePlan(planId: string) {
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
   try {
-    // First, get the total count of vouchers for this plan that aren't used
-    const { count: totalCount, error: totalError } = await supabase
+    // Get all vouchers for this plan that aren't used
+    const { data: vouchers, error: vouchersError } = await supabase
       .from('vouchers')
-      .select('*', { count: 'exact', head: true })
+      .select('id')
       .eq('plan_id', planId)
       .eq('is_used', false);
 
-    if (totalError) throw totalError;
+    if (vouchersError) throw vouchersError;
+    if (!vouchers) return 0;
 
-    // Then, get the count of vouchers that are in wallets
-    const { count: walletCount, error: walletError } = await supabase
+    // Get vouchers that are in wallets
+    const { data: walletVouchers, error: walletError } = await supabase
       .from('voucher_wallet')
-      .select('voucher_id', { count: 'exact' })
-      .eq('voucher_id', supabase
-        .from('vouchers')
-        .select('id')
-        .eq('plan_id', planId)
-        .eq('is_used', false));
+      .select('voucher_id')
+      .in('voucher_id', vouchers.map(v => v.id));
 
     if (walletError) throw walletError;
 
-    // Available vouchers are total vouchers minus those in wallets
-    const availableCount = (totalCount || 0) - (walletCount || 0);
+    // Calculate available vouchers by subtracting wallet vouchers from total vouchers
+    const availableCount = vouchers.length - (walletVouchers?.length || 0);
     return Math.max(0, availableCount); // Ensure we don't return negative numbers
   } catch (error) {
     console.error('Error counting available vouchers:', error);
@@ -84,7 +81,6 @@ export async function fetchClientPlans(): Promise<Plan[]> {
       .order('duration');
 
     if (plansError) throw plansError;
-
     if (!plans) return [];
 
     // Then, for each plan, count available vouchers
