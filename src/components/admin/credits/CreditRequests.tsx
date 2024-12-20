@@ -14,7 +14,7 @@ interface CreditRequest {
   created_at: string;
 }
 
-export const CreditRequests = () => {
+const CreditRequests = () => {
   const [requests, setRequests] = useState<CreditRequest[]>([]);
   const [loading, setLoading] = useState(true);
 
@@ -165,3 +165,5 @@ export const CreditRequests = () => {
     </Card>
   );
 };
+
+export default CreditRequests;

@@ -20,13 +20,15 @@ const AdminDashboard = () => {
   const [isEditing, setIsEditing] = useState(false);
   const [logoName, setLogoName] = useState("Admin Dashboard");
 
-  const { data: purchases, isLoading } = useQuery({
+  const { data: purchases = [], isLoading } = useQuery({
     queryKey: ['purchases'],
     queryFn: fetchPurchases,
-    onError: (error) => {
-      console.error('Error fetching purchases:', error);
-      toast.error("Failed to load purchases");
-    },
+    meta: {
+      onError: (error: Error) => {
+        console.error('Error fetching purchases:', error);
+        toast.error("Failed to load purchases");
+      }
+    }
   });
 
   const handleLogout = async () => {
@@ -91,8 +93,8 @@ const AdminDashboard = () => {
 
       <div className="container mx-auto p-4">
         <div className="grid gap-4 grid-cols-1 md:grid-cols-2 mb-6">
-          <SalesSummary />
-          <PendingPurchases purchases={purchases || []} isLoading={isLoading} />
+          <SalesSummary purchases={purchases} />
+          <PendingPurchases onPurchaseUpdate={() => {}} />
         </div>
 
         <Tabs defaultValue="plans" className="space-y-4">
@@ -108,11 +110,16 @@ const AdminDashboard = () => {
           </TabsContent>
 
           <TabsContent value="purchases" className="space-y-4">
-            <PurchasesTable purchases={purchases || []} isLoading={isLoading} />
+            <PurchasesTable 
+              purchases={purchases} 
+              onApprove={() => {}} 
+              onReject={() => {}} 
+              onDelete={() => {}} 
+            />
           </TabsContent>
 
           <TabsContent value="vouchers" className="space-y-4">
-            <VoucherPool vouchers={{}} />
+            <VoucherPool />
           </TabsContent>
 
           <TabsContent value="credits" className="space-y-4">
