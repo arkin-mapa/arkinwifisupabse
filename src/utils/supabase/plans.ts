@@ -47,45 +47,27 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
   try {
     console.log(`Counting available vouchers for plan ${planId}`);
     
-    // Get all vouchers for this plan that are not used
-    const { data: unusedVouchers, error: vouchersError } = await supabase
+    // Count vouchers that are not used and not in any wallet
+    const { count, error } = await supabase
       .from('vouchers')
-      .select('id')
+      .select('*', { count: 'exact', head: true })
       .eq('plan_id', planId)
-      .eq('is_used', false);
+      .eq('is_used', false)
+      .not('id', 'in', 
+        supabase
+          .from('voucher_wallet')
+          .select('voucher_id')
+      );
 
-    if (vouchersError) {
-      console.error('Error fetching unused vouchers:', vouchersError);
+    if (error) {
+      console.error('Error counting available vouchers:', error);
       return 0;
     }
 
-    if (!unusedVouchers || unusedVouchers.length === 0) {
-      console.log(`No unused vouchers found for plan ${planId}`);
-      return 0;
-    }
-
-    console.log(`Found ${unusedVouchers.length} unused vouchers`);
-
-    // Get count of these vouchers that are already in wallets with pending status
-    const { data: walletVouchers, error: walletError } = await supabase
-      .from('voucher_wallet')
-      .select('voucher_id')
-      .in('voucher_id', unusedVouchers.map(v => v.id))
-      .eq('status', 'pending');
-
-    if (walletError) {
-      console.error('Error fetching wallet vouchers:', walletError);
-      return 0;
-    }
-
-    const pendingCount = walletVouchers?.length || 0;
-    const availableCount = unusedVouchers.length - pendingCount;
-
-    console.log(`Plan ${planId}: Total unused=${unusedVouchers.length}, In wallets=${pendingCount}, Available=${availableCount}`);
-    
-    return Math.max(0, availableCount);
+    console.log(`Plan ${planId}: ${count || 0} vouchers available`);
+    return count || 0;
   } catch (error) {
-    console.error('Error counting available vouchers:', error);
+    console.error('Unexpected error in fetchAvailableVouchersCount:', error);
     return 0;
   }
 }
