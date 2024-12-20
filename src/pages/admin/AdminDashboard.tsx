@@ -45,19 +45,19 @@ const AdminDashboard = () => {
           <div className="flex items-center gap-2">
             <Settings className="h-5 w-5 text-purple-600 dark:text-purple-400" />
             <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
-              Admin Dashboard
+              Admin
             </h1>
           </div>
           <Button
             variant="outline"
             size="sm"
             onClick={handleLogout}
-            className="gap-2 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
+            className="h-8 w-8 p-0 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
                      dark:border-purple-800 dark:hover:bg-purple-900/50 dark:hover:text-purple-300 
                      transition-all duration-200"
+            title="Logout"
           >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
+            <LogOut className="h-3.5 w-3.5" />
           </Button>
         </div>
       </div>
