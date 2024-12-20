@@ -48,7 +48,7 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
     // First get all unused vouchers for this plan
     const { data: unusedVouchers, error: vouchersError } = await supabase
       .from('vouchers')
-      .select('id')
+      .select('*')  // Changed from just 'id' to '*' to get all voucher data
       .eq('plan_id', planId)
       .eq('is_used', false);
 
@@ -64,7 +64,7 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
     // Then check which of these vouchers are in wallets
     const { data: walletVouchers, error: walletError } = await supabase
       .from('voucher_wallet')
-      .select('voucher_id')
+      .select('*')  // Changed from just 'voucher_id' to '*' to get all wallet data
       .in('voucher_id', unusedVouchers.map(v => v.id));
 
     if (walletError) {
@@ -96,6 +96,7 @@ export async function fetchClientPlans(): Promise<Plan[]> {
     const plansWithCounts = await Promise.all(
       plans.map(async (plan) => {
         const availableCount = await fetchAvailableVouchersCount(plan.id);
+        console.log(`Plan ${plan.duration}: ${availableCount} vouchers available`); // Debug log
         return {
           id: plan.id,
           duration: plan.duration,
