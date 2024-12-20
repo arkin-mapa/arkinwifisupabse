@@ -71,18 +71,21 @@ export type Database = {
           created_at: string
           id: string
           is_enabled: boolean | null
+          method: Database["public"]["Enums"]["payment_method"]
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           is_enabled?: boolean | null
+          method: Database["public"]["Enums"]["payment_method"]
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           is_enabled?: boolean | null
+          method?: Database["public"]["Enums"]["payment_method"]
           updated_at?: string
         }
         Relationships: []
@@ -131,6 +134,42 @@ export type Database = {
           updated_at?: string
         }
         Relationships: []
+      }
+      purchase_vouchers: {
+        Row: {
+          created_at: string
+          id: string
+          purchase_id: string
+          voucher_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          purchase_id: string
+          voucher_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          purchase_id?: string
+          voucher_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "purchase_vouchers_purchase_id_fkey"
+            columns: ["purchase_id"]
+            isOneToOne: false
+            referencedRelation: "purchases"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "purchase_vouchers_voucher_id_fkey"
+            columns: ["voucher_id"]
+            isOneToOne: false
+            referencedRelation: "vouchers"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       purchases: {
         Row: {
@@ -184,31 +223,34 @@ export type Database = {
           client_id: string
           created_at: string
           id: string
+          is_used: boolean | null
           status: Database["public"]["Enums"]["purchase_status"] | null
           updated_at: string
-          voucher_id: string | null
+          voucher_id: string
         }
         Insert: {
           client_id: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
-          voucher_id?: string | null
+          voucher_id: string
         }
         Update: {
           client_id?: string
           created_at?: string
           id?: string
+          is_used?: boolean | null
           status?: Database["public"]["Enums"]["purchase_status"] | null
           updated_at?: string
-          voucher_id?: string | null
+          voucher_id?: string
         }
         Relationships: [
           {
             foreignKeyName: "voucher_wallet_voucher_id_fkey"
             columns: ["voucher_id"]
-            isOneToOne: true
+            isOneToOne: false
             referencedRelation: "vouchers"
             referencedColumns: ["id"]
           },

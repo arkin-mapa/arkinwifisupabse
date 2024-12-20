@@ -1,5 +1,5 @@
 import React, { useRef, useState } from 'react';
-import { Loader2 } from 'lucide-react';
+import { Upload, Loader2 } from 'lucide-react';
 import mammoth from 'mammoth';
 import { toast } from 'sonner';
 import { supabase } from '@/integrations/supabase/client';
@@ -7,10 +7,9 @@ import { supabase } from '@/integrations/supabase/client';
 interface Props {
   onExtracted: (vouchers: string[]) => void;
   className?: string;
-  children?: React.ReactNode;
 }
 
-export function FileUploader({ onExtracted, className = '', children }: Props) {
+export function FileUploader({ onExtracted, className = '' }: Props) {
   const [loading, setLoading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
 
@@ -137,14 +136,22 @@ export function FileUploader({ onExtracted, className = '', children }: Props) {
         className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
         disabled={loading}
       />
-      {loading ? (
-        <div className="w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border rounded bg-gray-50 text-gray-400">
+      <button
+        type="button"
+        className={`w-full flex items-center justify-center gap-1.5 px-3 py-1.5 text-xs border rounded ${
+          loading ? 'bg-gray-50 text-gray-400' : 'hover:bg-gray-50'
+        }`}
+        disabled={loading}
+      >
+        {loading ? (
           <Loader2 size={14} className="animate-spin" />
-          Processing...
-        </div>
-      ) : (
-        children
-      )}
+        ) : (
+          <>
+            <Upload size={14} />
+            Upload Vouchers
+          </>
+        )}
+      </button>
     </div>
   );
 }

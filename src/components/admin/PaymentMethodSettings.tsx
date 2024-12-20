@@ -12,8 +12,6 @@ interface PaymentMethodSetting {
   is_enabled: boolean;
 }
 
-const DEFAULT_METHODS: PaymentMethod[] = ['cash', 'gcash', 'paymaya', 'credit'];
-
 export const PaymentMethodSettings = () => {
   const [settings, setSettings] = useState<PaymentMethodSetting[]>([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -24,47 +22,13 @@ export const PaymentMethodSettings = () => {
 
   const loadSettings = async () => {
     try {
-      // First, ensure all default methods exist in the database
-      for (const method of DEFAULT_METHODS) {
-        const { data: existingMethod } = await supabase
-          .from('payment_method_settings')
-          .select('*')
-          .eq('id', method)
-          .single();
-
-        if (!existingMethod) {
-          // If method doesn't exist, create it
-          const { error: insertError } = await supabase
-            .from('payment_method_settings')
-            .insert([{
-              id: method,
-              is_enabled: true
-            }]);
-
-          if (insertError) {
-            console.error(`Error creating payment method ${method}:`, insertError);
-          }
-        }
-      }
-
-      // Now fetch all settings
       const { data, error } = await supabase
         .from('payment_method_settings')
         .select('*')
-        .order('id');
+        .order('method');
 
       if (error) throw error;
-
-      const transformedSettings = DEFAULT_METHODS.map(method => {
-        const existingSetting = data?.find(s => s.id === method);
-        return {
-          id: method,
-          method: method,
-          is_enabled: existingSetting?.is_enabled ?? true
-        };
-      });
-
-      setSettings(transformedSettings);
+      setSettings(data);
     } catch (error) {
       console.error('Error loading payment method settings:', error);
       toast.error("Failed to load payment method settings");

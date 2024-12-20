@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { PlanCard } from "./plans/PlanCard";
 import { PurchaseDialog } from "./plans/PurchaseDialog";
 
-type PaymentMethod = Database['public']['Enums']['payment_method'];
+type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
 type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 const PlansList = () => {
@@ -84,14 +84,27 @@ const PlansList = () => {
 
         if (creditError) throw creditError;
 
-        // Use the transfer_vouchers_to_client function to handle the transfer
-        const { error: transferError } = await supabase
-          .rpc('transfer_vouchers_to_client', {
-            p_client_id: clientId,
-            p_voucher_ids: availableVouchers.map(v => v.id)
-          });
+        // Add vouchers to wallet and mark them as used
+        const walletEntries = availableVouchers.map(voucher => ({
+          client_id: clientId,
+          voucher_id: voucher.id,
+          status: 'approved' as PurchaseStatus
+        }));
 
-        if (transferError) throw transferError;
+        const { error: walletError } = await supabase
+          .from('voucher_wallet')
+          .insert(walletEntries);
+
+        if (walletError) throw walletError;
+
+        // Update vouchers as used
+        const voucherIds = availableVouchers.map(v => v.id);
+        const { error: updateError } = await supabase
+          .from('vouchers')
+          .update({ is_used: true })
+          .in('id', voucherIds);
+
+        if (updateError) throw updateError;
 
         // Invalidate queries to refresh data
         queryClient.invalidateQueries({ queryKey: ['clientPlans'] });
@@ -123,13 +136,9 @@ const PlansList = () => {
     },
     onError: (error) => {
       console.error('Purchase error:', error);
-      if (error instanceof Error) {
-        if (error.message === "Please log in to make a purchase") {
-          toast.error("Please log in to make a purchase");
-          navigate("/auth");
-        } else {
-          toast.error(error.message || "Failed to process purchase. Please try again.");
-        }
+      if (error instanceof Error && error.message === "Please log in to make a purchase") {
+        toast.error("Please log in to make a purchase");
+        navigate("/auth");
       } else {
         toast.error("Failed to process purchase. Please try again.");
       }

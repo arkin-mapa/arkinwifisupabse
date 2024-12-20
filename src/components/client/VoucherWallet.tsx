@@ -1,6 +1,8 @@
 import { useState, useEffect } from "react";
 import { Card, CardContent } from "@/components/ui/card";
+import { ScrollArea } from "@/components/ui/scroll-area";
 import { toast } from "sonner";
+import PlanGroup from "./voucher/PlanGroup";
 import VoucherHeader from "./voucher/VoucherHeader";
 import { fetchClientVouchers, fetchClientPlans } from "@/utils/supabaseData";
 import { supabase } from "@/integrations/supabase/client";
@@ -9,7 +11,6 @@ import { useSession } from "@supabase/auth-helpers-react";
 import { QRCodeScanner } from "./voucher/QRCodeScanner";
 import { QRCodeGenerator } from "./voucher/QRCodeGenerator";
 import { printPlanVouchers } from "@/utils/printUtils";
-import { VoucherList } from "./voucher/VoucherList";
 
 const VoucherWallet = () => {
   const [vouchers, setVouchers] = useState<Record<string, Voucher[]>>({});
@@ -28,12 +29,8 @@ const VoucherWallet = () => {
 
   const loadData = async () => {
     try {
-      if (!session?.user?.id) {
-        throw new Error("User not authenticated");
-      }
-
       const [vouchersData, plansData] = await Promise.all([
-        fetchClientVouchers(session.user.id),
+        fetchClientVouchers(),
         fetchClientPlans()
       ]);
 
@@ -62,6 +59,7 @@ const VoucherWallet = () => {
 
   const handleDeleteVoucher = async (voucherId: string) => {
     try {
+      // First delete from voucher_wallet
       const { error: walletError } = await supabase
         .from('voucher_wallet')
         .delete()
@@ -71,18 +69,28 @@ const VoucherWallet = () => {
         throw walletError;
       }
 
-      await loadData();
+      // Then delete from vouchers table
+      const { error: voucherError } = await supabase
+        .from('vouchers')
+        .delete()
+        .eq('id', voucherId);
+
+      if (voucherError) {
+        throw voucherError;
+      }
+
       toast.success("Voucher deleted successfully");
+      await loadData();
     } catch (error) {
       console.error('Error deleting voucher:', error);
       toast.error("Failed to delete voucher");
     }
   };
 
-  const togglePlanExpansion = (planId: string) => {
+  const togglePlanExpansion = (planDuration: string) => {
     setExpandedPlans(prev => ({
       ...prev,
-      [planId]: !prev[planId]
+      [planDuration]: !prev[planDuration]
     }));
   };
 
@@ -144,15 +152,30 @@ const VoucherWallet = () => {
         onPrintSelected={handlePrintSelected}
       />
       <CardContent className="p-0">
-        <VoucherList
-          vouchers={vouchers}
-          plans={plans}
-          expandedPlans={expandedPlans}
-          onTogglePlan={togglePlanExpansion}
-          onDeleteVoucher={handleDeleteVoucher}
-          selectedVouchers={selectedVouchers}
-          onVoucherSelect={toggleVoucherSelection}
-        />
+        <ScrollArea className="h-[calc(100vh-16rem)]">
+          <div className="space-y-3 px-4 pb-4">
+            {Object.keys(vouchers).length > 0 ? (
+              Object.entries(vouchers).map(([planId, planVouchers]) => (
+                <PlanGroup
+                  key={planId}
+                  planId={planId}
+                  plan={plans[planId]}
+                  vouchers={planVouchers}
+                  isExpanded={expandedPlans[planId] || false}
+                  onToggle={() => togglePlanExpansion(planId)}
+                  onDeleteVoucher={handleDeleteVoucher}
+                  selectedVouchers={selectedVouchers}
+                  onVoucherSelect={toggleVoucherSelection}
+                />
+              ))
+            ) : (
+              <div className="text-center py-8 text-muted-foreground">
+                <p>No vouchers in your wallet.</p>
+                <p className="mt-2">Scan a QR code to receive vouchers.</p>
+              </div>
+            )}
+          </div>
+        </ScrollArea>
       </CardContent>
 
       {isQRGeneratorOpen && (

@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
+import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Voucher, Plan } from "@/types/plans";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState } from "react";
-import { toast } from "sonner";
 
 interface VoucherCardProps {
   voucher: Voucher;
@@ -24,14 +24,23 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
     try {
       await navigator.clipboard.writeText(code);
       
-      // Mark voucher as used in voucher_wallet
+      // Mark voucher as used in both vouchers and voucher_wallet tables
       const { error: walletError } = await supabase
         .from('voucher_wallet')
-        .update({ status: 'approved' })
+        .update({ is_used: true })
         .eq('voucher_id', voucher.id);
 
       if (walletError) {
         throw walletError;
+      }
+
+      const { error: voucherError } = await supabase
+        .from('vouchers')
+        .update({ is_used: true })
+        .eq('id', voucher.id);
+
+      if (voucherError) {
+        throw voucherError;
       }
 
       toast.success("Voucher code copied!");
@@ -39,6 +48,20 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
       console.error('Error:', err);
       toast.error("Failed to copy code. Please try again.");
     }
+  };
+
+  const handleDelete = () => {
+    toast.promise(
+      () => new Promise<void>((resolve) => {
+        onDelete(voucher.id);
+        resolve();
+      }),
+      {
+        loading: 'Deleting voucher...',
+        success: 'Voucher deleted successfully',
+        error: 'Failed to delete voucher'
+      }
+    );
   };
 
   return (
@@ -76,7 +99,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={() => onDelete(voucher.id)}
+                  onClick={handleDelete}
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

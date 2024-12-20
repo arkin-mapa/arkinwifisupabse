@@ -1,29 +1,28 @@
-import type { VoucherSchema, VoucherWalletSchema } from './database/vouchers';
-import type { PurchaseSchema } from './database/purchases';
-import type { PlanSchema } from './database/plans';
-
 export interface Database {
   public: {
     Tables: {
-      vouchers: {
-        Row: VoucherSchema;
-        Insert: Omit<VoucherSchema, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<VoucherSchema, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      voucher_wallet: {
-        Row: VoucherWalletSchema;
-        Insert: Omit<VoucherWalletSchema, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<VoucherWalletSchema, 'id' | 'created_at' | 'updated_at'>>;
-      };
-      purchases: {
-        Row: PurchaseSchema;
-        Insert: Omit<PurchaseSchema, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<PurchaseSchema, 'id' | 'created_at' | 'updated_at'>>;
-      };
       plans: {
-        Row: PlanSchema;
-        Insert: Omit<PlanSchema, 'id' | 'created_at' | 'updated_at'>;
-        Update: Partial<Omit<PlanSchema, 'id' | 'created_at' | 'updated_at'>>;
+        Row: {
+          id: string;
+          duration: string;
+          price: number;
+          created_at: string;
+          updated_at: string;
+        };
+        Insert: {
+          id?: string;
+          duration: string;
+          price: number;
+          created_at?: string;
+          updated_at?: string;
+        };
+        Update: {
+          id?: string;
+          duration?: string;
+          price?: number;
+          created_at?: string;
+          updated_at?: string;
+        };
       };
       credits: {
         Row: {
@@ -54,61 +53,75 @@ export interface Database {
           updated_at?: string;
         };
       };
-      profiles: {
+      vouchers: {
         Row: {
-          created_at: string;
           id: string;
-          role: Database["public"]["Enums"]["user_role"] | null;
+          code: string;
+          plan_id: string;
+          is_used: boolean;
+          created_at: string;
           updated_at: string;
         };
         Insert: {
+          id?: string;
+          code: string;
+          plan_id: string;
+          is_used?: boolean;
           created_at?: string;
-          id: string;
-          role?: Database["public"]["Enums"]["user_role"] | null;
           updated_at?: string;
         };
         Update: {
-          created_at?: string;
           id?: string;
-          role?: Database["public"]["Enums"]["user_role"] | null;
+          code?: string;
+          plan_id?: string;
+          is_used?: boolean;
+          created_at?: string;
           updated_at?: string;
         };
       };
-    };
-    Views: {
-      [_ in never]: never;
-    };
-    Functions: {
-      transfer_vouchers_to_client: {
-        Args: {
-          p_client_id: string;
-          p_voucher_ids: string[];
+      purchases: {
+        Row: {
+          id: string;
+          customer_name: string;
+          client_id: string;
+          plan_id: string | null;
+          quantity: number;
+          total_amount: number;
+          payment_method: 'cash' | 'gcash' | 'paymaya' | 'credit';
+          status: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          created_at: string;
+          updated_at: string;
         };
-        Returns: void;
-      };
-      get_user_id_by_email: {
-        Args: {
-          user_email: string;
+        Insert: {
+          id?: string;
+          customer_name: string;
+          client_id: string;
+          plan_id?: string | null;
+          quantity: number;
+          total_amount: number;
+          payment_method: 'cash' | 'gcash' | 'paymaya' | 'credit';
+          status?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          created_at?: string;
+          updated_at?: string;
         };
-        Returns: string;
-      };
-      transfer_credits: {
-        Args: {
-          from_client_id: string;
-          to_client_id: string;
-          transfer_amount: number;
+        Update: {
+          id?: string;
+          customer_name?: string;
+          client_id?: string;
+          plan_id?: string | null;
+          quantity?: number;
+          total_amount?: number;
+          payment_method?: 'cash' | 'gcash' | 'paymaya' | 'credit';
+          status?: 'pending' | 'approved' | 'rejected' | 'cancelled';
+          created_at?: string;
+          updated_at?: string;
         };
-        Returns: boolean;
       };
     };
     Enums: {
       payment_method: 'cash' | 'gcash' | 'paymaya' | 'credit';
       purchase_status: 'pending' | 'approved' | 'rejected' | 'cancelled';
       credit_transaction_type: 'deposit' | 'purchase';
-      user_role: 'admin' | 'client';
     };
   };
 }
-
-export type Tables<T extends keyof Database['public']['Tables']> = Database['public']['Tables'][T]['Row'];
-export type Enums<T extends keyof Database['public']['Enums']> = Database['public']['Enums'][T];
