@@ -11,7 +11,7 @@ import { useNavigate } from "react-router-dom";
 import { PlanCard } from "./plans/PlanCard";
 import { PurchaseDialog } from "./plans/PurchaseDialog";
 
-type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
+type PaymentMethod = Database['public']['Enums']['payment_method'];
 type PurchaseStatus = Database['public']['Tables']['purchases']['Row']['status'];
 
 const PlansList = () => {
