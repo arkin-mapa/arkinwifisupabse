@@ -1,4 +1,4 @@
-import type { Database } from "@/types/database.types";
+import type { Database } from './database.types';
 
 export interface Plan {
   id: string;
@@ -23,6 +23,6 @@ export interface Purchase {
   plan: string;
   quantity: number;
   total: number;
-  paymentMethod: Database['public']['Tables']['purchases']['Row']['payment_method'];
-  status: Database['public']['Tables']['purchases']['Row']['status'];
+  paymentMethod: Database['public']['Enums']['payment_method'];
+  status: Database['public']['Enums']['purchase_status'];
 }

@@ -71,21 +71,18 @@ export type Database = {
           created_at: string
           id: string
           is_enabled: boolean | null
-          method: Database["public"]["Enums"]["payment_method"]
           updated_at: string
         }
         Insert: {
           created_at?: string
           id?: string
           is_enabled?: boolean | null
-          method: Database["public"]["Enums"]["payment_method"]
           updated_at?: string
         }
         Update: {
           created_at?: string
           id?: string
           is_enabled?: boolean | null
-          method?: Database["public"]["Enums"]["payment_method"]
           updated_at?: string
         }
         Relationships: []
@@ -211,7 +208,7 @@ export type Database = {
           {
             foreignKeyName: "voucher_wallet_voucher_id_fkey"
             columns: ["voucher_id"]
-            isOneToOne: false
+            isOneToOne: true
             referencedRelation: "vouchers"
             referencedColumns: ["id"]
           },
