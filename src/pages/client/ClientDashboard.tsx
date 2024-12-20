@@ -39,11 +39,12 @@ const ClientDashboard = () => {
         },
         (payload: RealtimePostgresChangesPayload<CreditPurchase>) => {
           console.log('Credit purchase status changed:', payload);
-          // Check if payload.new exists and has a status property
-          const newStatus = payload.new?.status;
-          if (newStatus === 'approved') {
+          if (!payload.new) return;
+          
+          const status = payload.new.status;
+          if (status === 'approved') {
             toast.success("Your credit purchase has been approved!");
-          } else if (newStatus === 'rejected') {
+          } else if (status === 'rejected') {
             toast.error("Your credit purchase has been rejected.");
           }
         }
