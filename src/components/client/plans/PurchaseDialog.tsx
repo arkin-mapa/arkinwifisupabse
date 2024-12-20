@@ -9,7 +9,7 @@ import { ScrollArea } from "@/components/ui/scroll-area";
 import { CustomerDetails } from "./purchase/CustomerDetails";
 import { PaymentMethodSelector } from "./purchase/PaymentMethodSelector";
 
-type PaymentMethod = Database['public']['Tables']['purchases']['Row']['payment_method'];
+type PaymentMethod = Database['public']['Enums']['payment_method'];
 
 interface PurchaseDialogProps {
   selectedPlan: Plan | null;
@@ -43,11 +43,11 @@ export const PurchaseDialog = ({
     queryFn: async () => {
       const { data, error } = await supabase
         .from('payment_method_settings')
-        .select('method')
+        .select('id, is_enabled')
         .eq('is_enabled', true);
 
       if (error) throw error;
-      return data.map(pm => pm.method);
+      return (data || []).map(setting => setting.id as PaymentMethod);
     }
   });
 
