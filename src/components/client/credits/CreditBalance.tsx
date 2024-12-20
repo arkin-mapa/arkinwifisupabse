@@ -24,7 +24,8 @@ export const CreditBalanceCard = () => {
 
   useEffect(() => {
     fetchBalance();
-    // Subscribe to realtime changes
+    
+    // Subscribe to realtime changes for credits table
     const channel = supabase
       .channel('credit-changes')
       .on(
@@ -35,6 +36,7 @@ export const CreditBalanceCard = () => {
           table: 'credits'
         },
         () => {
+          console.log('Credits table changed, refreshing balance...');
           fetchBalance();
         }
       )

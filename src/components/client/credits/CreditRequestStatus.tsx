@@ -19,6 +19,7 @@ export const CreditRequestStatus = () => {
   useEffect(() => {
     loadRequests();
 
+    // Subscribe to realtime changes for credit_purchases table
     const channel = supabase
       .channel('credit-purchase-changes')
       .on(
@@ -28,7 +29,8 @@ export const CreditRequestStatus = () => {
           schema: 'public',
           table: 'credit_purchases'
         },
-        () => {
+        (payload) => {
+          console.log('Credit purchase changed:', payload);
           loadRequests();
         }
       )

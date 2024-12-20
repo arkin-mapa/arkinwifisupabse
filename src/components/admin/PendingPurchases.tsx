@@ -10,6 +10,7 @@ import { Trash2, ShoppingCart } from "lucide-react";
 import { CreditPurchaseHandler } from "./credits/CreditPurchaseHandler";
 import { VoucherPurchaseHandler } from "./vouchers/VoucherPurchaseHandler";
 import { motion } from "framer-motion";
+import { supabase } from "@/integrations/supabase/client";
 
 interface PendingPurchasesProps {
   onPurchaseUpdate?: () => void;
@@ -20,6 +21,27 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
 
   useEffect(() => {
     loadPurchases();
+
+    // Subscribe to realtime changes for purchases table
+    const channel = supabase
+      .channel('purchase-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'purchases'
+        },
+        (payload) => {
+          console.log('Purchase changed:', payload);
+          loadPurchases();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
   }, []);
 
   const loadPurchases = async () => {
