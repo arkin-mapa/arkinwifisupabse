@@ -8,6 +8,9 @@ import { LogOut, Wifi } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
+import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
+import { useEffect } from "react";
+import { toast } from "sonner";
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
@@ -16,6 +19,35 @@ const ClientDashboard = () => {
     await supabase.auth.signOut();
     navigate("/auth");
   };
+
+  useEffect(() => {
+    const session = supabase.auth.getSession();
+    if (!session) return;
+
+    // Subscribe to credit purchase status changes
+    const channel = supabase.channel('credit-purchase-status')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'credit_purchases'
+        },
+        (payload) => {
+          console.log('Credit purchase status changed:', payload);
+          if (payload.new && payload.new.status === 'approved') {
+            toast.success("Your credit purchase has been approved!");
+          } else if (payload.new && payload.new.status === 'rejected') {
+            toast.error("Your credit purchase has been rejected.");
+          }
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  }, []);
 
   return (
     <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
@@ -27,17 +59,24 @@ const ClientDashboard = () => {
               Internet Plans
             </h1>
           </div>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={handleLogout}
-            className="gap-2 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
-                     dark:border-purple-800 dark:hover:bg-purple-900/50 dark:hover:text-purple-300 
-                     transition-all duration-200"
-          >
-            <LogOut className="h-4 w-4" />
-            <span>Logout</span>
-          </Button>
+          <TooltipProvider>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={handleLogout}
+                  className="h-9 w-9 rounded-full bg-purple-50 hover:bg-purple-100 dark:bg-purple-900/50 
+                           dark:hover:bg-purple-800/70 transition-all duration-200"
+                >
+                  <LogOut className="h-4 w-4 text-purple-600 dark:text-purple-400" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent>
+                <p>Logout</p>
+              </TooltipContent>
+            </Tooltip>
+          </TooltipProvider>
         </div>
       </div>
 

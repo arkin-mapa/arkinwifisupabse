@@ -24,25 +24,22 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
     try {
       await navigator.clipboard.writeText(code);
       
-      // Update both wallet and voucher tables
-      const updates = await Promise.all([
-        supabase
-          .from('voucher_wallet')
-          .update({ is_used: true })
-          .eq('voucher_id', voucher.id),
-        
-        supabase
-          .from('vouchers')
-          .update({ is_used: true })
-          .eq('id', voucher.id)
-      ]);
-
-      const [walletError, voucherError] = updates.map(update => update.error);
+      // First update voucher_wallet
+      const { error: walletError } = await supabase
+        .from('voucher_wallet')
+        .update({ is_used: true })
+        .eq('voucher_id', voucher.id);
 
       if (walletError) {
         console.error('Error updating voucher_wallet:', walletError);
         throw walletError;
       }
+
+      // Then update vouchers table
+      const { error: voucherError } = await supabase
+        .from('vouchers')
+        .update({ is_used: true })
+        .eq('id', voucher.id);
 
       if (voucherError) {
         console.error('Error updating vouchers:', voucherError);
