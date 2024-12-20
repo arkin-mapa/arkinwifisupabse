@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { QRCode } from "qrcode.react";
+import QRCode from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher } from "@/types/plans";
