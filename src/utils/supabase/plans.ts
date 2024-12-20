@@ -45,7 +45,7 @@ export async function deletePlan(planId: string) {
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
   try {
-    // Get count of all unused vouchers for this plan
+    // First, get all unused vouchers for this plan
     const { count: totalCount, error: vouchersError } = await supabase
       .from('vouchers')
       .select('*', { count: 'exact' })
@@ -57,18 +57,23 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
       return 0;
     }
 
-    // Get count of vouchers in wallets
+    // Get the voucher IDs first
+    const { data: voucherIds } = await supabase
+      .from('vouchers')
+      .select('id')
+      .eq('plan_id', planId)
+      .eq('is_used', false);
+
+    if (!voucherIds || voucherIds.length === 0) {
+      return 0;
+    }
+
+    // Then use those IDs to count vouchers in wallets
     const { count: walletCount, error: walletError } = await supabase
       .from('voucher_wallet')
       .select('*', { count: 'exact' })
       .eq('status', 'pending')
-      .in('voucher_id', 
-        supabase
-          .from('vouchers')
-          .select('id')
-          .eq('plan_id', planId)
-          .eq('is_used', false)
-      );
+      .in('voucher_id', voucherIds.map(v => v.id));
 
     if (walletError) {
       console.error('Error fetching wallet vouchers:', walletError);
