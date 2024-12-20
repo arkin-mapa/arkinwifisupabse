@@ -43,35 +43,39 @@ export const useCreditBalance = () => {
   };
 
   useEffect(() => {
-    fetchBalance();
-    
-    const { data: { session } } = await supabase.auth.getSession();
-    if (!session?.user?.id) return;
+    const setupRealtimeSubscription = async () => {
+      await fetchBalance();
+      
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session?.user?.id) return;
 
-    // Real-time subscription for credit balance changes
-    const channel = supabase
-      .channel('credit-balance-changes')
-      .on(
-        'postgres_changes',
-        {
-          event: '*',
-          schema: 'public',
-          table: 'credits',
-          filter: `client_id=eq.${session.user.id}`
-        },
-        (payload) => {
-          console.log('Credits changed:', payload);
-          fetchBalance();
-        }
-      )
-      .subscribe((status) => {
-        console.log('Credit subscription status:', status);
-      });
+      // Real-time subscription for credit balance changes
+      const channel = supabase
+        .channel('credit-balance-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'credits',
+            filter: `client_id=eq.${session.user.id}`
+          },
+          (payload) => {
+            console.log('Credits changed:', payload);
+            fetchBalance();
+          }
+        )
+        .subscribe((status) => {
+          console.log('Credit subscription status:', status);
+        });
 
-    return () => {
-      console.log('Cleaning up credit subscription');
-      supabase.removeChannel(channel);
+      return () => {
+        console.log('Cleaning up credit subscription');
+        supabase.removeChannel(channel);
+      };
     };
+
+    setupRealtimeSubscription();
   }, []);
 
   return { balance, isLoading, refetchBalance: fetchBalance };
