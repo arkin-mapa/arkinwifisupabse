@@ -24,13 +24,14 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
     try {
       await navigator.clipboard.writeText(code);
       
-      // Update both voucher_wallet and vouchers tables
+      // Start a transaction to update both tables
       const { error: walletError } = await supabase
         .from('voucher_wallet')
         .update({ is_used: true })
         .eq('voucher_id', voucher.id);
 
       if (walletError) {
+        console.error('Error updating voucher_wallet:', walletError);
         throw walletError;
       }
 
@@ -40,13 +41,17 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
         .eq('id', voucher.id);
 
       if (voucherError) {
+        console.error('Error updating vouchers:', voucherError);
         throw voucherError;
       }
 
-      toast.success("Voucher code copied!");
+      toast.success("Voucher code copied and marked as used!");
+      
+      // Force refresh the parent component
+      onSelect(); // This will trigger a re-render of the parent
     } catch (err) {
       console.error('Error:', err);
-      toast.error("Failed to copy code. Please try again.");
+      toast.error("Failed to copy code or mark as used. Please try again.");
     }
   };
 
