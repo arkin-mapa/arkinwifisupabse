@@ -1,4 +1,4 @@
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from "@/components/ui/dialog";
+import { Dialog, DialogContent } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
 import { useState, useEffect } from "react";
 import { supabase } from "@/integrations/supabase/client";
@@ -107,24 +107,19 @@ export const PurchaseDialog = ({
 
   return (
     <Dialog open={selectedPlan !== null} onOpenChange={(open) => !open && onClose()}>
-      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0">
-        <DialogHeader className="p-6 pb-0">
-          <DialogTitle className="text-xl font-bold">Purchase {selectedPlan?.duration} Plan</DialogTitle>
-          <DialogDescription className="text-muted-foreground mt-2">
-            Please fill in your details to complete the purchase.
-          </DialogDescription>
-        </DialogHeader>
-        
-        <ScrollArea className="max-h-[calc(100vh-12rem)] px-6 py-4">
-          <div className="space-y-6">
+      <DialogContent className="max-w-[calc(100vw-2rem)] w-full sm:max-w-[425px] p-0 gap-0 max-h-[calc(100vh-8rem)] flex flex-col bg-white dark:bg-gray-900 rounded-lg shadow-lg">
+        <div className="px-4 py-2 border-b flex items-center justify-between">
+          <div className="flex flex-col items-start space-y-0.5">
+            <h3 className="text-base font-medium">{selectedPlan?.duration} Plan</h3>
+            <p className="text-sm text-muted-foreground">₱{selectedPlan?.price.toFixed(2)}</p>
+          </div>
+        </div>
+
+        <ScrollArea className="flex-grow overflow-y-auto px-4 py-2">
+          <div className="space-y-4">
             <CustomerDetails
-              customerName={purchaseDetails.customerName}
               quantity={purchaseDetails.quantity}
               maxQuantity={selectedPlan?.availableVouchers || 1}
-              onCustomerNameChange={(value) => setPurchaseDetails({
-                ...purchaseDetails,
-                customerName: value
-              })}
               onQuantityChange={(value) => setPurchaseDetails({
                 ...purchaseDetails,
                 quantity: value
@@ -141,25 +136,25 @@ export const PurchaseDialog = ({
               creditBalance={creditBalance}
               totalAmount={totalAmount}
             />
-
-            <div className="pt-2 space-y-4">
-              <div className="flex justify-between items-center text-sm">
-                <span className="text-muted-foreground">Total Amount:</span>
-                <span className="font-semibold">₱{totalAmount.toFixed(2)}</span>
-              </div>
-
-              <Button
-                className="w-full h-11"
-                onClick={onSubmit}
-                disabled={isPending || 
-                  (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
-                  !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
-              >
-                {isPending ? "Processing..." : "Confirm Purchase"}
-              </Button>
-            </div>
           </div>
         </ScrollArea>
+
+        <div className="p-3 border-t bg-gray-50 dark:bg-gray-900 rounded-b-lg space-y-2">
+          <div className="flex justify-between items-center text-sm">
+            <span className="text-muted-foreground">Total Amount:</span>
+            <span className="font-semibold">₱{totalAmount.toFixed(2)}</span>
+          </div>
+
+          <Button
+            className="w-full h-9"
+            onClick={onSubmit}
+            disabled={isPending || 
+              (purchaseDetails.paymentMethod === 'credit' && creditBalance < totalAmount) ||
+              !enabledPaymentMethods.includes(purchaseDetails.paymentMethod)}
+          >
+            {isPending ? "Processing..." : "Confirm Purchase"}
+          </Button>
+        </div>
       </DialogContent>
     </Dialog>
   );

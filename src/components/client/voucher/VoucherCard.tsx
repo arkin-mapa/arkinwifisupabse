@@ -1,13 +1,13 @@
 import { Button } from "@/components/ui/button";
 import { Card } from "@/components/ui/card";
 import { Trash2 } from "lucide-react";
-import { toast } from "sonner";
 import { motion } from "framer-motion";
 import type { Voucher, Plan } from "@/types/plans";
 import { Checkbox } from "@/components/ui/checkbox";
 import { supabase } from "@/integrations/supabase/client";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { useState } from "react";
+import { toast } from "sonner";
 
 interface VoucherCardProps {
   voucher: Voucher;
@@ -50,20 +50,6 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
     }
   };
 
-  const handleDelete = () => {
-    toast.promise(
-      () => new Promise<void>((resolve) => {
-        onDelete(voucher.id);
-        resolve();
-      }),
-      {
-        loading: 'Deleting voucher...',
-        success: 'Voucher deleted successfully',
-        error: 'Failed to delete voucher'
-      }
-    );
-  };
-
   return (
     <>
       <motion.div
@@ -99,7 +85,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
                 <Button
                   size="sm"
                   variant="ghost"
-                  onClick={handleDelete}
+                  onClick={() => onDelete(voucher.id)}
                   className="h-7 w-7 p-0 text-destructive hover:text-destructive"
                 >
                   <Trash2 className="h-3.5 w-3.5" />

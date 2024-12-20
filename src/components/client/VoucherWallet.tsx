@@ -79,8 +79,8 @@ const VoucherWallet = () => {
         throw voucherError;
       }
 
-      toast.success("Voucher deleted successfully");
       await loadData();
+      toast.success("Voucher deleted successfully");
     } catch (error) {
       console.error('Error deleting voucher:', error);
       toast.error("Failed to delete voucher");
