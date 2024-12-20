@@ -11,7 +11,7 @@ import type { Purchase } from "@/types/plans";
 import { fetchPurchases } from "@/utils/supabaseData";
 import { toast } from "sonner";
 import { Button } from "@/components/ui/button";
-import { LogOut } from "lucide-react";
+import { LogOut, Settings } from "lucide-react";
 import { supabase } from "@/integrations/supabase/client";
 import { useNavigate } from "react-router-dom";
 
@@ -39,12 +39,25 @@ const AdminDashboard = () => {
   };
 
   return (
-    <div className="min-h-screen bg-gray-50">
-      <div className="sticky top-0 z-50 bg-white border-b">
-        <div className="flex justify-between items-center px-4 py-2">
-          <h1 className="text-lg font-semibold">Admin Dashboard</h1>
-          <Button variant="ghost" size="icon" onClick={handleLogout}>
-            <LogOut className="h-5 w-5" />
+    <div className="min-h-screen bg-gray-50 dark:bg-gray-900">
+      <div className="sticky top-0 z-50 bg-white/80 dark:bg-gray-900/80 backdrop-blur-lg border-b border-purple-100 dark:border-purple-900">
+        <div className="flex justify-between items-center px-6 py-4">
+          <div className="flex items-center gap-2">
+            <Settings className="h-5 w-5 text-purple-600 dark:text-purple-400" />
+            <h1 className="text-xl font-bold bg-gradient-to-r from-purple-600 to-blue-500 bg-clip-text text-transparent">
+              Admin Dashboard
+            </h1>
+          </div>
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={handleLogout}
+            className="gap-2 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
+                     dark:border-purple-800 dark:hover:bg-purple-900/50 dark:hover:text-purple-300 
+                     transition-all duration-200"
+          >
+            <LogOut className="h-4 w-4" />
+            <span>Logout</span>
           </Button>
         </div>
       </div>
