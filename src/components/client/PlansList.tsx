@@ -123,9 +123,13 @@ const PlansList = () => {
     },
     onError: (error) => {
       console.error('Purchase error:', error);
-      if (error instanceof Error && error.message === "Please log in to make a purchase") {
-        toast.error("Please log in to make a purchase");
-        navigate("/auth");
+      if (error instanceof Error) {
+        if (error.message === "Please log in to make a purchase") {
+          toast.error("Please log in to make a purchase");
+          navigate("/auth");
+        } else {
+          toast.error(error.message || "Failed to process purchase. Please try again.");
+        }
       } else {
         toast.error("Failed to process purchase. Please try again.");
       }
