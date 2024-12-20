@@ -69,9 +69,28 @@ export const useCreditBalance = () => {
           console.log('Credit subscription status:', status);
         });
 
+      // Also subscribe to credit_purchases table for status updates
+      const purchaseChannel = supabase
+        .channel('credit-purchase-changes')
+        .on(
+          'postgres_changes',
+          {
+            event: '*',
+            schema: 'public',
+            table: 'credit_purchases',
+            filter: `client_id=eq.${session.user.id}`
+          },
+          (payload) => {
+            console.log('Credit purchase changed:', payload);
+            fetchBalance();
+          }
+        )
+        .subscribe();
+
       return () => {
         console.log('Cleaning up credit subscription');
         supabase.removeChannel(channel);
+        supabase.removeChannel(purchaseChannel);
       };
     };
 

@@ -29,14 +29,16 @@ const VoucherWallet = () => {
   }, [session?.user?.id]);
 
   const setupRealtimeSubscription = () => {
-    const channel = supabase
-      .channel('voucher-changes')
+    // Subscribe to voucher_wallet changes
+    const walletChannel = supabase
+      .channel('voucher-wallet-changes')
       .on(
         'postgres_changes',
         {
           event: '*',
           schema: 'public',
-          table: 'voucher_wallet'
+          table: 'voucher_wallet',
+          filter: session?.user?.id ? `client_id=eq.${session.user.id}` : undefined
         },
         (payload) => {
           console.log('Voucher wallet changed:', payload);
@@ -45,8 +47,26 @@ const VoucherWallet = () => {
       )
       .subscribe();
 
+    // Subscribe to vouchers changes
+    const vouchersChannel = supabase
+      .channel('vouchers-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'vouchers'
+        },
+        (payload) => {
+          console.log('Vouchers changed:', payload);
+          loadData();
+        }
+      )
+      .subscribe();
+
     return () => {
-      supabase.removeChannel(channel);
+      supabase.removeChannel(walletChannel);
+      supabase.removeChannel(vouchersChannel);
     };
   };
 
