@@ -35,8 +35,8 @@ export const QRCodeGenerator = ({ isOpen, onClose }: QRCodeGeneratorProps) => {
         <DialogHeader>
           <DialogTitle>Your QR Code</DialogTitle>
         </DialogHeader>
-        <div className="flex justify-center items-center p-4">
-          <div className={`${isMobile ? 'w-64 h-64' : 'w-72 h-72'}`}>
+        <div className="flex flex-col items-center justify-center p-4">
+          <div className="flex items-center justify-center w-full aspect-square max-w-[288px]">
             <QRCodeSVG
               value={qrData}
               size={isMobile ? 256 : 288}

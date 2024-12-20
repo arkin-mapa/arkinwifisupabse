@@ -35,12 +35,15 @@ export const QRCodeGenerator = ({ isOpen, onClose, vouchers, onTransferComplete 
           <DialogTitle>Share Vouchers</DialogTitle>
         </DialogHeader>
         <div className="flex flex-col items-center justify-center p-4">
-          <QRCode
-            value={qrData}
-            size={256}
-            level="H"
-            includeMargin={true}
-          />
+          <div className="flex items-center justify-center w-full aspect-square max-w-[288px]">
+            <QRCode
+              value={qrData}
+              size={256}
+              level="H"
+              includeMargin={true}
+              className="w-full h-full"
+            />
+          </div>
           <p className="mt-4 text-sm text-muted-foreground text-center">
             Scan this QR code to transfer {vouchers.length} voucher{vouchers.length !== 1 ? 's' : ''}
           </p>
