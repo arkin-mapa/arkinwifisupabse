@@ -24,8 +24,31 @@ const VoucherWallet = () => {
   useEffect(() => {
     if (session?.user?.id) {
       loadData();
+      setupRealtimeSubscription();
     }
   }, [session?.user?.id]);
+
+  const setupRealtimeSubscription = () => {
+    const channel = supabase
+      .channel('voucher-changes')
+      .on(
+        'postgres_changes',
+        {
+          event: '*',
+          schema: 'public',
+          table: 'voucher_wallet'
+        },
+        (payload) => {
+          console.log('Voucher wallet changed:', payload);
+          loadData();
+        }
+      )
+      .subscribe();
+
+    return () => {
+      supabase.removeChannel(channel);
+    };
+  };
 
   const loadData = async () => {
     try {
