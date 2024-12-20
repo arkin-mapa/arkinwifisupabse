@@ -11,6 +11,10 @@ import { useNavigate } from "react-router-dom";
 import { Tooltip, TooltipContent, TooltipProvider, TooltipTrigger } from "@/components/ui/tooltip";
 import { useEffect } from "react";
 import { toast } from "sonner";
+import type { RealtimePostgresChangesPayload } from '@supabase/supabase-js';
+import type { Database } from "@/integrations/supabase/types";
+
+type CreditPurchase = Database['public']['Tables']['credit_purchases']['Row'];
 
 const ClientDashboard = () => {
   const navigate = useNavigate();
@@ -33,7 +37,7 @@ const ClientDashboard = () => {
           schema: 'public',
           table: 'credit_purchases'
         },
-        (payload) => {
+        (payload: RealtimePostgresChangesPayload<CreditPurchase>) => {
           console.log('Credit purchase status changed:', payload);
           if (payload.new && payload.new.status === 'approved') {
             toast.success("Your credit purchase has been approved!");
