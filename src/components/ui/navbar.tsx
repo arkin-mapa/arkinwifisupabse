@@ -78,12 +78,12 @@ export function Navbar() {
                   variant="outline"
                   size="sm"
                   onClick={handleLogout}
-                  className="ml-2 h-8 px-2 gap-1 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
+                  className="ml-2 h-8 w-8 p-0 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
                            dark:border-purple-800 dark:hover:bg-purple-900 dark:hover:text-purple-300 
                            transition-all"
+                  title="Logout"
                 >
-                  <LogOut className="h-3 w-3" />
-                  <span className="text-xs">Logout</span>
+                  <LogOut className="h-3.5 w-3.5" />
                 </Button>
               </div>
 
@@ -120,12 +120,12 @@ export function Navbar() {
                         handleLogout();
                         setIsMenuOpen(false);
                       }}
-                      className="w-full h-8 gap-1 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
+                      className="w-8 h-8 p-0 border-purple-200 hover:bg-purple-50 hover:text-purple-700 
                                dark:border-purple-800 dark:hover:bg-purple-900 dark:hover:text-purple-300 
                                transition-all"
+                      title="Logout"
                     >
-                      <LogOut className="h-3 w-3" />
-                      <span className="text-xs">Logout</span>
+                      <LogOut className="h-3.5 w-3.5" />
                     </Button>
                   </div>
                 </div>
