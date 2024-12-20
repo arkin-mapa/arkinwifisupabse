@@ -62,7 +62,23 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
       .filter(v => v.voucher_id !== null)
       .map(v => v.voucher_id);
 
-    // Now count available vouchers excluding those in wallets
+    // If there are no vouchers in wallets, we can just count all unused vouchers for the plan
+    if (walletVoucherIds.length === 0) {
+      const { count, error } = await supabase
+        .from('vouchers')
+        .select('*', { count: 'exact', head: true })
+        .eq('plan_id', planId)
+        .eq('is_used', false);
+
+      if (error) {
+        console.error('Error counting available vouchers:', error);
+        return 0;
+      }
+
+      return count || 0;
+    }
+
+    // If there are vouchers in wallets, exclude them from the count
     const { count, error } = await supabase
       .from('vouchers')
       .select('*', { count: 'exact', head: true })
