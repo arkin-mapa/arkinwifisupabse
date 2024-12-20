@@ -3,6 +3,7 @@ import { QRCodeSVG } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import type { Voucher } from "@/types/plans";
+import { useIsMobile } from "@/hooks/use-mobile";
 
 interface QRCodeGeneratorProps {
   isOpen: boolean;
@@ -13,27 +14,30 @@ interface QRCodeGeneratorProps {
 
 export const QRCodeGenerator = ({ isOpen, onClose, vouchers }: QRCodeGeneratorProps) => {
   const [qrData, setQrData] = useState<string>("");
+  const isMobile = useIsMobile();
 
   useEffect(() => {
     const generateQRData = async () => {
       const { data: session } = await supabase.auth.getSession();
       if (session?.session?.user) {
-        // Optimize data structure to reduce size
+        // Create a compact data structure for QR code
         const qrContent = {
-          t: 'v', // shortened 'type' to 't' for voucher-transfer
-          u: session.session.user.id, // shortened 'userId' to 'u'
-          v: vouchers.map(v => v.id) // shortened 'vouchers' to 'v'
+          type: 'voucher-transfer',
+          from: session.session.user.id,
+          vouchers: vouchers.map(v => v.id)
         };
         setQrData(JSON.stringify(qrContent));
       }
     };
 
-    generateQRData();
-  }, [vouchers]);
+    if (isOpen) {
+      generateQRData();
+    }
+  }, [vouchers, isOpen]);
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className="sm:max-w-md">
+      <DialogContent className={`${isMobile ? 'w-[95vw] rounded-lg' : 'sm:max-w-md'}`}>
         <DialogHeader>
           <DialogTitle>Share Vouchers</DialogTitle>
         </DialogHeader>
@@ -41,7 +45,7 @@ export const QRCodeGenerator = ({ isOpen, onClose, vouchers }: QRCodeGeneratorPr
           <div className="flex items-center justify-center w-full aspect-square max-w-[288px]">
             <QRCodeSVG
               value={qrData}
-              size={288}
+              size={isMobile ? 256 : 288}
               level="H"
               includeMargin
               className="w-full h-full"

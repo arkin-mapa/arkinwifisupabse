@@ -23,28 +23,28 @@ export const QRCodeScanner = ({ isOpen, onClose, onTransferComplete }: QRCodeSca
         
         const data = JSON.parse(result.text);
         
-        // Check for shortened keys in optimized data structure
-        if (data.t !== 'v' || !data.u || !data.v) {
+        // Validate QR data structure
+        if (data.type !== 'voucher-transfer' || !data.from || !Array.isArray(data.vouchers)) {
           console.error('Invalid QR data format:', data);
           toast.error("Invalid QR Code format");
           return;
         }
 
-        if (data.u === session?.user?.id) {
+        if (data.from === session?.user?.id) {
           toast.error("Cannot transfer vouchers to yourself");
           return;
         }
 
         console.log('Attempting transfer:', {
-          from: data.u,
+          from: data.from,
           to: session?.user?.id,
-          vouchers: data.v
+          vouchers: data.vouchers
         });
 
         const { error: transferError } = await supabase.rpc('transfer_vouchers', {
-          from_client_id: data.u,
+          from_client_id: data.from,
           to_client_id: session?.user?.id,
-          voucher_ids: data.v
+          voucher_ids: data.vouchers
         });
 
         if (transferError) {
