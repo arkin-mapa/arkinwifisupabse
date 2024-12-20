@@ -1,35 +1,38 @@
-import QRCode from "qrcode.react";
+import { useEffect, useState } from "react";
+import { QRCode } from "qrcode.react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { useSession } from "@supabase/auth-helpers-react";
-import type { Voucher } from "@/types/plans";
 import { supabase } from "@/integrations/supabase/client";
-import { toast } from "sonner";
+import type { Voucher } from "@/types/plans";
 
 interface QRCodeGeneratorProps {
   isOpen: boolean;
   onClose: () => void;
   vouchers: Voucher[];
-  onTransferComplete: (transferredVoucherIds: string[]) => void;
+  onTransferComplete?: (transferredVoucherIds: string[]) => void;
 }
 
 export const QRCodeGenerator = ({ isOpen, onClose, vouchers, onTransferComplete }: QRCodeGeneratorProps) => {
-  const session = useSession();
+  const [qrData, setQrData] = useState<string>("");
 
-  const qrData = JSON.stringify({
-    type: 'voucher-transfer',
-    userId: session?.user?.id,
-    email: session?.user?.email,
-    vouchers: vouchers.map(v => v.id)
-  });
+  useEffect(() => {
+    const generateQRData = async () => {
+      const { data: session } = await supabase.auth.getSession();
+      if (session?.session?.user) {
+        const qrContent = {
+          type: 'voucher-transfer',
+          userId: session.session.user.id,
+          email: session.session.user.email,
+          voucherIds: vouchers.map(v => v.id)
+        };
+        setQrData(JSON.stringify(qrContent));
+      }
+    };
 
-  const handleClose = () => {
-    onClose();
-    // Call onTransferComplete with the transferred voucher IDs
-    onTransferComplete(vouchers.map(v => v.id));
-  };
+    generateQRData();
+  }, [vouchers]);
 
   return (
-    <Dialog open={isOpen} onOpenChange={handleClose}>
+    <Dialog open={isOpen} onOpenChange={onClose}>
       <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Share Vouchers</DialogTitle>
@@ -38,7 +41,7 @@ export const QRCodeGenerator = ({ isOpen, onClose, vouchers, onTransferComplete 
           <div className="flex items-center justify-center w-full aspect-square max-w-[288px]">
             <QRCode
               value={qrData}
-              size={256}
+              size={288}
               level="H"
               includeMargin={true}
               className="w-full h-full"
