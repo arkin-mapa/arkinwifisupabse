@@ -1,9 +1,9 @@
 import { useState } from "react";
 import { QrReader } from "react-qr-reader";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
-import { toast } from "sonner";
 import { supabase } from "@/integrations/supabase/client";
-import { useIsMobile } from "@/hooks/use-mobile";
+import { useSession } from "@supabase/auth-helpers-react";
+import { toast } from "sonner";
 
 interface QRCodeScannerProps {
   isOpen: boolean;
@@ -13,51 +13,51 @@ interface QRCodeScannerProps {
 
 export const QRCodeScanner = ({ isOpen, onClose, onTransferComplete }: QRCodeScannerProps) => {
   const [isLoading, setIsLoading] = useState(false);
-  const isMobile = useIsMobile();
+  const session = useSession();
 
-  const handleScan = async (result: any) => {
+  const handleScan = async (result: { text: string } | null) => {
     if (result && !isLoading) {
       try {
         setIsLoading(true);
-        console.log('Scanned QR data:', result.text); // Debug log
+        console.log('Scanned QR data:', result.text);
         
-        const data = JSON.parse(result?.text);
+        const data = JSON.parse(result.text);
         
-        if (data.type !== 'voucher-transfer' || !data.userId || !data.vouchers) {
-          console.error('Invalid QR data format:', data); // Debug log
+        // Check for shortened keys in optimized data structure
+        if (data.t !== 'v' || !data.u || !data.v) {
+          console.error('Invalid QR data format:', data);
           toast.error("Invalid QR Code format");
           return;
         }
 
-        const { data: session } = await supabase.auth.getSession();
-        if (!session?.session?.user) {
-          toast.error("Please log in to transfer vouchers");
+        if (data.u === session?.user?.id) {
+          toast.error("Cannot transfer vouchers to yourself");
           return;
         }
 
         console.log('Attempting transfer:', {
-          from: data.userId,
-          to: session.session.user.id,
-          vouchers: data.vouchers
-        }); // Debug log
+          from: data.u,
+          to: session?.user?.id,
+          vouchers: data.v
+        });
 
         const { error: transferError } = await supabase.rpc('transfer_vouchers', {
-          from_client_id: data.userId,
-          to_client_id: session.session.user.id,
-          voucher_ids: data.vouchers
+          from_client_id: data.u,
+          to_client_id: session?.user?.id,
+          voucher_ids: data.v
         });
 
         if (transferError) {
-          console.error('Transfer error:', transferError); // Debug log
+          console.error('Transfer error:', transferError);
           throw transferError;
         }
 
         toast.success("Vouchers transferred successfully");
         onTransferComplete();
         onClose();
-      } catch (error: any) {
-        console.error('Error transferring vouchers:', error);
-        toast.error(error.message || "Failed to transfer vouchers");
+      } catch (error) {
+        console.error('Error processing QR code:', error);
+        toast.error("Failed to transfer vouchers");
       } finally {
         setIsLoading(false);
       }
@@ -66,21 +66,16 @@ export const QRCodeScanner = ({ isOpen, onClose, onTransferComplete }: QRCodeSca
 
   return (
     <Dialog open={isOpen} onOpenChange={onClose}>
-      <DialogContent className={`${isMobile ? 'w-[95vw] rounded-lg p-4' : 'sm:max-w-md'}`}>
+      <DialogContent className="sm:max-w-md">
         <DialogHeader>
           <DialogTitle>Scan QR Code</DialogTitle>
         </DialogHeader>
-        <div className="space-y-4">
-          <div className={`${isMobile ? 'w-full aspect-square' : 'w-full'}`}>
-            <QrReader
-              onResult={handleScan}
-              constraints={{ facingMode: 'environment' }}
-              className="w-full"
-            />
-          </div>
-          <p className="text-sm text-muted-foreground text-center">
-            {isLoading ? "Processing transfer..." : "Scan a voucher QR code to receive vouchers"}
-          </p>
+        <div className="relative w-full aspect-square">
+          <QrReader
+            constraints={{ facingMode: "environment" }}
+            onResult={handleScan}
+            className="w-full h-full"
+          />
         </div>
       </DialogContent>
     </Dialog>
