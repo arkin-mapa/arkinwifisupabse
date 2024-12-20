@@ -24,7 +24,7 @@ const VoucherCard = ({ voucher, plan, onDelete, isSelected, onSelect }: VoucherC
     try {
       await navigator.clipboard.writeText(code);
       
-      // Mark voucher as used in both vouchers and voucher_wallet tables
+      // Update both voucher_wallet and vouchers tables
       const { error: walletError } = await supabase
         .from('voucher_wallet')
         .update({ is_used: true })

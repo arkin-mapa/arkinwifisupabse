@@ -34,11 +34,12 @@ export async function transferVouchersToClient(purchase: Purchase) {
     throw new Error(`Not enough vouchers available. Need ${purchase.quantity}, but only have ${availableVouchers?.length || 0}`);
   }
 
-  // Add vouchers to client's wallet
+  // Add vouchers to client's wallet and mark them as used in the vouchers table
   const walletEntries = availableVouchers.map(voucher => ({
     client_id: purchase.client_id,
     voucher_id: voucher.id,
-    status: 'approved' as PurchaseStatus
+    status: 'approved' as PurchaseStatus,
+    is_used: false // Initially not used when transferred
   }));
 
   console.log('Inserting wallet entries:', walletEntries);

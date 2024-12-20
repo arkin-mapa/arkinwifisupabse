@@ -26,9 +26,10 @@ export const useCreditBalance = () => {
       }
 
       const totalBalance = credits.reduce((acc, credit) => {
+        const amount = Number(credit.amount);
         return credit.transaction_type === 'deposit' 
-          ? acc + Number(credit.amount) 
-          : acc - Number(credit.amount);
+          ? acc + amount 
+          : acc - amount;
       }, 0);
 
       console.log('New balance calculated:', totalBalance);
@@ -44,28 +45,31 @@ export const useCreditBalance = () => {
   useEffect(() => {
     fetchBalance();
     
+    const { data: { session } } = await supabase.auth.getSession();
+    if (!session?.user?.id) return;
+
     // Real-time subscription for credit balance changes
     const channel = supabase
       .channel('credit-balance-changes')
       .on(
         'postgres_changes',
         {
-          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
+          event: '*',
           schema: 'public',
           table: 'credits',
-          filter: `client_id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
+          filter: `client_id=eq.${session.user.id}`
         },
         (payload) => {
           console.log('Credits changed:', payload);
-          fetchBalance(); // Refresh balance when any change occurs
+          fetchBalance();
         }
       )
       .subscribe((status) => {
-        console.log('Subscription status:', status);
+        console.log('Credit subscription status:', status);
       });
 
     return () => {
-      console.log('Cleaning up subscription');
+      console.log('Cleaning up credit subscription');
       supabase.removeChannel(channel);
     };
   }, []);
