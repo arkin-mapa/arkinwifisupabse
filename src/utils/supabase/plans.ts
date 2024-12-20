@@ -45,10 +45,12 @@ export async function deletePlan(planId: string) {
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
   try {
-    // First, get all unused vouchers for this plan
-    const { count: totalCount, error: vouchersError } = await supabase
+    console.log(`Counting available vouchers for plan ${planId}`);
+    
+    // Get all vouchers for this plan that are not used
+    const { data: unusedVouchers, error: vouchersError } = await supabase
       .from('vouchers')
-      .select('*', { count: 'exact' })
+      .select('id')
       .eq('plan_id', planId)
       .eq('is_used', false);
 
@@ -57,31 +59,30 @@ export async function fetchAvailableVouchersCount(planId: string): Promise<numbe
       return 0;
     }
 
-    // Get the voucher IDs first
-    const { data: voucherIds } = await supabase
-      .from('vouchers')
-      .select('id')
-      .eq('plan_id', planId)
-      .eq('is_used', false);
-
-    if (!voucherIds || voucherIds.length === 0) {
+    if (!unusedVouchers || unusedVouchers.length === 0) {
+      console.log(`No unused vouchers found for plan ${planId}`);
       return 0;
     }
 
-    // Then use those IDs to count vouchers in wallets
-    const { count: walletCount, error: walletError } = await supabase
+    console.log(`Found ${unusedVouchers.length} unused vouchers`);
+
+    // Get count of these vouchers that are already in wallets with pending status
+    const { data: walletVouchers, error: walletError } = await supabase
       .from('voucher_wallet')
-      .select('*', { count: 'exact' })
-      .eq('status', 'pending')
-      .in('voucher_id', voucherIds.map(v => v.id));
+      .select('voucher_id')
+      .in('voucher_id', unusedVouchers.map(v => v.id))
+      .eq('status', 'pending');
 
     if (walletError) {
       console.error('Error fetching wallet vouchers:', walletError);
       return 0;
     }
 
-    const availableCount = (totalCount || 0) - (walletCount || 0);
-    console.log(`Plan ${planId}: Total=${totalCount}, Wallet=${walletCount}, Available=${availableCount}`);
+    const pendingCount = walletVouchers?.length || 0;
+    const availableCount = unusedVouchers.length - pendingCount;
+
+    console.log(`Plan ${planId}: Total unused=${unusedVouchers.length}, In wallets=${pendingCount}, Available=${availableCount}`);
+    
     return Math.max(0, availableCount);
   } catch (error) {
     console.error('Error counting available vouchers:', error);
