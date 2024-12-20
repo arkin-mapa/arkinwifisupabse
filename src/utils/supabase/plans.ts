@@ -45,30 +45,39 @@ export async function deletePlan(planId: string) {
 
 export async function fetchAvailableVouchersCount(planId: string): Promise<number> {
   try {
-    // Get all vouchers for this plan that aren't used
-    const { data: vouchers, error: vouchersError } = await supabase
+    // First get all unused vouchers for this plan
+    const { data: unusedVouchers, error: vouchersError } = await supabase
       .from('vouchers')
       .select('id')
       .eq('plan_id', planId)
       .eq('is_used', false);
 
-    if (vouchersError) throw vouchersError;
-    if (!vouchers) return 0;
+    if (vouchersError) {
+      console.error('Error fetching unused vouchers:', vouchersError);
+      return 0;
+    }
 
-    // Get vouchers that are in wallets
+    if (!unusedVouchers || unusedVouchers.length === 0) {
+      return 0;
+    }
+
+    // Then check which of these vouchers are in wallets
     const { data: walletVouchers, error: walletError } = await supabase
       .from('voucher_wallet')
       .select('voucher_id')
-      .in('voucher_id', vouchers.map(v => v.id));
+      .in('voucher_id', unusedVouchers.map(v => v.id));
 
-    if (walletError) throw walletError;
+    if (walletError) {
+      console.error('Error fetching wallet vouchers:', walletError);
+      return 0;
+    }
 
-    // Calculate available vouchers by subtracting wallet vouchers from total vouchers
-    const availableCount = vouchers.length - (walletVouchers?.length || 0);
-    return Math.max(0, availableCount); // Ensure we don't return negative numbers
+    // Calculate available vouchers
+    const walletVoucherCount = walletVouchers?.length || 0;
+    return Math.max(0, unusedVouchers.length - walletVoucherCount);
   } catch (error) {
     console.error('Error counting available vouchers:', error);
-    return 0; // Return 0 instead of throwing to prevent UI breaks
+    return 0;
   }
 }
 
