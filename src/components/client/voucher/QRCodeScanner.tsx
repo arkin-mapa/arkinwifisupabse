@@ -15,8 +15,8 @@ export const QRCodeScanner = ({ isOpen, onClose, onTransferComplete }: QRCodeSca
   const [isLoading, setIsLoading] = useState(false);
   const session = useSession();
 
-  const handleScan = async (result: { text: string } | null) => {
-    if (result && !isLoading) {
+  const handleScan = async (result: any) => {
+    if (result?.text && !isLoading) {
       try {
         setIsLoading(true);
         console.log('Scanned QR data:', result.text);
