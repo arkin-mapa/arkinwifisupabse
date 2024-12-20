@@ -21,8 +21,7 @@ export const QRCodeGenerator = ({ isOpen, onClose, vouchers, onTransferComplete 
         const qrContent = {
           type: 'voucher-transfer',
           userId: session.session.user.id,
-          email: session.session.user.email,
-          voucherIds: vouchers.map(v => v.id)
+          vouchers: vouchers.map(v => v.id)
         };
         setQrData(JSON.stringify(qrContent));
       }
