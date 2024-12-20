@@ -25,35 +25,49 @@ export const CreditBalanceCard = () => {
   useEffect(() => {
     fetchBalance();
     
-    // Subscribe to realtime changes for credits table
+    // Subscribe to ALL changes on the credits table
     const channel = supabase
-      .channel('credit-changes')
+      .channel('credit-balance-changes')
       .on(
         'postgres_changes',
         {
-          event: '*',
+          event: '*', // Listen to all events (INSERT, UPDATE, DELETE)
           schema: 'public',
-          table: 'credits'
+          table: 'credits',
+          filter: `client_id=eq.${supabase.auth.getUser().then(({ data }) => data.user?.id)}`
         },
-        () => {
-          console.log('Credits table changed, refreshing balance...');
-          fetchBalance();
+        (payload) => {
+          console.log('Credits changed:', payload);
+          fetchBalance(); // Refresh balance when any change occurs
         }
       )
-      .subscribe();
+      .subscribe((status) => {
+        console.log('Subscription status:', status);
+      });
 
     return () => {
+      console.log('Cleaning up subscription');
       supabase.removeChannel(channel);
     };
   }, []);
 
   const fetchBalance = async () => {
     try {
+      const { data: session } = await supabase.auth.getSession();
+      if (!session?.session?.user) {
+        console.log('No authenticated user found');
+        return;
+      }
+
       const { data: credits, error } = await supabase
         .from('credits')
-        .select('amount, transaction_type');
+        .select('amount, transaction_type')
+        .eq('client_id', session.session.user.id);
 
-      if (error) throw error;
+      if (error) {
+        console.error('Error fetching balance:', error);
+        throw error;
+      }
 
       const totalBalance = credits.reduce((acc, credit) => {
         return credit.transaction_type === 'deposit' 
@@ -61,9 +75,10 @@ export const CreditBalanceCard = () => {
           : acc - Number(credit.amount);
       }, 0);
 
+      console.log('New balance calculated:', totalBalance);
       setBalance(totalBalance);
     } catch (error) {
-      console.error('Error fetching balance:', error);
+      console.error('Error in fetchBalance:', error);
       toast.error("Failed to fetch credit balance");
     }
   };
