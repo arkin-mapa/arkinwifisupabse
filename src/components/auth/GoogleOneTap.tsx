@@ -43,7 +43,7 @@ const GoogleOneTap = () => {
             cancel_on_tap_outside: false,
           });
 
-          window.google.accounts.id.prompt((notification) => {
+          window.google.accounts.id.prompt((notification: { isNotDisplayed: () => boolean; getNotDisplayedReason: () => string; }) => {
             if (notification.isNotDisplayed()) {
               console.log('One Tap not displayed:', notification.getNotDisplayedReason());
             }
