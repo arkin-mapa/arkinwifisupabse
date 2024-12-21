@@ -1,6 +1,9 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 import {
   Card,
   CardContent,
@@ -9,8 +12,27 @@ import {
   CardTitle,
 } from "@/components/ui/card";
 import { toast } from "sonner";
-import AuthForm from "@/components/auth/AuthForm";
-import GoogleOneTap from "@/components/auth/GoogleOneTap";
+import { Loader2 } from "lucide-react";
+
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: (callback?: (notification: any) => void) => void;
+          renderButton: (
+            parent: HTMLElement,
+            config: any,
+            callback?: () => void
+          ) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"; // Replace with your actual Google Client ID
 
 const AuthPage = () => {
   const [email, setEmail] = useState("");
@@ -19,6 +41,54 @@ const AuthPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const supabase = useSupabaseClient();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Initialize Google One Tap
+    if (window.google?.accounts) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleOneTapResponse,
+        auto_select: true,
+        cancel_on_tap_outside: false,
+      });
+
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed()) {
+          console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+        }
+      });
+    }
+
+    // Load the Google Identity Services script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const handleGoogleOneTapResponse = async (response: any) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+      });
+
+      if (error) throw error;
+
+      if (data?.user) {
+        toast.success("Successfully signed in!");
+        navigate("/client");
+      }
+    } catch (error: any) {
+      console.error('Google One Tap error:', error);
+      toast.error(error.message || "Failed to sign in with Google");
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -83,30 +153,69 @@ const AuthPage = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gray-50 px-4">
       <Card className="w-full max-w-md">
-        <CardHeader className="space-y-1">
-          <CardTitle className="text-2xl font-bold text-center">
-            {isSignUp ? "Create Account" : "Welcome Back"}
-          </CardTitle>
-          <CardDescription className="text-center">
+        <CardHeader>
+          <CardTitle>{isSignUp ? "Create Account" : "Welcome Back"}</CardTitle>
+          <CardDescription>
             {isSignUp
               ? "Sign up to access WiFi vouchers"
               : "Sign in to your account"}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <AuthForm
-            isSignUp={isSignUp}
-            setIsSignUp={setIsSignUp}
-            isLoading={isLoading}
-            onSubmit={handleAuth}
-            email={email}
-            setEmail={setEmail}
-            password={password}
-            setPassword={setPassword}
-          />
+          <form onSubmit={handleAuth} className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email</Label>
+              <Input
+                id="email"
+                type="email"
+                placeholder="Enter your email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label htmlFor="password">Password</Label>
+              <Input
+                id="password"
+                type="password"
+                placeholder="Enter your password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                required
+                disabled={isLoading}
+              />
+            </div>
+            <Button
+              type="submit"
+              className="w-full"
+              disabled={isLoading}
+            >
+              {isLoading ? (
+                <>
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                  {isSignUp ? "Creating Account..." : "Signing In..."}
+                </>
+              ) : (
+                isSignUp ? "Create Account" : "Sign In"
+              )}
+            </Button>
+          </form>
+          <div className="mt-4 text-center">
+            <Button
+              variant="link"
+              onClick={() => setIsSignUp(!isSignUp)}
+              className="text-sm"
+              disabled={isLoading}
+            >
+              {isSignUp
+                ? "Already have an account? Sign in"
+                : "Need an account? Sign up"}
+            </Button>
+          </div>
         </CardContent>
       </Card>
-      <GoogleOneTap />
     </div>
   );
 };
