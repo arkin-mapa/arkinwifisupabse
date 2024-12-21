@@ -11,6 +11,7 @@ import { CreditPurchaseHandler } from "./credits/CreditPurchaseHandler";
 import { VoucherPurchaseHandler } from "./vouchers/VoucherPurchaseHandler";
 import { motion } from "framer-motion";
 import { supabase } from "@/integrations/supabase/client";
+import { formatAmount } from "@/utils/formatters";
 
 interface PendingPurchasesProps {
   onPurchaseUpdate?: () => void;
@@ -150,7 +151,7 @@ const PendingPurchases = ({ onPurchaseUpdate }: PendingPurchasesProps) => {
                         </>
                       )}
                       <p className="text-muted-foreground">Payment: <span className="text-foreground capitalize">{purchase.paymentMethod}</span></p>
-                      <p className="font-medium">Total: <span className="text-primary">₱{purchase.total.toFixed(2)}</span></p>
+                      <p className="font-medium">Total: <span className="text-primary">{formatAmount(purchase.total)}</span></p>
                     </div>
                     {purchase.status === 'pending' && (
                       purchase.paymentMethod === 'credit' ? (

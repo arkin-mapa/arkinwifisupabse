@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { Button } from "@/components/ui/button";
@@ -14,6 +14,26 @@ import {
 import { toast } from "sonner";
 import { Loader2 } from "lucide-react";
 
+declare global {
+  interface Window {
+    google?: {
+      accounts: {
+        id: {
+          initialize: (config: any) => void;
+          prompt: (callback?: (notification: any) => void) => void;
+          renderButton: (
+            parent: HTMLElement,
+            config: any,
+            callback?: () => void
+          ) => void;
+        };
+      };
+    };
+  }
+}
+
+const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"; // Replace with your actual Google Client ID
+
 const AuthPage = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
@@ -21,6 +41,54 @@ const AuthPage = () => {
   const [isSignUp, setIsSignUp] = useState(false);
   const supabase = useSupabaseClient();
   const navigate = useNavigate();
+
+  useEffect(() => {
+    // Initialize Google One Tap
+    if (window.google?.accounts) {
+      window.google.accounts.id.initialize({
+        client_id: GOOGLE_CLIENT_ID,
+        callback: handleGoogleOneTapResponse,
+        auto_select: true,
+        cancel_on_tap_outside: false,
+      });
+
+      window.google.accounts.id.prompt((notification) => {
+        if (notification.isNotDisplayed()) {
+          console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+        }
+      });
+    }
+
+    // Load the Google Identity Services script
+    const script = document.createElement('script');
+    script.src = 'https://accounts.google.com/gsi/client';
+    script.async = true;
+    script.defer = true;
+    document.body.appendChild(script);
+
+    return () => {
+      document.body.removeChild(script);
+    };
+  }, []);
+
+  const handleGoogleOneTapResponse = async (response: any) => {
+    try {
+      const { data, error } = await supabase.auth.signInWithIdToken({
+        provider: 'google',
+        token: response.credential,
+      });
+
+      if (error) throw error;
+
+      if (data?.user) {
+        toast.success("Successfully signed in!");
+        navigate("/client");
+      }
+    } catch (error: any) {
+      console.error('Google One Tap error:', error);
+      toast.error(error.message || "Failed to sign in with Google");
+    }
+  };
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -49,7 +117,6 @@ const AuthPage = () => {
         });
 
         if (signInError) {
-          // Handle specific sign-in errors
           if (signInError.message.includes("Invalid login credentials")) {
             if (email.length === 0) {
               toast.error("Please enter your email address");
@@ -76,7 +143,6 @@ const AuthPage = () => {
       } else if (error.message.includes("already registered")) {
         toast.error("This email is already registered. Please sign in instead.");
       } else if (!error.message.includes("Invalid login credentials")) {
-        // Only show generic error if it's not already handled above
         toast.error(error.message || "An unexpected error occurred");
       }
     } finally {

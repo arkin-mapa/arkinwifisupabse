@@ -8,6 +8,7 @@ import { QRCodeGenerator } from "./QRCodeGenerator";
 import { QRCodeScanner } from "./QRCodeScanner";
 import { CreditRequestStatus } from "./CreditRequestStatus";
 import { useState } from "react";
+import { formatAmount } from "@/utils/formatters";
 
 export const CreditBalanceCard = () => {
   const { balance, isLoading } = useCreditBalance();
@@ -32,7 +33,7 @@ export const CreditBalanceCard = () => {
                 <div>
                   <p className="text-sm font-medium text-muted-foreground">Available Credits</p>
                   <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
-                    ₱{balance.toFixed(2)}
+                    {formatAmount(balance)}
                   </p>
                 </div>
               </div>
