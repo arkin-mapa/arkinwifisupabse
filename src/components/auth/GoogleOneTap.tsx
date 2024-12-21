@@ -3,13 +3,13 @@ import { useSupabaseClient } from "@supabase/auth-helpers-react";
 import { toast } from "sonner";
 import { useNavigate } from "react-router-dom";
 
-const GOOGLE_CLIENT_ID = "YOUR_GOOGLE_CLIENT_ID"; // Replace with your actual Google Client ID
+const GOOGLE_CLIENT_ID = "1096241878873-bnv8e0f7p8p7qqj4vj5g5k91vf9ld4hq.apps.googleusercontent.com";
 
 const GoogleOneTap = () => {
   const supabase = useSupabaseClient();
   const navigate = useNavigate();
 
-  const handleGoogleOneTapResponse = async (response: any) => {
+  const handleGoogleOneTapResponse = async (response: CredentialResponse) => {
     try {
       const { data, error } = await supabase.auth.signInWithIdToken({
         provider: 'google',
@@ -29,30 +29,35 @@ const GoogleOneTap = () => {
   };
 
   useEffect(() => {
-    if (window.google?.accounts) {
-      window.google.accounts.id.initialize({
-        client_id: GOOGLE_CLIENT_ID,
-        callback: handleGoogleOneTapResponse,
-        auto_select: true,
-        cancel_on_tap_outside: false,
-      });
+    const loadGoogleScript = () => {
+      const script = document.createElement('script');
+      script.src = 'https://accounts.google.com/gsi/client';
+      script.async = true;
+      script.defer = true;
+      script.onload = () => {
+        if (window.google?.accounts) {
+          window.google.accounts.id.initialize({
+            client_id: GOOGLE_CLIENT_ID,
+            callback: handleGoogleOneTapResponse,
+            auto_select: true,
+            cancel_on_tap_outside: false,
+          });
 
-      window.google.accounts.id.prompt((notification) => {
-        if (notification.isNotDisplayed()) {
-          console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+          window.google.accounts.id.prompt((notification) => {
+            if (notification.isNotDisplayed()) {
+              console.log('One Tap not displayed:', notification.getNotDisplayedReason());
+            }
+          });
         }
-      });
-    }
+      };
+      document.body.appendChild(script);
 
-    const script = document.createElement('script');
-    script.src = 'https://accounts.google.com/gsi/client';
-    script.async = true;
-    script.defer = true;
-    document.body.appendChild(script);
-
-    return () => {
-      document.body.removeChild(script);
+      return () => {
+        document.body.removeChild(script);
+      };
     };
+
+    loadGoogleScript();
   }, []);
 
   return null;

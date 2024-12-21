@@ -2,7 +2,7 @@ import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Loader2, Facebook, Mail } from "lucide-react";
+import { Loader2, Facebook, Mail, Chrome } from "lucide-react";
 import { toast } from "sonner";
 import { useSupabaseClient } from "@supabase/auth-helpers-react";
 
@@ -37,6 +37,17 @@ const AuthForm = ({
       if (error) throw error;
     } catch (error: any) {
       toast.error(error.message || "Failed to sign in with Facebook");
+    }
+  };
+
+  const handleGoogleLogin = async () => {
+    try {
+      const { error } = await supabase.auth.signInWithOAuth({
+        provider: 'google',
+      });
+      if (error) throw error;
+    } catch (error: any) {
+      toast.error(error.message || "Failed to sign in with Google");
     }
   };
 
@@ -93,6 +104,15 @@ const AuthForm = ({
       </div>
 
       <div className="grid gap-2">
+        <Button
+          type="button"
+          variant="outline"
+          onClick={handleGoogleLogin}
+          disabled={isLoading}
+        >
+          <Chrome className="mr-2 h-4 w-4" />
+          Google
+        </Button>
         <Button
           type="button"
           variant="outline"
