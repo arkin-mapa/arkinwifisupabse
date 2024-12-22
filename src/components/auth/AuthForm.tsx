@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { SocialLoginButton } from "./SocialLoginButton";
+import { useNavigate } from "react-router-dom";
 
 interface AuthFormProps {
   isSignUp: boolean;
@@ -17,6 +18,7 @@ export function AuthForm({ isSignUp, onToggleMode }: AuthFormProps) {
   const [password, setPassword] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const supabase = useSupabaseClient();
+  const navigate = useNavigate();
 
   const handleAuth = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -60,6 +62,19 @@ export function AuthForm({ isSignUp, onToggleMode }: AuthFormProps) {
 
         if (data?.user) {
           toast.success("Successfully signed in!");
+          // Get user role from profiles table
+          const { data: profileData } = await supabase
+            .from('profiles')
+            .select('role')
+            .eq('id', data.user.id)
+            .single();
+          
+          // Redirect based on user role
+          if (profileData?.role === 'admin') {
+            navigate('/admin');
+          } else {
+            navigate('/client');
+          }
         }
       }
     } catch (error: any) {
