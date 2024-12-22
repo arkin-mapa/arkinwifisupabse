@@ -31,6 +31,9 @@ export function AuthForm({ isSignUp, onToggleMode }: AuthFormProps) {
           password,
           options: {
             emailRedirectTo: `${window.location.origin}/client`,
+            data: {
+              redirect_url: window.location.href, // Store the original URL
+            }
           },
         });
 
@@ -69,6 +72,9 @@ export function AuthForm({ isSignUp, onToggleMode }: AuthFormProps) {
             .eq('id', data.user.id)
             .single();
           
+          // Store authentication status in localStorage
+          localStorage.setItem('isAuthenticated', 'true');
+          
           // Redirect based on user role
           if (profileData?.role === 'admin') {
             navigate('/admin');
@@ -98,6 +104,10 @@ export function AuthForm({ isSignUp, onToggleMode }: AuthFormProps) {
         provider: 'google',
         options: {
           redirectTo: `${window.location.origin}/client`,
+          queryParams: {
+            access_type: 'offline',
+            prompt: 'consent',
+          }
         },
       });
       if (error) throw error;
