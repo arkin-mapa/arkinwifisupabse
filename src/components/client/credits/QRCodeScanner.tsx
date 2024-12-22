@@ -1,5 +1,5 @@
-import { useState } from "react";
-import { QrReader } from "react-qr-reader";
+import { useState, useRef } from "react";
+import { Html5QrcodeScanner } from "html5-qrcode";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog";
 import { Input } from "@/components/ui/input";
@@ -17,23 +17,40 @@ export const QRCodeScanner = ({ isOpen, onClose }: QRCodeScannerProps) => {
   const [amount, setAmount] = useState("");
   const [recipientData, setRecipientData] = useState<{ userId: string; email: string } | null>(null);
   const [isLoading, setIsLoading] = useState(false);
+  const scannerRef = useRef<Html5QrcodeScanner | null>(null);
   const isMobile = useIsMobile();
 
-  const handleScan = (result: any) => {
-    if (result) {
-      try {
-        const data = JSON.parse(result?.text);
-        if (data.type === 'credit-transfer') {
-          setRecipientData({
-            userId: data.userId,
-            email: data.email
-          });
-          toast.success("QR Code scanned successfully!");
+  const initializeScanner = () => {
+    if (!scannerRef.current && !recipientData) {
+      scannerRef.current = new Html5QrcodeScanner(
+        "qr-reader",
+        { fps: 10, qrbox: { width: 250, height: 250 } },
+        false
+      );
+
+      scannerRef.current.render(
+        (result) => {
+          try {
+            const data = JSON.parse(result);
+            if (data.type === 'credit-transfer') {
+              setRecipientData({
+                userId: data.userId,
+                email: data.email
+              });
+              toast.success("QR Code scanned successfully!");
+              if (scannerRef.current) {
+                scannerRef.current.clear();
+              }
+            }
+          } catch (error) {
+            console.error('QR scan error:', error);
+            toast.error("Invalid QR Code");
+          }
+        },
+        (error) => {
+          console.log(error);
         }
-      } catch (error) {
-        console.error('QR scan error:', error);
-        toast.error("Invalid QR Code");
-      }
+      );
     }
   };
 
@@ -78,10 +95,19 @@ export const QRCodeScanner = ({ isOpen, onClose }: QRCodeScannerProps) => {
   };
 
   const handleClose = () => {
+    if (scannerRef.current) {
+      scannerRef.current.clear();
+      scannerRef.current = null;
+    }
     setAmount("");
     setRecipientData(null);
     onClose();
   };
+
+  // Initialize scanner when dialog opens
+  if (isOpen && !recipientData) {
+    initializeScanner();
+  }
 
   return (
     <Dialog open={isOpen} onOpenChange={handleClose}>
@@ -91,13 +117,7 @@ export const QRCodeScanner = ({ isOpen, onClose }: QRCodeScannerProps) => {
         </DialogHeader>
         <div className="space-y-4">
           {!recipientData ? (
-            <div className={`${isMobile ? 'w-full aspect-square' : 'w-full'}`}>
-              <QrReader
-                onResult={handleScan}
-                constraints={{ facingMode: 'environment' }}
-                className="w-full"
-              />
-            </div>
+            <div id="qr-reader" className={`${isMobile ? 'w-full aspect-square' : 'w-full'}`} />
           ) : (
             <div className="space-y-4">
               <div>
